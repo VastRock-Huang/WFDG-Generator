@@ -4,5 +4,6 @@
 #include "GlobalInstance.h"
 
 namespace wfg {
-    vector<FuncInfo> GlobalInstance::funcInfoList{};
+    Configuration GlobalInstance::Config{};
+    vector<FuncInfo> GlobalInstance::FuncInfoList{};
 }

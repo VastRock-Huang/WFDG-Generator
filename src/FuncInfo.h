@@ -5,9 +5,12 @@
 #ifndef WFG_GENERATOR_FUNCINFO_H
 #define WFG_GENERATOR_FUNCINFO_H
 
+#include "MiniCFG.h"
+#include "util.h"
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 using namespace std;
 
@@ -15,31 +18,32 @@ namespace wfg {
     class FuncInfo {
     private:
         string _funcName;
+
         unsigned _startLine;
+
         unsigned _endLine;
+
         vector<pair<unsigned, unsigned>> _sensitiveLines{};
 
+        MiniCFG _miniCFG;
+
+        unordered_map<string, vector<unsigned>> _idMap{};
+
     public:
-        FuncInfo(string funcName, unsigned start, unsigned end)
-                : _funcName(funcName), _startLine(start), _endLine(end) {}
+        FuncInfo(string funcName, unsigned start, unsigned end, MiniCFG &&miniCFG)
+                : _funcName(funcName), _startLine(start), _endLine(end), _miniCFG(miniCFG) {}
 
         string toString() const {
-            string str = "{funcName: " + _funcName + ", startLine: " + to_string(_startLine) + ", endLine: "
-                         + to_string(_endLine) + ", sensitiveLines: [";
-            int sz = _sensitiveLines.size();
-            for (int i = 0; i < sz; ++i) {
-                str += "(" + to_string(_sensitiveLines[i].first) + ", " + to_string(_sensitiveLines[i].second) + ")";
-                if (i != sz - 1) {
-                    str += ", ";
-                }
-            }
-            str += "]}";
-            return str;
+            return "{funcName: " + _funcName + ", startLine: " + to_string(_startLine) + ", endLine: "
+                   + to_string(_endLine) + ", sensitiveLines:" + Util::NumPairVecToString(_sensitiveLines)
+                   + ", miniCFG: " + _miniCFG.toString() +"}";
         }
 
         void setSensitiveLines(vector<pair<unsigned, unsigned>> &&sensitiveLines) {
             _sensitiveLines = sensitiveLines;
         }
+
+        void insertIdentifier(const string& id, unsigned lineNo);
     };
 }
 

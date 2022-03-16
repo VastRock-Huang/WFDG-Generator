@@ -5,12 +5,14 @@
 #ifndef WFG_GENERATOR_GLOBALINSTANCE_H
 #define WFG_GENERATOR_GLOBALINSTANCE_H
 
+#include "Configuration.h"
 #include "FuncInfo.h"
 
 
 namespace wfg {
     struct GlobalInstance {
-        static vector<FuncInfo> funcInfoList;
+        static Configuration Config;
+        static vector<FuncInfo> FuncInfoList;
     };
 }
 

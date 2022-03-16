@@ -3,7 +3,7 @@
 //
 
 #include "FuncInfo.h"
-#include "WFGGen.h"
+#include "FuncInfoGen.h"
 #include "GlobalInstance.h"
 
 #include <iostream>
@@ -15,8 +15,8 @@ int main(int argc, const char **argv) {
     llvm::cl::OptionCategory opCategory("WFG Generation");
     CommonOptionsParser op(argc, argv, opCategory);
     ClangTool tool(op.getCompilations(), op.getSourcePathList());
-    int ret = tool.run(newFrontendActionFactory<WFGGenAction>().get());
-    for (auto &funcInfo: GlobalInstance::funcInfoList) {
+    int ret = tool.run(newFrontendActionFactory<FuncInfoGenAction>().get());
+    for (auto &funcInfo: GlobalInstance::FuncInfoList) {
         cout << funcInfo.toString() << endl;
     }
     return ret;
