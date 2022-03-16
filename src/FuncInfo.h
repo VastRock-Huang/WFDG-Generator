@@ -19,9 +19,7 @@ namespace wfg {
     private:
         string _funcName;
 
-        unsigned _startLine;
-
-        unsigned _endLine;
+        pair<unsigned, unsigned> _lineRange;
 
         vector<pair<unsigned, unsigned>> _sensitiveLines{};
 
@@ -31,19 +29,19 @@ namespace wfg {
 
     public:
         FuncInfo(string funcName, unsigned start, unsigned end, MiniCFG &&miniCFG)
-                : _funcName(funcName), _startLine(start), _endLine(end), _miniCFG(miniCFG) {}
+                : _funcName(funcName), _lineRange(make_pair(start, end)), _miniCFG(miniCFG) {}
 
         string toString() const {
-            return "{funcName: " + _funcName + ", startLine: " + to_string(_startLine) + ", endLine: "
-                   + to_string(_endLine) + ", sensitiveLines:" + Util::NumPairVecToString(_sensitiveLines)
-                   + ", miniCFG: " + _miniCFG.toString() +"}";
+            return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)
+                   + ", sensitiveLines:" + Util::numPairVecToString(_sensitiveLines)
+                   + ", miniCFG: " + _miniCFG.toString() + "}";
         }
 
         void setSensitiveLines(vector<pair<unsigned, unsigned>> &&sensitiveLines) {
             _sensitiveLines = sensitiveLines;
         }
 
-        void insertIdentifier(const string& id, unsigned lineNo);
+        void insertIdentifier(const string &id, unsigned lineNo);
     };
 }
 

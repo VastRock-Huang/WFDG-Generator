@@ -87,10 +87,10 @@ namespace wfg {
 
         string toString() const {
             return "{funcName: " + _funcName + ", nodeCnt: " + to_string(_nodeCnt)
-                         +", succCnt: " + to_string(_succCnt) + ", nodesSuccCnt: " + Util::NumVecToString(_nodesSuccCnt)
-                         +", nodesSuccVec: " + Util::NumVecToString(_nodesSuccVec)
-                         +", predCnt: " + to_string(_predCnt) + ", nodesPredCnt: " + Util::NumVecToString(_nodesPredCnt)
-                         +", nodesPredVec: " + Util::NumVecToString(_nodesPredVec)
+                         +", succCnt: " + to_string(_succCnt) + ", nodesSuccCnt: " + Util::numVecToString(_nodesSuccCnt)
+                         +", nodesSuccVec: " + Util::numVecToString(_nodesSuccVec)
+                         +", predCnt: " + to_string(_predCnt) + ", nodesPredCnt: " + Util::numVecToString(_nodesPredCnt)
+                         +", nodesPredVec: " + Util::numVecToString(_nodesPredVec)
                          + ", ASTStmtVec: " + ASTStmtVecToString() + "}";
         }
     };

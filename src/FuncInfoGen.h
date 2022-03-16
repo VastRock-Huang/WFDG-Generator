@@ -36,9 +36,11 @@ namespace wfg {
 
         MiniCFG buildMiniCFG(FunctionDecl *funcDecl) const;
 
-        void travelCFGStmt(const Stmt* stmt, MiniCFG& miniCFG) const;
+        static void travelCFGStmt(const Stmt* stmt, MiniCFG& miniCFG);
 
-        void catchSpecialStmt(const Stmt* stmt, MiniCFG& miniCfg) const;
+        static void catchSpecialStmt(const Stmt* stmt, MiniCFG& miniCfg);
+
+
 
     public:
         FuncInfoGenConsumer(ASTContext &ctx) : _context(ctx), _manager(ctx.getSourceManager()) {}

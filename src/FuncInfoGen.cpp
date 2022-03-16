@@ -32,18 +32,18 @@ namespace wfg {
         return result;
     }
 
-    void FuncInfoGenConsumer::travelCFGStmt(const Stmt *stmt, MiniCFG& miniCFG) const {
+    void FuncInfoGenConsumer::travelCFGStmt(const Stmt *stmt, MiniCFG& miniCFG) {
         assert(stmt);
-        llvm::errs() << stmt->getStmtClassName() <<'\n';
+//        llvm::errs() << stmt->getStmtClassName() <<'\n';
         miniCFG.addASTStmtKind(stmt->getStmtClassName());
         for(auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
             travelCFGStmt(*it, miniCFG);
         }
     }
 
-    void FuncInfoGenConsumer::catchSpecialStmt(const Stmt *stmt, MiniCFG &miniCfg) const {
+    void FuncInfoGenConsumer::catchSpecialStmt(const Stmt *stmt, MiniCFG &miniCfg) {
         if(stmt){
-            llvm::errs() <<"**"<< stmt->getStmtClassName() <<'\n';
+//            llvm::errs() <<"**"<< stmt->getStmtClassName() <<'\n';
             miniCfg.addASTStmtKind(stmt->getStmtClassName());
         }
     }
@@ -53,10 +53,10 @@ namespace wfg {
         unique_ptr<CFG> wholeCFG = CFG::buildCFG(funcDecl, funcBody, &_context, CFG::BuildOptions());
         MiniCFG miniCFG(funcDecl->getQualifiedNameAsString(), wholeCFG->size(),
                         GlobalInstance::Config.ASTStmtKindMap);
-        llvm::errs() << funcDecl->getQualifiedNameAsString() <<'\n';
+
         for(auto& block: *wholeCFG) {
-            block->dump();
             unsigned cur = block->getBlockID();
+
             for(auto it = block->succ_begin();it != block->succ_end(); ++it) {
                 CFGBlock *b = *it;
                 if (!b) {
@@ -65,6 +65,7 @@ namespace wfg {
                 miniCFG.addSuccEdge(cur, b->getBlockID());
             }
             miniCFG.finishSuccEdges();
+
             for(auto it = block->pred_begin(); it!=block->pred_end(); ++it) {
                 CFGBlock*b =*it;
                 if(!b){
@@ -84,6 +85,7 @@ namespace wfg {
             catchSpecialStmt(block->getTerminatorStmt(), miniCFG);
             catchSpecialStmt(block->getLoopTarget(), miniCFG);
             catchSpecialStmt(block->getLabel(), miniCFG);
+
         }
         return miniCFG;
     }

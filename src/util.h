@@ -14,7 +14,7 @@ using namespace std;
 namespace wfg{
     struct Util {
         template<typename T>
-        static string NumVecToString(const vector<T>& vec) {
+        static string numVecToString(const vector<T>& vec) {
             string str = "[";
             size_t sz = vec.size();
             for(size_t i = 0; i < sz; ++i) {
@@ -27,11 +27,16 @@ namespace wfg{
         }
 
         template<typename T, typename U>
-        static string NumPairVecToString(const vector<pair<T,U>>& vec) {
+        static string numPairToString(const pair<T, U> p) {
+            return "(" + to_string(p.first) + ", " + to_string(p.second) + ")";
+        }
+
+        template<typename T, typename U>
+        static string numPairVecToString(const vector<pair<T,U>>& vec) {
             string str = "[";
             size_t sz = vec.size();
             for(size_t i =0;i<sz;++i) {
-                str += "(" + to_string(vec[i].first) + ", " + to_string(vec[i].second) + ")";
+                str += numPairToString(vec[i]);
                 if(i != sz -1) {
                     str += ", ";
                 }
