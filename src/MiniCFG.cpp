@@ -20,11 +20,4 @@ namespace wfg {
         _nodesPredCnt[cur + 1] = ++_predCnt;
         _nodesPredVec.push_back(pred);
     }
-
-    void MiniCFG::addASTStmtKind(const string &stmtKind) {
-        auto it = AST_STMT_KIND_MAP.find(stmtKind);
-        if(it!=AST_STMT_KIND_MAP.end()){
-            ++_ASTStmtVec[it->second];
-        }
-    }
 }

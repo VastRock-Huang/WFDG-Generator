@@ -16,6 +16,7 @@ int main(int argc, const char **argv) {
     CommonOptionsParser op(argc, argv, opCategory);
     ClangTool tool(op.getCompilations(), op.getSourcePathList());
     int ret = tool.run(newFrontendActionFactory<FuncInfoGenAction>().get());
+    cout << "Debug\n";
     for (auto &funcInfo: GlobalInstance::FuncInfoList) {
         cout << funcInfo.toString() << endl;
     }

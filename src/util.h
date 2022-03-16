@@ -11,15 +11,15 @@
 
 using namespace std;
 
-namespace wfg{
+namespace wfg {
     struct Util {
         template<typename T>
-        static string numVecToString(const vector<T>& vec) {
+        static string numVecToString(const vector<T> &vec) {
             string str = "[";
             size_t sz = vec.size();
-            for(size_t i = 0; i < sz; ++i) {
+            for (size_t i = 0; i < sz; ++i) {
                 str += to_string(vec[i]);
-                if(i != sz -1) {
+                if (i != sz - 1) {
                     str += ", ";
                 }
             }
@@ -32,12 +32,25 @@ namespace wfg{
         }
 
         template<typename T, typename U>
-        static string numPairVecToString(const vector<pair<T,U>>& vec) {
+        static string numPairVecToString(const vector<pair<T, U>> &vec) {
             string str = "[";
             size_t sz = vec.size();
-            for(size_t i =0;i<sz;++i) {
+            for (size_t i = 0; i < sz; ++i) {
                 str += numPairToString(vec[i]);
-                if(i != sz -1) {
+                if (i != sz - 1) {
+                    str += ", ";
+                }
+            }
+            return str += "]";
+        }
+
+        template<typename T>
+        static string objVecToString(const vector<T> &vec) {
+            string str = "[";
+            size_t sz = vec.size();
+            for (size_t i = 0; i < sz; ++i) {
+                str += vec[i].toString();
+                if (i != sz - 1) {
                     str += ", ";
                 }
             }

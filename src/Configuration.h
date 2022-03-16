@@ -8,7 +8,9 @@
 #include <llvm/ADT/StringRef.h>
 #include <vector>
 #include <string>
+#include <utility>
 #include <unordered_map>
+#include <algorithm>
 
 
 using namespace std;
@@ -50,9 +52,13 @@ namespace wfg {
         const unordered_map<string, unsigned> ASTStmtKindMap;
 
         Configuration() : keyWords(initKeywords()), ASTStmtKinds(initASTStmtKinds()),
-                   ASTStmtKindMap(initASTStmtKindMap()) {}
+                          ASTStmtKindMap(initASTStmtKindMap()) {}
 
-        bool matchFuncPrefix(StringRef funcName);
+        bool matchFuncPrefix(StringRef funcName) const;
+
+        void updateStmtVec(vector<unsigned> &stmtVec, const string &stmtName) const;
+
+        static void mergeLineRanges(vector<pair<unsigned, unsigned>> &ranges);
     };
 }
 

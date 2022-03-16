@@ -16,7 +16,6 @@
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <vector>
-#include <memory>
 
 using namespace std;
 using namespace clang;
@@ -36,11 +35,11 @@ namespace wfg {
 
         MiniCFG buildMiniCFG(FunctionDecl *funcDecl) const;
 
-        static void travelCFGStmt(const Stmt* stmt, MiniCFG& miniCFG);
+        void travelCFGStmt(const Stmt* stmt, CFGNode& node) const;
 
-        static void catchSpecialStmt(const Stmt* stmt, MiniCFG& miniCfg);
+        void catchSpecialStmt(const Stmt* stmt, CFGNode& node) const;
 
-
+        pair<unsigned,unsigned> getStmtLineRange(const SourceRange& sourceRange) const;
 
     public:
         FuncInfoGenConsumer(ASTContext &ctx) : _context(ctx), _manager(ctx.getSourceManager()) {}
