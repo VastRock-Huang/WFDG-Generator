@@ -25,6 +25,7 @@ namespace wfg {
 
         MiniCFG _miniCFG;
 
+        // 行号向量是默认去重升序的
         unordered_map<string, vector<unsigned>> _idMap{};
 
     public:
@@ -34,14 +35,19 @@ namespace wfg {
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)
                    + ", sensitiveLines:" + Util::numPairVecToString(_sensitiveLines)
-                   + ", miniCFG: " + _miniCFG.toString() + "}";
+                   + ", miniCFG: " + _miniCFG.toString() + ", idMap: " + Util::str_NumVecMapToString(_idMap) + "}";
         }
 
         void setSensitiveLines(vector<pair<unsigned, unsigned>> &&sensitiveLines) {
             _sensitiveLines = sensitiveLines;
         }
 
-        void insertIdentifier(const string &id, unsigned lineNo);
+        void insertIdentifier(string &&id, unsigned lineNo);
+
+        pair<unsigned, unsigned> getLineRange() const {
+            return _lineRange;
+        }
+
     };
 }
 

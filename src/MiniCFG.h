@@ -24,7 +24,7 @@ namespace wfg {
         CFGNode(vector<unsigned>&& vec) :stmtVec(vec) {}
 
         string toString() const {
-            return "{lineRange: " + Util::numPairVecToString(lineRanges) + ", stmtVec: "
+            return "{lineRanges: " + Util::numPairVecToString(lineRanges) + ", stmtVec: "
                    + Util::numVecToString(stmtVec) + "}";
         }
     };

@@ -6,12 +6,12 @@
 
 
 namespace wfg {
-    void FuncInfo::insertIdentifier(const string &id, unsigned lineNo) {
+    void FuncInfo::insertIdentifier(string &&id, unsigned lineNo) {
         auto it = _idMap.find(id);
-        if(it != _idMap.end()) {
-            it->second.push_back(lineNo);
-        } else {
+        if(it == _idMap.end()) {
             _idMap.emplace(id, vector<unsigned>{lineNo});
+        } else if(lineNo > it->second.back()){
+            it->second.push_back(lineNo);
         }
     }
 }

@@ -117,4 +117,31 @@ namespace wfg {
         }
         return true;
     }
+
+    void FuncInfoGenAction::lexToken() const {
+        Preprocessor &preprocessor = getCompilerInstance().getPreprocessor();
+        Token token;
+        preprocessor.EnterMainSourceFile();
+        vector<FuncInfo> &funInfoList = GlobalInstance::FuncInfoList;
+        size_t funcCnt = funInfoList.size();
+        size_t i = 0;
+        do {
+            preprocessor.Lex(token);
+            if (token.isAnyIdentifier()) {
+                unsigned lineNo = getCompilerInstance().getASTContext()
+                        .getFullLoc(token.getLocation()).getSpellingLineNumber();
+                while (i < funcCnt) {
+                    int ret = Util::numInRange(lineNo, funInfoList[i].getLineRange());
+                    if (ret == 0) {
+                        funInfoList[i].insertIdentifier(preprocessor.getSpelling(token), lineNo);
+                        break;
+                    } else if(ret < 0) {
+                        break;
+                    }
+                    ++i;
+                }
+            }
+        } while (token.isNot(tok::eof));
+    }
+
 }

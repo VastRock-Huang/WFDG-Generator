@@ -29,20 +29,24 @@ namespace wfg {
     private:
         ASTContext &_context;
         SourceManager &_manager;
+        Preprocessor &_preprocessor;
+        const LangOptions &_langOpts;
 
         vector<pair<unsigned, unsigned>>
         findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const;
 
         MiniCFG buildMiniCFG(FunctionDecl *funcDecl) const;
 
-        void travelCFGStmt(const Stmt* stmt, CFGNode& node) const;
+        void travelCFGStmt(const Stmt *stmt, CFGNode &node) const;
 
-        void catchSpecialStmt(const Stmt* stmt, CFGNode& node) const;
+        void catchSpecialStmt(const Stmt *stmt, CFGNode &node) const;
 
-        pair<unsigned,unsigned> getStmtLineRange(const SourceRange& sourceRange) const;
+        pair<unsigned, unsigned> getStmtLineRange(const SourceRange &sourceRange) const;
 
     public:
-        FuncInfoGenConsumer(ASTContext &ctx) : _context(ctx), _manager(ctx.getSourceManager()) {}
+        FuncInfoGenConsumer(ASTContext &ctx, Preprocessor& processor) : _context(ctx), _manager(ctx.getSourceManager()),
+                                                                       _preprocessor(processor),
+                                                                       _langOpts(processor.getLangOpts()) {}
 
         void HandleTranslationUnit(ASTContext &ctx) override {
             TraverseDecl(ctx.getTranslationUnitDecl());
@@ -53,8 +57,17 @@ namespace wfg {
 
     class FuncInfoGenAction
             : public ASTFrontendAction {
+    private:
         std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &compiler, StringRef file) override {
-            return llvm::make_unique<FuncInfoGenConsumer>(compiler.getASTContext());
+            return llvm::make_unique<FuncInfoGenConsumer>(compiler.getASTContext(),
+                                                          compiler.getPreprocessor());
+        }
+
+        void lexToken() const;
+
+        void ExecuteAction() override {
+            ASTFrontendAction::ExecuteAction();
+            lexToken();
         }
     };
 

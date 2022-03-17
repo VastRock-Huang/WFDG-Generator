@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <unordered_map>
 
 using namespace std;
 
@@ -56,6 +57,31 @@ namespace wfg {
             }
             return str += "]";
         }
+
+        template<typename T>
+        static string str_NumVecMapToString(const unordered_map<string, vector<T>>& strNumMap) {
+            string str = "[";
+            size_t sz = strNumMap.size();
+            size_t i = 0;
+            for(auto & item: strNumMap) {
+                str += item.first + ":" + numVecToString(item.second);
+                if(++i != sz) {
+                    str += ", ";
+                }
+            }
+            return str += "]";
+        }
+
+        static int numInRange(unsigned num,const pair<unsigned, unsigned>& range) {
+            if(num < range.first) {
+                return -1;
+            }
+            if(num > range.second){
+                return 1;
+            }
+            return 0;
+        }
+
     };
 }
 
