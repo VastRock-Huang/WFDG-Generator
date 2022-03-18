@@ -19,8 +19,8 @@ namespace wfg {
                   "WhileStmt", "SwitchStmt", "ContinueStmt", "ImplicitCastExpr"
     };
 
-    bool Configuration::matchFuncPrefix(StringRef funcName) const {
-        return !hasFuncPrefix || funcName.startswith(funcPrefix);
+    bool Configuration::matchDestFunc(const string &funcName) const {
+        return !hasFuncPrefix || funcName == destFunc;
     }
 
     void Configuration::updateStmtVec(vector<unsigned> &stmtVec, const string &stmtName) const {

@@ -21,11 +21,11 @@ namespace wfg {
         }
 
         template<typename T>
-        static string vecToString(const vector<T> &vec, function<string(decltype(*vec.begin()))> func) {
+        static string vecToString(const vector<T> &vec, function<string(decltype(*vec.begin()))> toStrFunc) {
             string str = "[";
             size_t sz = vec.size();
             for (size_t i = 0; i < sz; ++i) {
-                str += func(vec[i]);
+                str += toStrFunc(vec[i]);
                 if (i != sz - 1) {
                     str += ", ";
                 }
@@ -34,7 +34,7 @@ namespace wfg {
         }
 
         template<typename T, typename U>
-        static string numPairToString(const pair<T, U> p) {
+        static string numPairToString(const pair<T, U>& p) {
             return "(" + to_string(p.first) + ", " + to_string(p.second) + ")";
         }
 

@@ -45,7 +45,7 @@ namespace wfg {
 
         const bool hasFuncPrefix{false};
 
-        const string funcPrefix{};
+        const string destFunc{};
 
         const vector<string> ASTStmtKinds;
 
@@ -54,7 +54,7 @@ namespace wfg {
         Configuration() : keyWords(initKeywords()), ASTStmtKinds(initASTStmtKinds()),
                           ASTStmtKindMap(initASTStmtKindMap()) {}
 
-        bool matchFuncPrefix(StringRef funcName) const;
+        bool matchDestFunc(const string& funcName) const;
 
         void updateStmtVec(vector<unsigned> &stmtVec, const string &stmtName) const;
 
