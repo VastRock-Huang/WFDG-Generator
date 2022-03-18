@@ -9,6 +9,7 @@
 #include <vector>
 #include <utility>
 #include <unordered_map>
+#include <functional>
 
 using namespace std;
 
@@ -59,24 +60,57 @@ namespace wfg {
         }
 
         template<typename T>
-        static string str_NumVecMapToString(const unordered_map<string, vector<T>>& strNumMap) {
+        static string vecToString(const vector<T> &vec, function<string(decltype(*vec.begin()))> func) {
             string str = "[";
-            size_t sz = strNumMap.size();
-            size_t i = 0;
-            for(auto & item: strNumMap) {
-                str += item.first + ":" + numVecToString(item.second);
-                if(++i != sz) {
+            size_t sz = vec.size();
+            for (size_t i = 0; i < sz; ++i) {
+                str += func(vec[i]);
+                if (i != sz - 1) {
                     str += ", ";
                 }
             }
             return str += "]";
         }
 
-        static int numInRange(unsigned num,const pair<unsigned, unsigned>& range) {
-            if(num < range.first) {
+        template<typename T>
+        static string str_NumVecMapToString(const unordered_map<string, vector<T>> &strNumMap) {
+            string str = "[";
+            size_t sz = strNumMap.size();
+            size_t i = 0;
+            for (auto &item: strNumMap) {
+                str += item.first + ":" + numVecToString(item.second);
+                if (++i != sz) {
+                    str += ", ";
+                }
+            }
+            return str += "]";
+        }
+
+        template<typename T>
+        static string numToString(T num) {
+            return move(to_string(num));
+        }
+
+        template<typename T, typename U>
+        static string
+        mapToString(const unordered_map<T, U>& hashmap, function<string(decltype(hashmap.begin()->first))> tFunc,
+                    function<string(decltype(hashmap.begin()->second))> uFunc) {
+            string str = "[";
+            size_t i = 0, sz = hashmap.size();
+            for (auto &item: hashmap) {
+                str += tFunc(item.first) + ":" + uFunc(item.second);
+                if (++i != sz) {
+                    str += ", ";
+                }
+            }
+            return str += "]";
+        }
+
+        static int numInRange(unsigned num, const pair<unsigned, unsigned> &range) {
+            if (num < range.first) {
                 return -1;
             }
-            if(num > range.second){
+            if (num > range.second) {
                 return 1;
             }
             return 0;

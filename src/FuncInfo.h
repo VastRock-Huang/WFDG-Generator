@@ -11,10 +11,32 @@
 #include <utility>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace std;
 
 namespace wfg {
+    struct IdMapper {
+        unordered_set<string> idSet{};
+        // 行号向量是默认去重升序的
+        unordered_map<const string *, vector<unsigned>> idMap{};
+        unordered_map<unsigned, vector<const string *>> lineMap{};
+
+        static string getIdName(const string *idAddr) {
+            return *idAddr;
+        }
+
+        static string vecToString(const vector<const string *> &vec) {
+            return Util::vecToString(vec, getIdName);
+        }
+
+        string toString() const {
+            return "{idMap: " + Util::mapToString(idMap,getIdName,Util::numVecToString<unsigned>) + ", lineMap: "
+            + Util::mapToString(lineMap, Util::numToString<unsigned>, vecToString) + "}";
+        }
+    };
+
+
     class FuncInfo {
     private:
         string _funcName;
@@ -25,8 +47,7 @@ namespace wfg {
 
         MiniCFG _miniCFG;
 
-        // 行号向量是默认去重升序的
-        unordered_map<string, vector<unsigned>> _idMap{};
+        IdMapper _idMapper{};
 
     public:
         FuncInfo(string funcName, unsigned start, unsigned end, MiniCFG &&miniCFG)
@@ -35,7 +56,7 @@ namespace wfg {
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)
                    + ", sensitiveLines:" + Util::numPairVecToString(_sensitiveLines)
-                   + ", miniCFG: " + _miniCFG.toString() + ", idMap: " + Util::str_NumVecMapToString(_idMap) + "}";
+                   + ", miniCFG: " + _miniCFG.toString() + ", idMapper:" + _idMapper.toString() + "}";
         }
 
         void setSensitiveLines(vector<pair<unsigned, unsigned>> &&sensitiveLines) {
