@@ -4,7 +4,6 @@
 
 
 #include "FuncInfo.h"
-#include "GlobalInstance.h"
 #include "FuncInfoGen.h"
 #include <llvm/ADT/StringRef.h>
 #include <string>
@@ -128,12 +127,17 @@ namespace wfg {
         do {
             preprocessor.Lex(token);
             if (token.isAnyIdentifier()) {
+                string idName = preprocessor.getSpelling(token);
+                if(GlobalInstance::VarDeclSet.count(idName) == 0){
+                    continue;
+                }
+
                 unsigned lineNo = getCompilerInstance().getASTContext()
                         .getFullLoc(token.getLocation()).getSpellingLineNumber();
                 while (i < funcCnt) {
                     int ret = Util::numInRange(lineNo, funInfoList[i].getLineRange());
                     if (ret == 0) {
-                        funInfoList[i].insertIdentifier(preprocessor.getSpelling(token), lineNo);
+                        funInfoList[i].insertIdentifier(idName, lineNo);
                         break;
                     } else if(ret < 0) {
                         break;

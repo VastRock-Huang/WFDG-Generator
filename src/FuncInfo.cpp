@@ -6,7 +6,7 @@
 
 
 namespace wfg {
-    void FuncInfo::insertIdentifier(string &&id, unsigned lineNo) {
+    void FuncInfo::insertIdentifier(const string &id, unsigned lineNo) {
         auto it = _idMap.find(id);
         if(it == _idMap.end()) {
             _idMap.emplace(id, vector<unsigned>{lineNo});

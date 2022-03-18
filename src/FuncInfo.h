@@ -42,7 +42,7 @@ namespace wfg {
             _sensitiveLines = sensitiveLines;
         }
 
-        void insertIdentifier(string &&id, unsigned lineNo);
+        void insertIdentifier(const string &id, unsigned lineNo);
 
         pair<unsigned, unsigned> getLineRange() const {
             return _lineRange;

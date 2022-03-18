@@ -7,12 +7,14 @@
 
 #include "Configuration.h"
 #include "FuncInfo.h"
+#include <unordered_set>
 
 
 namespace wfg {
     struct GlobalInstance {
         static Configuration Config;
         static vector<FuncInfo> FuncInfoList;
+        static unordered_set<string> VarDeclSet;
     };
 }
 

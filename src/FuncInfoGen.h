@@ -6,6 +6,7 @@
 #define WFG_GENERATOR_FUNCINFOGEN_H
 
 #include "MiniCFG.h"
+#include "GlobalInstance.h"
 #include <clang/Analysis/CFG.h>
 #include <clang/AST/AST.h>
 #include <clang/AST/RecursiveASTVisitor.h>
@@ -53,6 +54,13 @@ namespace wfg {
         }
 
         bool VisitFunctionDecl(FunctionDecl *funcDecl);
+
+        bool VisitVarDecl(VarDecl * varDecl){
+            if(_manager.getFileID(varDecl->getSourceRange().getBegin()) == _manager.getMainFileID()){
+                GlobalInstance::VarDeclSet.emplace(varDecl->getQualifiedNameAsString());
+            }
+            return true;
+        }
     };
 
     class FuncInfoGenAction
