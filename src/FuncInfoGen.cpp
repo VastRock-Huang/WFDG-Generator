@@ -104,7 +104,7 @@ namespace wfg {
         if (funcDecl->doesThisDeclarationHaveABody() &&
             _manager.getFileID(funcDecl->getSourceRange().getBegin()) == _manager.getMainFileID()) {
             const string funcName = funcDecl->getQualifiedNameAsString();
-            if (GlobalInstance::Config.matchFuncPrefix(funcName)) {
+            if (GlobalInstance::Config.matchDestFunc(funcName)) {
                 FullSourceLoc beginLoc = _context.getFullLoc(funcDecl->getSourceRange().getBegin());
                 FullSourceLoc endLoc = _context.getFullLoc(funcDecl->getSourceRange().getEnd());
 
