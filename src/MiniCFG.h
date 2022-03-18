@@ -21,11 +21,12 @@ namespace wfg {
         vector<unsigned> stmtVec;
 
         CFGNode() = default;
-        CFGNode(vector<unsigned>&& vec) :stmtVec(vec) {}
 
-        string toString() const {
-            return "{lineRanges: " + Util::numPairVecToString(lineRanges) + ", stmtVec: "
-                   + Util::numVecToString(stmtVec) + "}";
+        CFGNode(vector<unsigned> &&vec) : stmtVec(vec) {}
+
+        static string toString(const CFGNode &node) {
+            return "{lineRanges: " + Util::vecToString(node.lineRanges, Util::numPairToString<unsigned, unsigned>) +
+                   ", stmtVec: " + Util::vecToString(node.stmtVec, Util::numToString<unsigned>) + "}";
         }
     };
 
@@ -79,7 +80,7 @@ namespace wfg {
 
         void addPredEdge(unsigned cur, unsigned pred);
 
-        void setCFGNode(unsigned nodeID,const CFGNode &node){
+        void setCFGNode(unsigned nodeID, const CFGNode &node) {
             _nodes[nodeID] = node;
         }
 
@@ -100,11 +101,14 @@ namespace wfg {
         }
 
         string toString() const {
-            return "{funcName: " + _funcName + ", nodeCnt: " + to_string(_nodeCnt) + ", nodes: " +
-                   Util::objVecToString(_nodes) + ", succCnt: " + to_string(_succCnt) + ", nodesSuccCnt: " +
-                   Util::numVecToString(_nodesSuccCnt) + ", nodesSuccVec: " + Util::numVecToString(_nodesSuccVec)
-                   + ", predCnt: " + to_string(_predCnt) + ", nodesPredCnt: " + Util::numVecToString(_nodesPredCnt)
-                   + ", nodesPredVec: " + Util::numVecToString(_nodesPredVec) +
+            return "{funcName: " + _funcName + ", nodeCnt: " + to_string(_nodeCnt) +
+                   ", nodes: " + Util::vecToString(_nodes, CFGNode::toString) +
+                   ", succCnt: " + to_string(_succCnt) +
+                   ", nodesSuccCnt: " + Util::vecToString(_nodesSuccCnt, Util::numToString<unsigned>) +
+                   ", nodesSuccVec: " + Util::vecToString(_nodesSuccVec, Util::numToString<unsigned>) +
+                   ", predCnt: " + to_string(_predCnt) + ", nodesPredCnt: " +
+                   Util::vecToString(_nodesPredCnt, Util::numToString<unsigned>) + ", nodesPredVec: " +
+                   Util::vecToString(_nodesPredVec, Util::numToString<unsigned>) +
                    +"}";
         }
     };

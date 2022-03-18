@@ -16,47 +16,8 @@ using namespace std;
 namespace wfg {
     struct Util {
         template<typename T>
-        static string numVecToString(const vector<T> &vec) {
-            string str = "[";
-            size_t sz = vec.size();
-            for (size_t i = 0; i < sz; ++i) {
-                str += to_string(vec[i]);
-                if (i != sz - 1) {
-                    str += ", ";
-                }
-            }
-            return str += "]";
-        }
-
-        template<typename T, typename U>
-        static string numPairToString(const pair<T, U> p) {
-            return "(" + to_string(p.first) + ", " + to_string(p.second) + ")";
-        }
-
-        template<typename T, typename U>
-        static string numPairVecToString(const vector<pair<T, U>> &vec) {
-            string str = "[";
-            size_t sz = vec.size();
-            for (size_t i = 0; i < sz; ++i) {
-                str += numPairToString(vec[i]);
-                if (i != sz - 1) {
-                    str += ", ";
-                }
-            }
-            return str += "]";
-        }
-
-        template<typename T>
-        static string objVecToString(const vector<T> &vec) {
-            string str = "[";
-            size_t sz = vec.size();
-            for (size_t i = 0; i < sz; ++i) {
-                str += vec[i].toString();
-                if (i != sz - 1) {
-                    str += ", ";
-                }
-            }
-            return str += "]";
+        static string numToString(T num) {
+            return move(to_string(num));
         }
 
         template<typename T>
@@ -72,23 +33,9 @@ namespace wfg {
             return str += "]";
         }
 
-        template<typename T>
-        static string str_NumVecMapToString(const unordered_map<string, vector<T>> &strNumMap) {
-            string str = "[";
-            size_t sz = strNumMap.size();
-            size_t i = 0;
-            for (auto &item: strNumMap) {
-                str += item.first + ":" + numVecToString(item.second);
-                if (++i != sz) {
-                    str += ", ";
-                }
-            }
-            return str += "]";
-        }
-
-        template<typename T>
-        static string numToString(T num) {
-            return move(to_string(num));
+        template<typename T, typename U>
+        static string numPairToString(const pair<T, U> p) {
+            return "(" + to_string(p.first) + ", " + to_string(p.second) + ")";
         }
 
         template<typename T, typename U>

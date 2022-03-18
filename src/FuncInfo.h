@@ -30,9 +30,13 @@ namespace wfg {
             return Util::vecToString(vec, getIdName);
         }
 
+        static string numVecToString(const vector<unsigned> &vec) {
+            return Util::vecToString(vec, Util::numToString<unsigned>);
+        }
+
         string toString() const {
-            return "{idMap: " + Util::mapToString(idMap,getIdName,Util::numVecToString<unsigned>) + ", lineMap: "
-            + Util::mapToString(lineMap, Util::numToString<unsigned>, vecToString) + "}";
+            return "{idMap: " + Util::mapToString(idMap, getIdName, numVecToString) + ", lineMap: "
+                   + Util::mapToString(lineMap, Util::numToString<unsigned>, vecToString) + "}";
         }
     };
 
@@ -55,7 +59,7 @@ namespace wfg {
 
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)
-                   + ", sensitiveLines:" + Util::numPairVecToString(_sensitiveLines)
+                   + ", sensitiveLines:" + Util::vecToString(_sensitiveLines, Util::numPairToString<unsigned, unsigned>)
                    + ", miniCFG: " + _miniCFG.toString() + ", idMapper:" + _idMapper.toString() + "}";
         }
 
