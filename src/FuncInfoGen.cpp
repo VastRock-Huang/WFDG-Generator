@@ -50,9 +50,12 @@ namespace wfg {
     }
 
     pair<unsigned, unsigned> FuncInfoGenConsumer::getStmtLineRange(const SourceRange &sourceRange) const {
-        FullSourceLoc beginLoc = _context.getFullLoc(sourceRange.getBegin());
-        FullSourceLoc endLoc = _context.getFullLoc(sourceRange.getEnd());
-        return make_pair(beginLoc.getSpellingLineNumber(), endLoc.getSpellingLineNumber());
+        unsigned startLine = _context.getFullLoc(sourceRange.getBegin()).getSpellingLineNumber();
+        unsigned endLine = _context.getFullLoc(sourceRange.getEnd()).getSpellingLineNumber();
+        if(startLine <= endLine) {
+            return make_pair(startLine, endLine);
+        }
+        return make_pair(endLine, startLine);
     }
 
     MiniCFG FuncInfoGenConsumer::buildMiniCFG(FunctionDecl *funcDecl) const {
