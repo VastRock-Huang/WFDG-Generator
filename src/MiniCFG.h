@@ -7,6 +7,7 @@
 
 #include "util.h"
 #include <string>
+#include <utility>
 #include <vector>
 #include <unordered_map>
 #include <assert.h>
@@ -14,7 +15,6 @@
 using namespace std;
 
 namespace wfg {
-
 
     struct CFGNode {
         vector<pair<unsigned, unsigned>> lineRanges{};
@@ -46,18 +46,6 @@ namespace wfg {
         unsigned _predCnt{0};
         vector<unsigned> _nodesPredCnt;
         vector<unsigned> _nodesPredVec{};
-
-//        string ASTStmtVecToString() const {
-//            string str = "[";
-//            size_t i = 0, sz = AST_STMT_KIND_MAP.size();
-//            for(auto& item: AST_STMT_KIND_MAP) {
-//                str += item.first + ":"  + to_string(_ASTStmtVec[item.second]);
-//                if(++i != sz) {
-//                    str += ", ";
-//                }
-//            }
-//            return str += "]";
-//        }
 
     public:
         MiniCFG(const string &funcName, unsigned nodeCnt, const unordered_map<string, unsigned> &ASTStmtKindMap)

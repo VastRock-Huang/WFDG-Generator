@@ -63,6 +63,8 @@ namespace wfg {
             return 0;
         }
 
+        static void mergeLineRanges(vector<pair<unsigned, unsigned>> &ranges);
+
     };
 }
 

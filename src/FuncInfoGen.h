@@ -16,6 +16,7 @@
 #include <clang/Basic/LangOptions.h>
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CommonOptionsParser.h>
+#include <utility>
 #include <vector>
 
 using namespace std;
@@ -34,15 +35,15 @@ namespace wfg {
         const LangOptions &_langOpts;
 
         vector<pair<unsigned, unsigned>>
-        findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const;
+        _findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const;
 
-        MiniCFG buildMiniCFG(FunctionDecl *funcDecl) const;
+        MiniCFG _buildMiniCFG(const FunctionDecl *funcDecl) const;
 
-        void travelCFGStmt(const Stmt *stmt, CFGNode &node) const;
+        void _travelCFGStmt(const Stmt *stmt, CFGNode &node) const;
 
-        void catchSpecialStmt(const Stmt *stmt, CFGNode &node) const;
+        void _catchSpecialStmt(const Stmt *stmt, CFGNode &node) const;
 
-        pair<unsigned, unsigned> getStmtLineRange(const SourceRange &sourceRange) const;
+        pair<unsigned, unsigned> _getStmtLineRange(const SourceRange &sourceRange) const;
 
     public:
         FuncInfoGenConsumer(ASTContext &ctx, Preprocessor& processor) : _context(ctx), _manager(ctx.getSourceManager()),
@@ -71,12 +72,12 @@ namespace wfg {
                                                           compiler.getPreprocessor());
         }
 
-        void lexToken() const;
-
         void ExecuteAction() override {
             ASTFrontendAction::ExecuteAction();
-            lexToken();
+            _lexToken();
         }
+
+        void _lexToken() const;
     };
 
 }

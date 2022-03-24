@@ -11,7 +11,7 @@
 namespace wfg {
 
     vector<pair<unsigned, unsigned >>
-    FuncInfoGenConsumer::findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const {
+    FuncInfoGenConsumer::_findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const {
         FileID fileId = _manager.getMainFileID();
         StringRef funcContent{_manager.getCharacterData(beginLoc),
                               _manager.getCharacterData(endLoc) - _manager.getCharacterData(beginLoc) + 1};
@@ -31,25 +31,25 @@ namespace wfg {
         return result;
     }
 
-    void FuncInfoGenConsumer::travelCFGStmt(const Stmt *stmt, CFGNode &node) const {
+    void FuncInfoGenConsumer::_travelCFGStmt(const Stmt *stmt, CFGNode &node) const {
         assert(stmt);
 //        llvm::errs() << stmt->getStmtClassName() <<'\n';
-        node.lineRanges.push_back(move(getStmtLineRange(stmt->getSourceRange())));
+        node.lineRanges.push_back(move(_getStmtLineRange(stmt->getSourceRange())));
         GlobalInstance::Config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
-            travelCFGStmt(*it, node);
+            _travelCFGStmt(*it, node);
         }
     }
 
-    void FuncInfoGenConsumer::catchSpecialStmt(const Stmt *stmt, CFGNode &node) const {
+    void FuncInfoGenConsumer::_catchSpecialStmt(const Stmt *stmt, CFGNode &node) const {
         if (stmt) {
 //            llvm::errs() <<"**"<< stmt->getStmtClassName() <<'\n';
-            node.lineRanges.push_back(move(getStmtLineRange(stmt->getSourceRange())));
+            node.lineRanges.push_back(move(_getStmtLineRange(stmt->getSourceRange())));
             GlobalInstance::Config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         }
     }
 
-    pair<unsigned, unsigned> FuncInfoGenConsumer::getStmtLineRange(const SourceRange &sourceRange) const {
+    pair<unsigned, unsigned> FuncInfoGenConsumer::_getStmtLineRange(const SourceRange &sourceRange) const {
         unsigned startLine = _context.getFullLoc(sourceRange.getBegin()).getSpellingLineNumber();
         unsigned endLine = _context.getFullLoc(sourceRange.getEnd()).getSpellingLineNumber();
         if(startLine <= endLine) {
@@ -58,7 +58,7 @@ namespace wfg {
         return make_pair(endLine, startLine);
     }
 
-    MiniCFG FuncInfoGenConsumer::buildMiniCFG(FunctionDecl *funcDecl) const {
+    MiniCFG FuncInfoGenConsumer::_buildMiniCFG(const FunctionDecl *funcDecl) const {
         Stmt *funcBody = funcDecl->getBody();
         unique_ptr <CFG> wholeCFG = CFG::buildCFG(funcDecl, funcBody, &_context, CFG::BuildOptions());
         MiniCFG miniCFG(funcDecl->getQualifiedNameAsString(), wholeCFG->size(),
@@ -90,13 +90,13 @@ namespace wfg {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
                     assert(stmt);
-                    travelCFGStmt(stmt, node);
+                    _travelCFGStmt(stmt, node);
                 }
             }
-            catchSpecialStmt(block->getTerminatorStmt(), node);
-            catchSpecialStmt(block->getLoopTarget(), node);
-            catchSpecialStmt(block->getLabel(), node);
-            Configuration::mergeLineRanges(node.lineRanges);
+            _catchSpecialStmt(block->getTerminatorStmt(), node);
+            _catchSpecialStmt(block->getLoopTarget(), node);
+            _catchSpecialStmt(block->getLabel(), node);
+            Util::mergeLineRanges(node.lineRanges);
 
             miniCFG.setCFGNode(cur, node);
         }
@@ -112,15 +112,15 @@ namespace wfg {
                 FullSourceLoc endLoc = _context.getFullLoc(funcDecl->getSourceRange().getEnd());
 
                 FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), beginLoc.getSpellingLineNumber(),
-                                  endLoc.getSpellingLineNumber(), move(buildMiniCFG(funcDecl)));
-                funcInfo.setSensitiveLines(std::move(findSensitiveLines(beginLoc, endLoc)));
+                                  endLoc.getSpellingLineNumber(), move(_buildMiniCFG(funcDecl)));
+                funcInfo.setSensitiveLines(std::move(_findSensitiveLines(beginLoc, endLoc)));
                 GlobalInstance::FuncInfoList.push_back(funcInfo);
             }
         }
         return true;
     }
 
-    void FuncInfoGenAction::lexToken() const {
+    void FuncInfoGenAction::_lexToken() const {
         Preprocessor &preprocessor = getCompilerInstance().getPreprocessor();
         Token token;
         preprocessor.EnterMainSourceFile();

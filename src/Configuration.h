@@ -5,29 +5,25 @@
 #ifndef WFG_GENERATOR_CONFIGURATION_H
 #define WFG_GENERATOR_CONFIGURATION_H
 
-#include <llvm/ADT/StringRef.h>
 #include <vector>
 #include <string>
 #include <utility>
 #include <unordered_map>
-#include <algorithm>
-
 
 using namespace std;
-using llvm::StringRef;
 
 namespace wfg {
     class Configuration {
     private:
-        const vector<string> initKeywords() {
+        const vector<string> _initKeywords() {
             return DEFAULT_KEYWORDS;
         }
 
-        const vector<string> initASTStmtKinds() {
+        const vector<string> _initASTStmtKinds() {
             return DEFAULT_AST_STMT_KINDS;
         }
 
-        unordered_map<string, unsigned> initASTStmtKindMap() {
+        unordered_map<string, unsigned> _initASTStmtKindMap() {
             unordered_map<string, unsigned> kindMap;
             int i = 0;
             for (auto &kind: ASTStmtKinds) {
@@ -51,14 +47,12 @@ namespace wfg {
 
         const unordered_map<string, unsigned> ASTStmtKindMap;
 
-        Configuration() : keyWords(initKeywords()), ASTStmtKinds(initASTStmtKinds()),
-                          ASTStmtKindMap(initASTStmtKindMap()) {}
+        Configuration() : keyWords(_initKeywords()), ASTStmtKinds(_initASTStmtKinds()),
+                          ASTStmtKindMap(_initASTStmtKindMap()) {}
 
         bool matchDestFunc(const string& funcName) const;
 
         void updateStmtVec(vector<unsigned> &stmtVec, const string &stmtName) const;
-
-        static void mergeLineRanges(vector<pair<unsigned, unsigned>> &ranges);
     };
 }
 
