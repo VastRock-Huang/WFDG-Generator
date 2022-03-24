@@ -10,14 +10,18 @@
 
 namespace wfg {
 
-    vector<pair<unsigned, unsigned >>
+    vector<pair<unsigned, unsigned>>
     FuncInfoGenConsumer::_findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const {
+        if(GlobalInstance::Config.hasSensitiveLine) {
+            return {{GlobalInstance::Config.sensitiveLine, 0}};
+        }
+
         FileID fileId = _manager.getMainFileID();
         StringRef funcContent{_manager.getCharacterData(beginLoc),
-                              _manager.getCharacterData(endLoc) - _manager.getCharacterData(beginLoc) + 1};
+                              _manager.getCharacterData(endLoc) - _manager.getCharacterData(beginLoc) + 1UL};
         unsigned fileOffset = _manager.getFileOffset(beginLoc);
         vector<pair<unsigned, unsigned>> result;
-        for (size_t i = 0; i < GlobalInstance::Config.keyWords.size(); ++i) {
+        for (size_t i = 1; i < GlobalInstance::Config.keyWords.size(); ++i) {
             StringRef keyword{GlobalInstance::Config.keyWords[i]};
             size_t pos = 0;
             pos = funcContent.find(keyword, pos);
@@ -113,7 +117,7 @@ namespace wfg {
 
                 FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), beginLoc.getSpellingLineNumber(),
                                   endLoc.getSpellingLineNumber(), move(_buildMiniCFG(funcDecl)));
-                funcInfo.setSensitiveLines(std::move(_findSensitiveLines(beginLoc, endLoc)));
+                funcInfo.setSensitiveLines(move(_findSensitiveLines(beginLoc, endLoc)));
                 GlobalInstance::FuncInfoList.push_back(funcInfo);
             }
         }

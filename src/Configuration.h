@@ -39,16 +39,20 @@ namespace wfg {
 
         const vector<string> keyWords;
 
-        const bool hasFuncPrefix{false};
+        const bool hasDestFunc{false};
 
         const string destFunc{};
+
+        const bool hasSensitiveLine{false};
+
+        const unsigned sensitiveLine{0};
 
         const vector<string> ASTStmtKinds;
 
         const unordered_map<string, unsigned> ASTStmtKindMap;
 
-        Configuration() : keyWords(_initKeywords()), ASTStmtKinds(_initASTStmtKinds()),
-                          ASTStmtKindMap(_initASTStmtKindMap()) {}
+        Configuration() : keyWords(move(_initKeywords())), ASTStmtKinds(move(_initASTStmtKinds())),
+                          ASTStmtKindMap(move(_initASTStmtKindMap())) {}
 
         bool matchDestFunc(const string& funcName) const;
 

@@ -21,6 +21,10 @@ private:
         unsigned _nodeWeight;
         unsigned _weight;
         vector<unsigned> _ASTStmtVec;
+
+        bool operator<(const Node& node) const {
+            return _id < node._id;
+        }
     };
 
     string _funcName;

@@ -5,7 +5,7 @@
 #include "Configuration.h"
 
 namespace wfg {
-    const vector<string> Configuration::DEFAULT_KEYWORDS{"memcpy", "strcpy", "read", "free", "buf"};
+    const vector<string> Configuration::DEFAULT_KEYWORDS{"USER_SET","memcpy", "strcpy", "read", "free", "buf"};
 
     const vector<string> Configuration::DEFAULT_AST_STMT_KINDS{
             "VarDecl", "FunctionDecl", "FieldDecl", "DeclRefExpr",
@@ -20,7 +20,7 @@ namespace wfg {
     };
 
     bool Configuration::matchDestFunc(const string &funcName) const {
-        return !hasFuncPrefix || funcName == destFunc;
+        return !hasDestFunc || funcName == destFunc;
     }
 
     void Configuration::updateStmtVec(vector<unsigned> &stmtVec, const string &stmtName) const {
