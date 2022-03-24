@@ -37,12 +37,12 @@ namespace wfg {
         unsigned _nodeCnt;
         vector<CFGNode> _nodes;
 
-        int _succIdx{-1};
+        unsigned _succIdx{0};
         unsigned _succCnt{0};   // succ边的总数
         vector<unsigned> _nodesSuccCnt;
         vector<unsigned> _nodesSuccVec{};
 
-        int _predIdx{-1};
+        unsigned _predIdx{0};
         unsigned _predCnt{0};
         vector<unsigned> _nodesPredCnt;
         vector<unsigned> _nodesPredVec{};
