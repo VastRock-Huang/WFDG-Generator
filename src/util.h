@@ -10,6 +10,8 @@
 #include <utility>
 #include <unordered_map>
 #include <functional>
+#include <set>
+#include <map>
 
 using namespace std;
 
@@ -21,7 +23,7 @@ namespace wfg {
         }
 
         template<typename T>
-        static string vecToString(const vector<T> &vec, function<string(decltype(*vec.begin()))> toStrFunc) {
+        static string vecToString(const vector<T> &vec, const function<string(decltype(*vec.begin()))>& toStrFunc) {
             string str = "[";
             size_t sz = vec.size();
             for (size_t i = 0; i < sz; ++i) {
@@ -40,13 +42,41 @@ namespace wfg {
 
         template<typename T, typename U>
         static string
-        mapToString(const unordered_map<T, U>& hashmap, function<string(decltype(hashmap.begin()->first))> tFunc,
-                    function<string(decltype(hashmap.begin()->second))> uFunc) {
+        hashmapToString(const unordered_map<T, U>& hashmap, const function<string(decltype(hashmap.begin()->first))>& tFunc,
+                        const function<string(decltype(hashmap.begin()->second))>& uFunc) {
             string str = "[";
             size_t i = 0, sz = hashmap.size();
             for (auto &item: hashmap) {
                 str += tFunc(item.first) + ":" + uFunc(item.second);
                 if (++i != sz) {
+                    str += ", ";
+                }
+            }
+            return str += "]";
+        }
+
+        template<typename T, typename U>
+        static string
+        mapToString(const map<T, U>& m, const function<string(decltype(m.begin()->first))>& tFunc,
+                        const function<string(decltype(m.begin()->second))>& uFunc) {
+            string str = "[";
+            size_t i = 0, sz = m.size();
+            for (auto &item: m) {
+                str += tFunc(item.first) + ":" + uFunc(item.second);
+                if (++i != sz) {
+                    str += ", ";
+                }
+            }
+            return str += "]";
+        }
+
+        template<typename T>
+        static string setToString(const set<T>& s, const function<string(decltype(*s.begin()))>& toStrFunc) {
+            string str = "[";
+            size_t i = 0, sz = s.size();
+            for(auto &item : s) {
+                str += toStrFunc(item);
+                if(++i != sz) {
                     str += ", ";
                 }
             }
@@ -64,6 +94,7 @@ namespace wfg {
         }
 
         static void mergeLineRanges(vector<pair<unsigned, unsigned>> &ranges);
+
 
     };
 }

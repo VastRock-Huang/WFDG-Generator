@@ -5,10 +5,12 @@
 #include "FuncInfo.h"
 #include "FuncInfoGen.h"
 #include "GlobalInstance.h"
-
+#include "WFGGen.h"
+#include "WFGGen/WFG.h"
 #include <iostream>
 
 using namespace wfg;
+
 
 int main(int argc, const char **argv) {
     // 构建命令行选项类别
@@ -16,10 +18,11 @@ int main(int argc, const char **argv) {
     CommonOptionsParser op(argc, argv, opCategory);
     ClangTool tool(op.getCompilations(), op.getSourcePathList());
     int ret = tool.run(newFrontendActionFactory<FuncInfoGenAction>().get());
-
     for (auto &funcInfo: GlobalInstance::FuncInfoList) {
-        cout << funcInfo.toString() << endl;
+        vector<WFG> wfgs = genWFGs(funcInfo);
+        for (auto &w: wfgs) {
+            cout << w.toString() << endl;
+        }
     }
-
     return ret;
 }

@@ -12,7 +12,7 @@ namespace wfg {
 
     vector<pair<unsigned, unsigned>>
     FuncInfoGenConsumer::_findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const {
-        if(GlobalInstance::Config.hasSensitiveLine) {
+        if (GlobalInstance::Config.hasSensitiveLine) {
             return {{GlobalInstance::Config.sensitiveLine, 0}};
         }
 
@@ -56,7 +56,7 @@ namespace wfg {
     pair<unsigned, unsigned> FuncInfoGenConsumer::_getStmtLineRange(const SourceRange &sourceRange) const {
         unsigned startLine = _context.getFullLoc(sourceRange.getBegin()).getSpellingLineNumber();
         unsigned endLine = _context.getFullLoc(sourceRange.getEnd()).getSpellingLineNumber();
-        if(startLine <= endLine) {
+        if (startLine <= endLine) {
             return make_pair(startLine, endLine);
         }
         return make_pair(endLine, startLine);
@@ -73,8 +73,8 @@ namespace wfg {
 
             for (auto it = block->succ_begin(); it != block->succ_end(); ++it) {
                 CFGBlock *b = *it;
-                if (!b) {
-                    b = it->getPossiblyUnreachableBlock();
+                if (!b && !(b = it->getPossiblyUnreachableBlock())) {
+                    continue;
                 }
                 miniCFG.addSuccEdge(cur, b->getBlockID());
             }
@@ -82,14 +82,14 @@ namespace wfg {
 
             for (auto it = block->pred_begin(); it != block->pred_end(); ++it) {
                 CFGBlock *b = *it;
-                if (!b) {
-                    b = it->getPossiblyUnreachableBlock();
+                if (!b && !(b = it->getPossiblyUnreachableBlock())) {
+                    continue;
                 }
                 miniCFG.addPredEdge(cur, b->getBlockID());
             }
             miniCFG.finishPredEdges();
 
-            CFGNode node(move(vector<unsigned>(GlobalInstance::Config.ASTStmtKindMap.size())));
+            CFGNode node(vector<unsigned>(GlobalInstance::Config.ASTStmtKindMap.size()));
             for (const CFGElement &element: *block) {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
@@ -126,6 +126,7 @@ namespace wfg {
 
     void FuncInfoGenAction::_lexToken() const {
         Preprocessor &preprocessor = getCompilerInstance().getPreprocessor();
+        // TODO: 处理结构体的变量,带->和.的标识符
         Token token;
         preprocessor.EnterMainSourceFile();
         vector<FuncInfo> &funInfoList = GlobalInstance::FuncInfoList;
@@ -135,7 +136,7 @@ namespace wfg {
             preprocessor.Lex(token);
             if (token.isAnyIdentifier()) {
                 string idName = preprocessor.getSpelling(token);
-                if(GlobalInstance::VarDeclSet.count(idName) == 0){
+                if (GlobalInstance::VarDeclSet.count(idName) == 0) {
                     continue;
                 }
 
@@ -146,7 +147,7 @@ namespace wfg {
                     if (ret == 0) {
                         funInfoList[i].insertIdentifier(idName, lineNo);
                         break;
-                    } else if(ret < 0) {
+                    } else if (ret < 0) {
                         break;
                     }
                     ++i;

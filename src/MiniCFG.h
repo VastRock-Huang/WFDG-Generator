@@ -10,19 +10,21 @@
 #include <utility>
 #include <vector>
 #include <unordered_map>
-#include <assert.h>
+#include <functional>
+#include <cassert>
 
 using namespace std;
 
 namespace wfg {
 
     struct CFGNode {
+        // 升序且合并后的区间
         vector<pair<unsigned, unsigned>> lineRanges{};
         vector<unsigned> stmtVec;
 
         CFGNode() = default;
 
-        CFGNode(vector<unsigned> &&vec) : stmtVec(vec) {}
+        explicit CFGNode(vector<unsigned> &&vec) : stmtVec(vec) {}
 
         static string toString(const CFGNode &node) {
             return "{lineRanges: " + Util::vecToString(node.lineRanges, Util::numPairToString<unsigned, unsigned>) +
@@ -48,8 +50,8 @@ namespace wfg {
         vector<unsigned> _nodesPredVec{};
 
     public:
-        MiniCFG(const string &funcName, unsigned nodeCnt, const unordered_map<string, unsigned> &ASTStmtKindMap)
-                : _funcName(funcName), _nodeCnt(nodeCnt), _nodes(nodeCnt),
+        MiniCFG(string funcName, unsigned nodeCnt, const unordered_map<string, unsigned> &ASTStmtKindMap)
+                : _funcName(std::move(funcName)), _nodeCnt(nodeCnt), _nodes(nodeCnt),
                   _nodesSuccCnt(nodeCnt + 1), _nodesPredCnt(nodeCnt + 1) {}
 
         void addSuccEdge(unsigned cur, unsigned succ);
@@ -84,8 +86,50 @@ namespace wfg {
             return _nodeCnt - 1;
         }
 
-        unsigned getExitNodeID() const {
+        static unsigned getExitNodeID() {
             return 0;
+        }
+
+        const vector<CFGNode> &getNodes() const {
+            return _nodes;
+        }
+
+        unsigned pred_begin(unsigned nodeId) const {
+            return _nodesPredCnt.at(nodeId);
+        }
+
+        unsigned pred_end(unsigned nodeId) const {
+            return _nodesPredCnt.at(nodeId + 1);
+        }
+
+        unsigned pred_at(unsigned preVecIdx) const {
+            return _nodesPredVec.at(preVecIdx);
+        }
+
+        void for_each_pred(unsigned curNode, const function<void(unsigned, unsigned)>& execution) const {
+            for(unsigned vecIdx = pred_begin(curNode); vecIdx != pred_end(curNode); ++vecIdx) {
+                unsigned succNode = pred_at(vecIdx);
+                execution(succNode,curNode);
+            }
+        }
+
+        unsigned succ_begin(unsigned nodeId) const {
+            return _nodesSuccCnt.at(nodeId);
+        }
+
+        unsigned succ_end(unsigned nodeId) const {
+            return _nodesSuccCnt.at(nodeId+1);
+        }
+
+        unsigned succ_at(unsigned succVecIdx) const {
+            return _nodesSuccVec.at(succVecIdx);
+        }
+
+        void for_each_succ(unsigned curNode, const function<void(unsigned, unsigned)>& execution) const {
+            for(unsigned vecIdx = succ_begin(curNode); vecIdx != succ_end(curNode); ++vecIdx) {
+                unsigned predNode = succ_at(vecIdx);
+                execution(predNode, curNode);
+            }
         }
 
         string toString() const {

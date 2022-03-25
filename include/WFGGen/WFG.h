@@ -7,29 +7,51 @@
 
 #include <string>
 #include <set>
+#include <map>
 #include <vector>
 #include <utility>
 
 using namespace std;
 
-class WFG {
-private:
-    struct Node {
-        unsigned _id;
-        vector<unsigned> _markedLines;
-        unsigned _lineWeight;
-        unsigned _nodeWeight;
-        unsigned _weight;
-        vector<unsigned> _ASTStmtVec;
+namespace wfg {
+    struct WFGNode {
+        unsigned id{0};
+        double lineWeight{0.};
+        double nodeWeight{0.};
+        double weight{0.};
+        set<unsigned> markedLines{};
+        vector<unsigned> stmtVec{};
 
-        bool operator<(const Node& node) const {
-            return _id < node._id;
-        }
+        static string toString(const WFGNode &node);
     };
 
-    string _funcName;
-    set<Node> _nodes;
-    vector<pair<unsigned,unsigned>> _edges;
-};
+    class WFG {
+    private:
+        const string _funcName;
+        const unsigned _rootLine;
+        map<unsigned, WFGNode> _nodes{};
+        set<pair<unsigned, unsigned>> _edges{};
+    public:
+        WFG(string funcName, unsigned rootLine) : _funcName(move(funcName)), _rootLine(rootLine) {}
+
+        void setNodes(map<unsigned, WFGNode> &&nodes) {
+            _nodes = nodes;
+        }
+
+        const map<unsigned, WFGNode> &getNodes() const {
+            return _nodes;
+        }
+
+        void addEdge(unsigned src, unsigned dest) {
+            _edges.emplace(src, dest);
+        }
+
+        string getFuncName() const {
+            return _funcName;
+        }
+
+        string toString() const;
+    };
+}
 
 #endif //WFG_GENERATOR_WFG_H

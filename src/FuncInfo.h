@@ -35,8 +35,8 @@ namespace wfg {
         }
 
         string toString() const {
-            return "{idMap: " + Util::mapToString(idMap, getIdName, numVecToString) + ", lineMap: "
-                   + Util::mapToString(lineMap, Util::numToString<unsigned>, vecToString) + "}";
+            return "{idMap: " + Util::hashmapToString(idMap, getIdName, numVecToString) + ", lineMap: "
+                   + Util::hashmapToString(lineMap, Util::numToString<unsigned>, vecToString) + "}";
         }
     };
 
@@ -55,7 +55,7 @@ namespace wfg {
 
     public:
         FuncInfo(string funcName, unsigned start, unsigned end, MiniCFG &&miniCFG)
-                : _funcName(funcName), _lineRange(make_pair(start, end)), _miniCFG(miniCFG) {}
+                : _funcName(std::move(funcName)), _lineRange(make_pair(start, end)), _miniCFG(miniCFG) {}
 
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)
@@ -73,6 +73,21 @@ namespace wfg {
             return _lineRange;
         }
 
+        const vector<pair<unsigned ,unsigned >>& getSensitiveLinePairs() const {
+            return _sensitiveLines;
+        }
+
+        const IdMapper& getIdMapper() const {
+            return _idMapper;
+        }
+
+        const MiniCFG& getMiniCFG() const {
+            return _miniCFG;
+        }
+
+        string getFuncName() const {
+            return _funcName;
+        }
     };
 }
 

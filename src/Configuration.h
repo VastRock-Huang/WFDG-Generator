@@ -15,11 +15,11 @@ using namespace std;
 namespace wfg {
     class Configuration {
     private:
-        const vector<string> _initKeywords() {
+        static vector<string> _initKeywords() {
             return DEFAULT_KEYWORDS;
         }
 
-        const vector<string> _initASTStmtKinds() {
+        static vector<string> _initASTStmtKinds() {
             return DEFAULT_AST_STMT_KINDS;
         }
 
@@ -41,7 +41,7 @@ namespace wfg {
 
         const bool hasDestFunc{false};
 
-        const string destFunc{};
+        const string destFunc{"rsa_int_export_to"};
 
         const bool hasSensitiveLine{false};
 
@@ -51,8 +51,18 @@ namespace wfg {
 
         const unordered_map<string, unsigned> ASTStmtKindMap;
 
-        Configuration() : keyWords(move(_initKeywords())), ASTStmtKinds(move(_initASTStmtKinds())),
-                          ASTStmtKindMap(move(_initASTStmtKindMap())) {}
+        const bool useWeight{true};
+
+        const double weightPredRatio{0.85};
+
+        const double weightSuccRatio{0.85};
+
+        const unsigned graphPredDepth{5};
+
+        const unsigned graphSuccDepth{5};
+
+        Configuration() : keyWords(_initKeywords()), ASTStmtKinds(_initASTStmtKinds()),
+                          ASTStmtKindMap(_initASTStmtKindMap()) {}
 
         bool matchDestFunc(const string& funcName) const;
 
