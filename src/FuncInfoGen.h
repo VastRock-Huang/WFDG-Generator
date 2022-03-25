@@ -29,10 +29,10 @@ namespace wfg {
     class FuncInfoGenConsumer
             : public ASTConsumer, public RecursiveASTVisitor<FuncInfoGenConsumer> {
     private:
+        const Configuration &_config;
         ASTContext &_context;
         SourceManager &_manager;
-        Preprocessor &_preprocessor;
-        const LangOptions &_langOpts;
+        unordered_set<string> &_varDeclSet;
 
         vector<pair<unsigned, unsigned>>
         _findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const;
@@ -46,9 +46,8 @@ namespace wfg {
         pair<unsigned, unsigned> _getStmtLineRange(const SourceRange &sourceRange) const;
 
     public:
-        FuncInfoGenConsumer(ASTContext &ctx, Preprocessor& processor) : _context(ctx), _manager(ctx.getSourceManager()),
-                                                                       _preprocessor(processor),
-                                                                       _langOpts(processor.getLangOpts()) {}
+        FuncInfoGenConsumer(ASTContext &ctx, const Configuration &config, unordered_set<string> &varDeclSet) :
+                _config(config), _context(ctx), _manager(ctx.getSourceManager()), _varDeclSet(varDeclSet) {}
 
         void HandleTranslationUnit(ASTContext &ctx) override {
             TraverseDecl(ctx.getTranslationUnitDecl());
@@ -56,9 +55,9 @@ namespace wfg {
 
         bool VisitFunctionDecl(FunctionDecl *funcDecl);
 
-        bool VisitVarDecl(VarDecl * varDecl){
-            if(_manager.getFileID(varDecl->getSourceRange().getBegin()) == _manager.getMainFileID()){
-                GlobalInstance::VarDeclSet.emplace(varDecl->getQualifiedNameAsString());
+        bool VisitVarDecl(VarDecl *varDecl) {
+            if (_manager.getFileID(varDecl->getSourceRange().getBegin()) == _manager.getMainFileID()) {
+                _varDeclSet.emplace(varDecl->getQualifiedNameAsString());
             }
             return true;
         }
@@ -67,9 +66,11 @@ namespace wfg {
     class FuncInfoGenAction
             : public ASTFrontendAction {
     private:
-        std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &compiler, StringRef file) override {
+        unordered_set<string> _varDeclSet{};
+
+        unique_ptr <ASTConsumer> CreateASTConsumer(CompilerInstance &compiler, StringRef file) override {
             return llvm::make_unique<FuncInfoGenConsumer>(compiler.getASTContext(),
-                                                          compiler.getPreprocessor());
+                                                          GlobalInstance::getInstance().Config, _varDeclSet);
         }
 
         void ExecuteAction() override {

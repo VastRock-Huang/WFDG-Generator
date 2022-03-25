@@ -18,8 +18,9 @@ int main(int argc, const char **argv) {
     CommonOptionsParser op(argc, argv, opCategory);
     ClangTool tool(op.getCompilations(), op.getSourcePathList());
     int ret = tool.run(newFrontendActionFactory<FuncInfoGenAction>().get());
-    for (auto &funcInfo: GlobalInstance::FuncInfoList) {
-        vector<WFG> wfgs = genWFGs(funcInfo);
+    for (auto &funcInfo: GlobalInstance::getInstance().FuncInfoList) {
+        WFGGenerator wfgGenerator(GlobalInstance::getInstance().Config, funcInfo);
+        vector<WFG> wfgs = wfgGenerator.genWFGs();
         for (auto &w: wfgs) {
             cout << w.toString() << endl;
         }

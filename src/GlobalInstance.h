@@ -11,10 +11,21 @@
 
 
 namespace wfg {
-    struct GlobalInstance {
-        static Configuration Config;
-        static vector<FuncInfo> FuncInfoList;
-        static unordered_set<string> VarDeclSet;
+    class GlobalInstance {
+    private:
+        GlobalInstance() = default;
+
+    public:
+        const Configuration Config{};
+        vector<FuncInfo> FuncInfoList{};
+
+        static GlobalInstance& getInstance() {
+            static GlobalInstance instance;
+            return instance;
+        }
+
+        GlobalInstance(const GlobalInstance&) = delete;
+        GlobalInstance& operator=(const GlobalInstance&) = delete;
     };
 }
 

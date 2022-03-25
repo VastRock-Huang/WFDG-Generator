@@ -12,8 +12,8 @@ namespace wfg {
 
     vector<pair<unsigned, unsigned>>
     FuncInfoGenConsumer::_findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const {
-        if (GlobalInstance::Config.hasSensitiveLine) {
-            return {{GlobalInstance::Config.sensitiveLine, 0}};
+        if (_config.hasSensitiveLine) {
+            return {{_config.sensitiveLine, 0}};
         }
 
         FileID fileId = _manager.getMainFileID();
@@ -21,8 +21,8 @@ namespace wfg {
                               _manager.getCharacterData(endLoc) - _manager.getCharacterData(beginLoc) + 1UL};
         unsigned fileOffset = _manager.getFileOffset(beginLoc);
         vector<pair<unsigned, unsigned>> result;
-        for (size_t i = 1; i < GlobalInstance::Config.keyWords.size(); ++i) {
-            StringRef keyword{GlobalInstance::Config.keyWords[i]};
+        for (size_t i = 1; i < _config.keyWords.size(); ++i) {
+            StringRef keyword{_config.keyWords[i]};
             size_t pos = 0;
             pos = funcContent.find(keyword, pos);
             while (pos != StringRef::npos) {
@@ -39,7 +39,7 @@ namespace wfg {
         assert(stmt);
 //        llvm::errs() << stmt->getStmtClassName() <<'\n';
         node.lineRanges.push_back(move(_getStmtLineRange(stmt->getSourceRange())));
-        GlobalInstance::Config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
+        _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
             _travelCFGStmt(*it, node);
         }
@@ -49,7 +49,7 @@ namespace wfg {
         if (stmt) {
 //            llvm::errs() <<"**"<< stmt->getStmtClassName() <<'\n';
             node.lineRanges.push_back(move(_getStmtLineRange(stmt->getSourceRange())));
-            GlobalInstance::Config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
+            _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         }
     }
 
@@ -66,7 +66,7 @@ namespace wfg {
         Stmt *funcBody = funcDecl->getBody();
         unique_ptr <CFG> wholeCFG = CFG::buildCFG(funcDecl, funcBody, &_context, CFG::BuildOptions());
         MiniCFG miniCFG(funcDecl->getQualifiedNameAsString(), wholeCFG->size(),
-                        GlobalInstance::Config.ASTStmtKindMap);
+                        _config.ASTStmtKindMap);
 
         for (auto &block: *wholeCFG) {
             unsigned cur = block->getBlockID();
@@ -89,7 +89,7 @@ namespace wfg {
             }
             miniCFG.finishPredEdges();
 
-            CFGNode node(vector<unsigned>(GlobalInstance::Config.ASTStmtKindMap.size()));
+            CFGNode node(vector<unsigned>(_config.ASTStmtKindMap.size()));
             for (const CFGElement &element: *block) {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
@@ -111,14 +111,14 @@ namespace wfg {
         if (funcDecl->doesThisDeclarationHaveABody() &&
             _manager.getFileID(funcDecl->getSourceRange().getBegin()) == _manager.getMainFileID()) {
             const string funcName = funcDecl->getQualifiedNameAsString();
-            if (GlobalInstance::Config.matchDestFunc(funcName)) {
+            if (_config.matchDestFunc(funcName)) {
                 FullSourceLoc beginLoc = _context.getFullLoc(funcDecl->getSourceRange().getBegin());
                 FullSourceLoc endLoc = _context.getFullLoc(funcDecl->getSourceRange().getEnd());
 
                 FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), beginLoc.getSpellingLineNumber(),
                                   endLoc.getSpellingLineNumber(), move(_buildMiniCFG(funcDecl)));
                 funcInfo.setSensitiveLines(move(_findSensitiveLines(beginLoc, endLoc)));
-                GlobalInstance::FuncInfoList.push_back(funcInfo);
+                GlobalInstance::getInstance().FuncInfoList.push_back(funcInfo);
             }
         }
         return true;
@@ -129,14 +129,14 @@ namespace wfg {
         // TODO: 处理结构体的变量,带->和.的标识符
         Token token;
         preprocessor.EnterMainSourceFile();
-        vector<FuncInfo> &funInfoList = GlobalInstance::FuncInfoList;
+        vector<FuncInfo> &funInfoList = GlobalInstance::getInstance().FuncInfoList;
         size_t funcCnt = funInfoList.size();
         size_t i = 0;
         do {
             preprocessor.Lex(token);
             if (token.isAnyIdentifier()) {
                 string idName = preprocessor.getSpelling(token);
-                if (GlobalInstance::VarDeclSet.count(idName) == 0) {
+                if (_varDeclSet.count(idName) == 0) {
                     continue;
                 }
 

@@ -4,6 +4,7 @@
 
 #include "WFGGen/WFG.h"
 #include "GlobalInstance.h"
+#include "WFGGen.h"
 #include <set>
 #include <map>
 #include <queue>
@@ -11,7 +12,8 @@
 #include <iostream>
 
 namespace wfg {
-    void genLineWeight(const IdMapper &idMapper, unsigned rootLine, map<unsigned, double> &lineWeightMap) {
+    void WFGGenerator::_genLineWeight(unsigned rootLine, map<unsigned, double> &lineWeightMap) {
+        const IdMapper &idMapper = _funcInfo.getIdMapper();
         queue<const string *> idQue{};
         set<const string *> idSet{};
         double initWeight = 1., curPredWeight = initWeight, curSuccWeight = initWeight;
@@ -28,11 +30,10 @@ namespace wfg {
             idSet.emplace(id);
         }
         // BFS 设置行权重
-        const Configuration &Config = GlobalInstance::Config;
         while (!idQue.empty()) {
             // 每一层递减一次权重
-            curPredWeight *= Config.weightPredRatio;
-            curSuccWeight *= Config.weightSuccRatio;
+            curPredWeight *= _config.weightPredRatio;
+            curSuccWeight *= _config.weightSuccRatio;
             for (auto size = idQue.size(); size != 0; --size) {
                 const string *id = idQue.front();
                 idQue.pop();
@@ -58,11 +59,10 @@ namespace wfg {
         }
     }
 
-    void
-    getWFGNodes(const MiniCFG &miniCFG, const map<unsigned, double> &lineWeightMap, map<unsigned, WFGNode> &wfgNodes) {
+    void WFGGenerator::_getWFGNodes(const map<unsigned, double> &lineWeightMap, map<unsigned, WFGNode> &wfgNodes) {
         // 遍历所有结点
         int i = 0;
-        for (const CFGNode &cfgNode: miniCFG.getNodes()) {
+        for (const CFGNode &cfgNode: _miniCFG.getNodes()) {
             set<unsigned> markedLines{};
             double lineWeight = 0.;
             // 遍历所有标记行
@@ -93,7 +93,7 @@ namespace wfg {
         }
     }
 
-    vector<unsigned> findRootNodes(const map<unsigned, WFGNode> &wfgNodes, unsigned rootLine) {
+    vector<unsigned> WFGGenerator::findRootNodes(const map<unsigned, WFGNode> &wfgNodes, unsigned rootLine) {
         vector<unsigned> rootNodes{};
         for (auto &nodePair: wfgNodes) {
             if (nodePair.second.markedLines.count(rootLine)) {
@@ -103,7 +103,7 @@ namespace wfg {
         return rootNodes;
     }
 
-    void genNodeWeight(map<unsigned, WFGNode> &wfgNodes, const MiniCFG &miniCFG, const vector<unsigned> &rootNodes) {
+    void WFGGenerator::_genNodeWeight(map<unsigned, WFGNode> &wfgNodes, const vector<unsigned> &rootNodes) {
 //        unsigned rootNode = rootNodes[0];
         queue<unsigned> predNodeQue{};
         queue<unsigned> succNodeQue{};
@@ -128,13 +128,12 @@ namespace wfg {
 
         for (unsigned rootNode: rootNodes) {
             wfgNodes[rootNode].nodeWeight = 1;
-            miniCFG.for_each_pred(rootNode, predExecution);
-            miniCFG.for_each_succ(rootNode, succExecution);
+            _miniCFG.for_each_pred(rootNode, predExecution);
+            _miniCFG.for_each_succ(rootNode, succExecution);
         }
 
-        const Configuration &Config = GlobalInstance::Config;
-        for (unsigned depth = 0; depth < Config.graphPredDepth && !predNodeQue.empty(); ++depth) {
-            curPredWeight *= Config.weightPredRatio;
+        for (unsigned depth = 0; depth < _config.graphPredDepth && !predNodeQue.empty(); ++depth) {
+            curPredWeight *= _config.weightPredRatio;
             for (auto size = predNodeQue.size(); size > 0; --size) {
                 unsigned node = predNodeQue.front();
                 predNodeQue.pop();
@@ -143,12 +142,12 @@ namespace wfg {
                     continue;
                 }
                 it->second.nodeWeight = curPredWeight;
-                miniCFG.for_each_pred(node, predExecution);
+                _miniCFG.for_each_pred(node, predExecution);
             }
         }
 
-        for (unsigned depth = 0; depth < Config.graphSuccDepth && !succNodeQue.empty(); ++depth) {
-            curPredWeight *= Config.weightSuccRatio;
+        for (unsigned depth = 0; depth < _config.graphSuccDepth && !succNodeQue.empty(); ++depth) {
+            curPredWeight *= _config.weightSuccRatio;
             for (auto size = succNodeQue.size(); size > 0; --size) {
                 unsigned node = succNodeQue.front();
                 succNodeQue.pop();
@@ -157,12 +156,13 @@ namespace wfg {
                     continue;
                 }
                 it->second.nodeWeight = curSuccWeight;
-                miniCFG.for_each_succ(node, succExecution);
+                _miniCFG.for_each_succ(node, succExecution);
             }
         }
     }
 
-    void buildWFG(WFG &w, map<unsigned, WFGNode> &wfgNodes, const MiniCFG &miniCFG) {
+    WFG WFGGenerator::_buildWFG(map<unsigned, WFGNode> &wfgNodes, unsigned rootLine) {
+        WFG w(_funcInfo.getFuncName(), rootLine);
         for (auto it = wfgNodes.begin(); it != wfgNodes.end();) {
             WFGNode &node = it->second;
             if (node.nodeWeight == 0.) {
@@ -179,21 +179,21 @@ namespace wfg {
             }
         };
         for (auto &nodePair: w.getNodes()) {
-            miniCFG.for_each_succ(nodePair.first, insertEdges);
+            _miniCFG.for_each_succ(nodePair.first, insertEdges);
         }
+        return w;
     }
 
-    vector<WFG> genWFGs(const FuncInfo &funcInfo) {
+    vector<WFG> WFGGenerator::genWFGs() {
         vector<WFG> wfgs{};
-        for (const auto &linePair: funcInfo.getSensitiveLinePairs()) {
+        for (const auto &linePair: _funcInfo.getSensitiveLinePairs()) {
             unsigned rootLine = linePair.first;
             map<unsigned, double> lineWeightMap{};
-            genLineWeight(funcInfo.getIdMapper(), rootLine, lineWeightMap);
+            _genLineWeight(rootLine, lineWeightMap);
             map<unsigned, WFGNode> wfgNodes{};
-            getWFGNodes(funcInfo.getMiniCFG(), lineWeightMap, wfgNodes);
-            genNodeWeight(wfgNodes, funcInfo.getMiniCFG(), findRootNodes(wfgNodes, rootLine));
-            WFG w(funcInfo.getFuncName(), rootLine);
-            buildWFG(w, wfgNodes, funcInfo.getMiniCFG());
+            _getWFGNodes(lineWeightMap, wfgNodes);
+            _genNodeWeight(wfgNodes, findRootNodes(wfgNodes, rootLine));
+            WFG w = _buildWFG(wfgNodes, rootLine);
             wfgs.push_back(move(w));
         }
         return wfgs;
