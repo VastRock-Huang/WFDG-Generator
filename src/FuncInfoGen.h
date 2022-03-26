@@ -35,7 +35,7 @@ namespace wfg {
         unordered_set<string> &_varDeclSet;
 
         vector<pair<unsigned, unsigned>>
-        _findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const;
+        _findSensitiveLines(const SourceRange &sourceRange, const pair<unsigned,unsigned>& lineRange) const;
 
         MiniCFG _buildMiniCFG(const FunctionDecl *funcDecl) const;
 
@@ -43,7 +43,7 @@ namespace wfg {
 
         void _catchSpecialStmt(const Stmt *stmt, CFGNode &node) const;
 
-        pair<unsigned, unsigned> _getStmtLineRange(const SourceRange &sourceRange) const;
+        pair<unsigned, unsigned> _getLineRange(const SourceRange &sourceRange) const;
 
     public:
         FuncInfoGenConsumer(ASTContext &ctx, const Configuration &config, unordered_set<string> &varDeclSet) :

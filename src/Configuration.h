@@ -15,6 +15,10 @@ using namespace std;
 namespace wfg {
     class Configuration {
     private:
+        string _destFunc{};
+
+        unsigned _sensitiveLine{0};
+
         static vector<string> _initKeywords() {
             return DEFAULT_KEYWORDS;
         }
@@ -39,14 +43,6 @@ namespace wfg {
 
         const vector<string> keyWords;
 
-        const bool hasDestFunc{false};
-
-        const string destFunc{"rsa_int_export_to"};
-
-        const bool hasSensitiveLine{false};
-
-        const unsigned sensitiveLine{0};
-
         const vector<string> ASTStmtKinds;
 
         const unordered_map<string, unsigned> ASTStmtKindMap;
@@ -64,7 +60,24 @@ namespace wfg {
         Configuration() : keyWords(_initKeywords()), ASTStmtKinds(_initASTStmtKinds()),
                           ASTStmtKindMap(_initASTStmtKindMap()) {}
 
+        void init(string destFunc, unsigned sensitiveLine) {
+            static bool initialized{false};
+            if(initialized) {
+                return;
+            }
+            initialized = true;
+            // 只有给定函数名给定敏感行才有意义
+            if(!destFunc.empty()) {
+                _sensitiveLine = sensitiveLine;
+            }
+            _destFunc = move(destFunc);
+        }
+
         bool matchDestFunc(const string& funcName) const;
+
+        unsigned getSensitiveLine() const {
+            return _sensitiveLine;
+        }
 
         void updateStmtVec(vector<unsigned> &stmtVec, const string &stmtName) const;
     };

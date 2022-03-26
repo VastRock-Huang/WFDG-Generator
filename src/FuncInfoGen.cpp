@@ -11,10 +11,13 @@
 namespace wfg {
 
     vector<pair<unsigned, unsigned>>
-    FuncInfoGenConsumer::_findSensitiveLines(const SourceLocation &beginLoc, const SourceLocation &endLoc) const {
-        if (_config.hasSensitiveLine) {
-            return {{_config.sensitiveLine, 0}};
+    FuncInfoGenConsumer::_findSensitiveLines(const SourceRange &sourceRange, const pair<unsigned,unsigned>& lineRange) const {
+        unsigned sensitiveLine = _config.getSensitiveLine();
+        if (sensitiveLine != 0 && Util::numInRange(sensitiveLine, lineRange) == 0) {
+            return {{sensitiveLine, 0}};
         }
+        const SourceLocation& beginLoc = sourceRange.getBegin();
+        const SourceLocation &endLoc = sourceRange.getEnd();
 
         FileID fileId = _manager.getMainFileID();
         StringRef funcContent{_manager.getCharacterData(beginLoc),
@@ -38,7 +41,7 @@ namespace wfg {
     void FuncInfoGenConsumer::_travelCFGStmt(const Stmt *stmt, CFGNode &node) const {
         assert(stmt);
 //        llvm::errs() << stmt->getStmtClassName() <<'\n';
-        node.lineRanges.push_back(move(_getStmtLineRange(stmt->getSourceRange())));
+        node.lineRanges.push_back(move(_getLineRange(stmt->getSourceRange())));
         _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
             _travelCFGStmt(*it, node);
@@ -48,12 +51,12 @@ namespace wfg {
     void FuncInfoGenConsumer::_catchSpecialStmt(const Stmt *stmt, CFGNode &node) const {
         if (stmt) {
 //            llvm::errs() <<"**"<< stmt->getStmtClassName() <<'\n';
-            node.lineRanges.push_back(move(_getStmtLineRange(stmt->getSourceRange())));
+            node.lineRanges.push_back(move(_getLineRange(stmt->getSourceRange())));
             _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         }
     }
 
-    pair<unsigned, unsigned> FuncInfoGenConsumer::_getStmtLineRange(const SourceRange &sourceRange) const {
+    pair<unsigned, unsigned> FuncInfoGenConsumer::_getLineRange(const SourceRange &sourceRange) const {
         unsigned startLine = _context.getFullLoc(sourceRange.getBegin()).getSpellingLineNumber();
         unsigned endLine = _context.getFullLoc(sourceRange.getEnd()).getSpellingLineNumber();
         if (startLine <= endLine) {
@@ -112,12 +115,12 @@ namespace wfg {
             _manager.getFileID(funcDecl->getSourceRange().getBegin()) == _manager.getMainFileID()) {
             const string funcName = funcDecl->getQualifiedNameAsString();
             if (_config.matchDestFunc(funcName)) {
-                FullSourceLoc beginLoc = _context.getFullLoc(funcDecl->getSourceRange().getBegin());
-                FullSourceLoc endLoc = _context.getFullLoc(funcDecl->getSourceRange().getEnd());
+//                FullSourceLoc beginLoc = _context.getFullLoc(funcDecl->getSourceRange().getBegin());
+//                FullSourceLoc endLoc = _context.getFullLoc(funcDecl->getSourceRange().getEnd());
+                pair<unsigned,unsigned> lineRange = _getLineRange(funcDecl->getSourceRange());
 
-                FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), beginLoc.getSpellingLineNumber(),
-                                  endLoc.getSpellingLineNumber(), move(_buildMiniCFG(funcDecl)));
-                funcInfo.setSensitiveLines(move(_findSensitiveLines(beginLoc, endLoc)));
+                FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, move(_buildMiniCFG(funcDecl)));
+                funcInfo.setSensitiveLines(move(_findSensitiveLines(funcDecl->getSourceRange(), lineRange)));
                 GlobalInstance::getInstance().FuncInfoList.push_back(funcInfo);
             }
         }

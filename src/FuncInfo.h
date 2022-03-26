@@ -56,6 +56,8 @@ namespace wfg {
     public:
         FuncInfo(string funcName, unsigned start, unsigned end, MiniCFG &&miniCFG)
                 : _funcName(std::move(funcName)), _lineRange(make_pair(start, end)), _miniCFG(miniCFG) {}
+        FuncInfo(string funcName, pair<unsigned,unsigned> lineRange, MiniCFG &&miniCFG)
+                : _funcName(std::move(funcName)), _lineRange(move(lineRange)), _miniCFG(miniCFG) {}
 
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)

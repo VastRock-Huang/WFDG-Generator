@@ -16,7 +16,7 @@ namespace wfg {
         GlobalInstance() = default;
 
     public:
-        const Configuration Config{};
+        Configuration Config{};
         vector<FuncInfo> FuncInfoList{};
 
         static GlobalInstance& getInstance() {

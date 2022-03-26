@@ -20,7 +20,7 @@ namespace wfg {
     };
 
     bool Configuration::matchDestFunc(const string &funcName) const {
-        return !hasDestFunc || funcName == destFunc;
+        return _destFunc.empty() || funcName == _destFunc;
     }
 
     void Configuration::updateStmtVec(vector<unsigned> &stmtVec, const string &stmtName) const {
