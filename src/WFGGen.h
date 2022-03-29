@@ -26,6 +26,8 @@ namespace wfg {
 
         WFG _buildWFG(map<unsigned, WFGNode> &wfgNodes, unsigned rootLine);
 
+        WFG _genWFGWithoutSensitiveLine();
+
         static vector<unsigned> findRootNodes(const map<unsigned, WFGNode> &wfgNodes, unsigned rootLine);
 
     public:

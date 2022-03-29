@@ -168,7 +168,7 @@ namespace wfg {
             if (node.nodeWeight == 0.) {
                 it = wfgNodes.erase(it);
             } else {
-                node.weight = sqrt(node.lineWeight * node.nodeWeight);
+                node.weight = _config.useWeight ? sqrt(node.lineWeight * node.nodeWeight) : 0.;
                 ++it;
             }
         }
@@ -185,6 +185,10 @@ namespace wfg {
     }
 
     vector<WFG> WFGGenerator::genWFGs() {
+        if (_funcInfo.getSensitiveLinePairs().empty()) {
+            return {_genWFGWithoutSensitiveLine()};
+        }
+
         vector<WFG> wfgs{};
         for (const auto &linePair: _funcInfo.getSensitiveLinePairs()) {
             unsigned rootLine = linePair.first;
@@ -197,6 +201,28 @@ namespace wfg {
             wfgs.push_back(move(w));
         }
         return wfgs;
+    }
+
+    WFG WFGGenerator::_genWFGWithoutSensitiveLine() {
+        map<unsigned, WFGNode> wfgNodes{};
+        int i = 0;
+        for (const CFGNode &cfgNode: _miniCFG.getNodes()) {
+            WFGNode wfgNode{};
+            wfgNode.id = i;
+            wfgNode.stmtVec = cfgNode.stmtVec;
+            wfgNode.weight = _config.useWeight ? 1 : 0;
+            wfgNodes.emplace(i, move(wfgNode));
+            ++i;
+        }
+        WFG w(_funcInfo.getFuncName());
+        w.setNodes(move(wfgNodes));
+        auto insertEdges = [&w](unsigned succNode, unsigned curNode) {
+            w.addEdge(curNode, succNode);
+        };
+        for (auto &nodePair: w.getNodes()) {
+            _miniCFG.for_each_succ(nodePair.first, insertEdges);
+        }
+        return w;
     }
 
 }

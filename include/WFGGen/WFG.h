@@ -32,7 +32,7 @@ namespace wfg {
         map<unsigned, WFGNode> _nodes{};
         set<pair<unsigned, unsigned>> _edges{};
     public:
-        WFG(string funcName, unsigned rootLine) : _funcName(move(funcName)), _rootLine(rootLine) {}
+        explicit WFG(string funcName, unsigned rootLine = 0) : _funcName(move(funcName)), _rootLine(rootLine) {}
 
         void setNodes(map<unsigned, WFGNode> &&nodes) {
             _nodes = nodes;
