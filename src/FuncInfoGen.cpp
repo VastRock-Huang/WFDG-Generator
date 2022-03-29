@@ -11,12 +11,13 @@
 namespace wfg {
 
     vector<pair<unsigned, unsigned>>
-    FuncInfoGenConsumer::_findSensitiveLines(const SourceRange &sourceRange, const pair<unsigned,unsigned>& lineRange) const {
+    FuncInfoGenConsumer::_findSensitiveLines(const SourceRange &sourceRange,
+                                             const pair<unsigned, unsigned> &lineRange) const {
         unsigned sensitiveLine = _config.getSensitiveLine();
         if (sensitiveLine != 0 && Util::numInRange(sensitiveLine, lineRange) == 0) {
             return {{sensitiveLine, 0}};
         }
-        const SourceLocation& beginLoc = sourceRange.getBegin();
+        const SourceLocation &beginLoc = sourceRange.getBegin();
         const SourceLocation &endLoc = sourceRange.getEnd();
 
         FileID fileId = _manager.getMainFileID();
@@ -117,7 +118,7 @@ namespace wfg {
             if (_config.matchDestFunc(funcName)) {
 //                FullSourceLoc beginLoc = _context.getFullLoc(funcDecl->getSourceRange().getBegin());
 //                FullSourceLoc endLoc = _context.getFullLoc(funcDecl->getSourceRange().getEnd());
-                pair<unsigned,unsigned> lineRange = _getLineRange(funcDecl->getSourceRange());
+                pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getSourceRange());
 
                 FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, move(_buildMiniCFG(funcDecl)));
                 funcInfo.setSensitiveLines(move(_findSensitiveLines(funcDecl->getSourceRange(), lineRange)));
@@ -129,32 +130,43 @@ namespace wfg {
 
     void FuncInfoGenAction::_lexToken() const {
         Preprocessor &preprocessor = getCompilerInstance().getPreprocessor();
-        // TODO: 处理结构体的变量,带->和.的标识符
         Token token;
         preprocessor.EnterMainSourceFile();
         vector<FuncInfo> &funInfoList = GlobalInstance::getInstance().FuncInfoList;
         size_t funcCnt = funInfoList.size();
         size_t i = 0;
+        string preId{};
+        unsigned preLine{0};
         do {
             preprocessor.Lex(token);
-            if (token.isAnyIdentifier()) {
+            if ((token.is(tok::arrow) || token.is(tok::period)) && preLine != 0) {
+                preId.append(preprocessor.getSpelling(token));
+            } else if (token.isAnyIdentifier()) {
                 string idName = preprocessor.getSpelling(token);
-                if (_varDeclSet.count(idName) == 0) {
+                if (preId.empty() && _varDeclSet.count(idName) == 0) {
                     continue;
                 }
-
+                preId.append(idName);
                 unsigned lineNo = getCompilerInstance().getASTContext()
                         .getFullLoc(token.getLocation()).getSpellingLineNumber();
                 while (i < funcCnt) {
                     int ret = Util::numInRange(lineNo, funInfoList[i].getLineRange());
                     if (ret == 0) {
-                        funInfoList[i].insertIdentifier(idName, lineNo);
+                        preLine = lineNo;
                         break;
                     } else if (ret < 0) {
+                        preLine = 0;
                         break;
                     }
                     ++i;
                 }
+            } else if(preLine != 0) {
+                funInfoList[i].insertIdentifier(preId, preLine);
+                preId.clear();
+                preLine = 0;
+            } else {
+                preId.clear();
+                preLine = 0;
             }
         } while (token.isNot(tok::eof));
     }
