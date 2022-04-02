@@ -2,8 +2,8 @@
 // Created by Unravel on 2022/3/14.
 //
 
-#ifndef WFG_GENERATOR_MINICFG_H
-#define WFG_GENERATOR_MINICFG_H
+#ifndef WFG_GENERATOR_CUSTOMCFG_H
+#define WFG_GENERATOR_CUSTOMCFG_H
 
 #include "util.h"
 #include <string>
@@ -16,43 +16,51 @@
 using namespace std;
 
 namespace wfg {
+    class CustomCFG {
+    public:
+        struct CFGNode {
+            // 升序且合并后的区间
+            vector<pair<unsigned, unsigned>> lineRanges{};
+            vector<unsigned> stmtVec{};
 
-    struct CFGNode {
-        // 升序且合并后的区间
-        vector<pair<unsigned, unsigned>> lineRanges{};
-        vector<unsigned> stmtVec;
+            CFGNode() = default;
 
-        CFGNode() = default;
+            explicit CFGNode(vector<unsigned> &&vec) : stmtVec(vec) {}
 
-        explicit CFGNode(vector<unsigned> &&vec) : stmtVec(vec) {}
+            void mergeLineRanges() {
+                Util::mergeLineRanges(lineRanges);
+            }
 
-        static string toString(const CFGNode &node) {
-            return "{lineRanges: " + Util::vecToString(node.lineRanges, Util::numPairToString<unsigned, unsigned>) +
-                   ", stmtVec: " + Util::vecToString(node.stmtVec, Util::numToString<unsigned>) + "}";
-        }
-    };
+            static string toString(const CFGNode &node) {
+                return "{lineRanges: " + Util::vecToString(node.lineRanges, Util::numPairToString<unsigned, unsigned>) +
+                       ", stmtVec: " + Util::vecToString(node.stmtVec, Util::numToString<unsigned>) + "}";
+            }
+        };
 
-    class MiniCFG {
     private:
-        std::string _funcName;
-
-        unsigned _nodeCnt;
-        vector<CFGNode> _nodes;
+        unsigned _nodeCnt{0};
+        vector<CFGNode> _nodes{};
 
         unsigned _succIdx{0};
         unsigned _succCnt{0};   // succ边的总数
-        vector<unsigned> _nodesSuccCnt;
+        vector<unsigned> _nodesSuccCnt{};
         vector<unsigned> _nodesSuccVec{};
 
         unsigned _predIdx{0};
         unsigned _predCnt{0};
-        vector<unsigned> _nodesPredCnt;
+        vector<unsigned> _nodesPredCnt{};
         vector<unsigned> _nodesPredVec{};
 
     public:
-        MiniCFG(string funcName, unsigned nodeCnt, const unordered_map<string, unsigned> &ASTStmtKindMap)
-                : _funcName(std::move(funcName)), _nodeCnt(nodeCnt), _nodes(nodeCnt),
-                  _nodesSuccCnt(nodeCnt + 1), _nodesPredCnt(nodeCnt + 1) {}
+        void extendNodeCnt(unsigned nodeCnt) {
+            if (nodeCnt <= _nodeCnt) {
+                return;
+            }
+            _nodeCnt = nodeCnt;
+            _nodes.resize(nodeCnt);
+            _nodesSuccCnt.resize(nodeCnt + 1);
+            _nodesPredCnt.resize(nodeCnt + 1);
+        }
 
         void addSuccEdge(unsigned cur, unsigned succ);
 
@@ -71,23 +79,7 @@ namespace wfg {
         void addPredEdge(unsigned cur, unsigned pred);
 
         void setCFGNode(unsigned nodeID, const CFGNode &node) {
-            _nodes[nodeID] = node;
-        }
-
-        std::string getFuncName() const {
-            return _funcName;
-        }
-
-        unsigned getNodeCnt() const {
-            return _nodeCnt;
-        }
-
-        unsigned getEntryNodeID() const {
-            return _nodeCnt - 1;
-        }
-
-        static unsigned getExitNodeID() {
-            return 0;
+            _nodes.at(nodeID) = node;
         }
 
         const vector<CFGNode> &getNodes() const {
@@ -106,10 +98,10 @@ namespace wfg {
             return _nodesPredVec.at(preVecIdx);
         }
 
-        void for_each_pred(unsigned curNode, const function<void(unsigned, unsigned)>& execution) const {
-            for(unsigned vecIdx = pred_begin(curNode); vecIdx != pred_end(curNode); ++vecIdx) {
+        void for_each_pred(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
+            for (unsigned vecIdx = pred_begin(curNode); vecIdx != pred_end(curNode); ++vecIdx) {
                 unsigned succNode = pred_at(vecIdx);
-                execution(succNode,curNode);
+                execution(succNode, curNode);
             }
         }
 
@@ -118,22 +110,22 @@ namespace wfg {
         }
 
         unsigned succ_end(unsigned nodeId) const {
-            return _nodesSuccCnt.at(nodeId+1);
+            return _nodesSuccCnt.at(nodeId + 1);
         }
 
         unsigned succ_at(unsigned succVecIdx) const {
             return _nodesSuccVec.at(succVecIdx);
         }
 
-        void for_each_succ(unsigned curNode, const function<void(unsigned, unsigned)>& execution) const {
-            for(unsigned vecIdx = succ_begin(curNode); vecIdx != succ_end(curNode); ++vecIdx) {
+        void for_each_succ(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
+            for (unsigned vecIdx = succ_begin(curNode); vecIdx != succ_end(curNode); ++vecIdx) {
                 unsigned predNode = succ_at(vecIdx);
                 execution(predNode, curNode);
             }
         }
 
         string toString() const {
-            return "{funcName: " + _funcName + ", nodeCnt: " + to_string(_nodeCnt) +
+            return "{nodeCnt: " + to_string(_nodeCnt) +
                    ", nodes: " + Util::vecToString(_nodes, CFGNode::toString) +
                    ", succCnt: " + to_string(_succCnt) +
                    ", nodesSuccCnt: " + Util::vecToString(_nodesSuccCnt, Util::numToString<unsigned>) +
@@ -147,4 +139,4 @@ namespace wfg {
 
 }
 
-#endif //WFG_GENERATOR_MINICFG_H
+#endif //WFG_GENERATOR_CUSTOMCFG_H

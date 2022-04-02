@@ -5,7 +5,7 @@
 #ifndef WFG_GENERATOR_FUNCINFO_H
 #define WFG_GENERATOR_FUNCINFO_H
 
-#include "MiniCFG.h"
+#include "CustomCFG.h"
 #include "util.h"
 #include <string>
 #include <utility>
@@ -49,15 +49,13 @@ namespace wfg {
 
         vector<pair<unsigned, unsigned>> _sensitiveLines{};
 
-        MiniCFG _miniCFG;
+        CustomCFG _miniCFG{};
 
         IdMapper _idMapper{};
 
     public:
-        FuncInfo(string funcName, unsigned start, unsigned end, MiniCFG &&miniCFG)
-                : _funcName(std::move(funcName)), _lineRange(make_pair(start, end)), _miniCFG(miniCFG) {}
-        FuncInfo(string funcName, pair<unsigned,unsigned> lineRange, MiniCFG &&miniCFG)
-                : _funcName(std::move(funcName)), _lineRange(move(lineRange)), _miniCFG(miniCFG) {}
+        FuncInfo(string funcName, pair<unsigned,unsigned> lineRange)
+                : _funcName(std::move(funcName)), _lineRange(move(lineRange)) {}
 
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)
@@ -83,7 +81,11 @@ namespace wfg {
             return _idMapper;
         }
 
-        const MiniCFG& getMiniCFG() const {
+        CustomCFG& getMiniCFG() {
+            return _miniCFG;
+        }
+
+        const CustomCFG& getMiniCFG() const {
             return _miniCFG;
         }
 

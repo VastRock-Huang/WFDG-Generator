@@ -40,16 +40,16 @@ int main(int argc, const char **argv) {
     int ret = tool.run(unique_ptr<FrontendActionFactory>(new FuncInfoGenFactory(config,funcInfoList)).get());
 
     for (auto &funcInfo: funcInfoList) {
-        if (showFuncInfo) {
+//        if (showFuncInfo) {
             cout << "********************* FuncInfo *********************\n"
                  << funcInfo.toString() << endl
                  << "****************************************************\n";
-        }
-        WFGGenerator wfgGenerator(config, funcInfo);
-        vector<WFG> wfgs = wfgGenerator.genWFGs();
-        for (auto &w: wfgs) {
-            cout << w.toString() << endl << endl;
-        }
+//        }
+//        WFGGenerator wfgGenerator(config, funcInfo);
+//        vector<WFG> wfgs = wfgGenerator.genWFGs();
+//        for (auto &w: wfgs) {
+//            cout << w.toString() << endl << endl;
+//        }
     }
     return ret;
 }

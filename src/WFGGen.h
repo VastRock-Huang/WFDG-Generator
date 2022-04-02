@@ -16,7 +16,7 @@ namespace wfg {
     private:
         const Configuration &_config;
         const FuncInfo &_funcInfo;
-        const MiniCFG &_miniCFG;
+        const CustomCFG &_miniCFG;
 
         void _genLineWeight(unsigned rootLine, map<unsigned, double> &lineWeightMap);
 

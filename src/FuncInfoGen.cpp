@@ -39,19 +39,26 @@ namespace wfg {
         return result;
     }
 
-    void FuncInfoGenConsumer::_traverseCFGStmt(const Stmt *stmt, CFGNode &node) const {
+    void FuncInfoGenConsumer::_traverseCFGStmt(const Stmt *stmt, CustomCFG::CFGNode &node) const {
         assert(stmt);
-//        llvm::errs() << stmt->getStmtClassName() <<'\n';
-        node.lineRanges.push_back(move(_getLineRange(stmt->getSourceRange())));
+//        if (stmt->getStmtClass() == Stmt::BinaryOperatorClass || stmt->getStmtClass() == Stmt::CompoundAssignOperatorClass) {
+//            const BinaryOperator *binOp = static_cast<const BinaryOperator *>(stmt);
+//            if (binOp->isAssignmentOp()) {
+//                binOp->dump();
+//            }
+//        } else if (stmt->getStmtClass() == Stmt::DeclStmtClass) {
+//            stmt->dump();
+//        }
+
+        node.lineRanges.push_back(move(_getLineRange(stmt->getBeginLoc(), stmt->getEndLoc())));
         _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
             _traverseCFGStmt(*it, node);
         }
     }
 
-    void FuncInfoGenConsumer::_catchSpecialStmt(const Stmt *stmt, CFGNode &node) const {
+    void FuncInfoGenConsumer::_catchSpecialStmt(const Stmt *stmt, CustomCFG::CFGNode &node) const {
         if (stmt) {
-//            llvm::errs() <<"**"<< stmt->getStmtClassName() <<'\n';
             node.lineRanges.push_back(move(_getLineRange(stmt->getBeginLoc(), stmt->getEndLoc())));
             _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         }
@@ -66,12 +73,11 @@ namespace wfg {
         return make_pair(endLine, startLine);
     }
 
-    MiniCFG FuncInfoGenConsumer::_buildMiniCFG(const FunctionDecl *funcDecl) const {
+    void FuncInfoGenConsumer::_buildMiniCFG(const FunctionDecl *funcDecl, CustomCFG& miniCFG) const {
         Stmt *funcBody = funcDecl->getBody();
         unique_ptr <CFG> wholeCFG = CFG::buildCFG(funcDecl, funcBody, &_context, CFG::BuildOptions());
-        MiniCFG miniCFG(funcDecl->getQualifiedNameAsString(), wholeCFG->size(),
-                        _config.ASTStmtKindMap);
 
+        miniCFG.extendNodeCnt(wholeCFG->size());
         for (auto &block: *wholeCFG) {
             unsigned cur = block->getBlockID();
 
@@ -93,7 +99,7 @@ namespace wfg {
             }
             miniCFG.finishPredEdges();
 
-            CFGNode node(vector<unsigned>(_config.ASTStmtKindMap.size()));
+            CustomCFG::CFGNode node(vector<unsigned>(_config.ASTStmtKindMap.size()));
             for (const CFGElement &element: *block) {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
@@ -104,11 +110,9 @@ namespace wfg {
             _catchSpecialStmt(block->getTerminatorStmt(), node);
             _catchSpecialStmt(block->getLoopTarget(), node);
             _catchSpecialStmt(block->getLabel(), node);
-            Util::mergeLineRanges(node.lineRanges);
-
+            node.mergeLineRanges();
             miniCFG.setCFGNode(cur, node);
         }
-        return miniCFG;
     }
 
     bool FuncInfoGenConsumer::VisitFunctionDecl(FunctionDecl *funcDecl) {
@@ -118,8 +122,9 @@ namespace wfg {
             if (_config.matchDestFunc(funcName)) {
                 pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc());
 
-                FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, move(_buildMiniCFG(funcDecl)));
+                FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange);
                 funcInfo.setSensitiveLines(move(_findSensitiveLines(funcDecl, lineRange)));
+                _buildMiniCFG(funcDecl, funcInfo.getMiniCFG());
                 _funcInfoList.push_back(funcInfo);
             }
         }

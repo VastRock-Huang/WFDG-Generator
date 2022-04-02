@@ -5,7 +5,7 @@
 #ifndef WFG_GENERATOR_FUNCINFOGEN_H
 #define WFG_GENERATOR_FUNCINFOGEN_H
 
-#include "MiniCFG.h"
+#include "CustomCFG.h"
 #include "FuncInfo.h"
 #include "Configuration.h"
 #include <clang/Analysis/CFG.h>
@@ -40,11 +40,11 @@ namespace wfg {
         vector<pair<unsigned, unsigned>>
         _findSensitiveLines(const FunctionDecl* functionDecl, const pair<unsigned, unsigned> &lineRange) const;
 
-        MiniCFG _buildMiniCFG(const FunctionDecl *funcDecl) const;
+        void _buildMiniCFG(const FunctionDecl *funcDecl, CustomCFG& miniCFG) const;
 
-        void _traverseCFGStmt(const Stmt *stmt, CFGNode &node) const;
+        void _traverseCFGStmt(const Stmt *stmt, CustomCFG::CFGNode &node) const;
 
-        void _catchSpecialStmt(const Stmt *stmt, CFGNode &node) const;
+        void _catchSpecialStmt(const Stmt *stmt, CustomCFG::CFGNode &node) const;
 
         pair<unsigned, unsigned> _getLineRange(const SourceLocation &beginLoc,const SourceLocation &endLoc) const;
 

@@ -60,7 +60,7 @@ namespace wfg {
     void WFGGenerator::_getWFGNodes(const map<unsigned, double> &lineWeightMap, map<unsigned, WFGNode> &wfgNodes) {
         // 遍历所有结点
         int i = 0;
-        for (const CFGNode &cfgNode: _miniCFG.getNodes()) {
+        for (const CustomCFG::CFGNode &cfgNode: _miniCFG.getNodes()) {
             set<unsigned> markedLines{};
             double lineWeight = 0.;
             // 遍历所有标记行
@@ -204,7 +204,7 @@ namespace wfg {
     WFG WFGGenerator::_genWFGWithoutSensitiveLine() {
         map<unsigned, WFGNode> wfgNodes{};
         int i = 0;
-        for (const CFGNode &cfgNode: _miniCFG.getNodes()) {
+        for (const CustomCFG::CFGNode &cfgNode: _miniCFG.getNodes()) {
             WFGNode wfgNode{};
             wfgNode.id = i;
             wfgNode.stmtVec = cfgNode.stmtVec;
