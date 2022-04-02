@@ -11,14 +11,14 @@
 namespace wfg {
 
     vector<pair<unsigned, unsigned>>
-    FuncInfoGenConsumer::_findSensitiveLines(const SourceRange &sourceRange,
+    FuncInfoGenConsumer::_findSensitiveLines(const FunctionDecl* functionDecl,
                                              const pair<unsigned, unsigned> &lineRange) const {
         unsigned sensitiveLine = _config.getSensitiveLine();
         if (sensitiveLine != 0 && Util::numInRange(sensitiveLine, lineRange) == 0) {
             return {{sensitiveLine, 0}};
         }
-        const SourceLocation &beginLoc = sourceRange.getBegin();
-        const SourceLocation &endLoc = sourceRange.getEnd();
+        const SourceLocation &beginLoc = functionDecl->getLocation();
+        const SourceLocation &endLoc = functionDecl->getEndLoc();
 
         FileID fileId = _manager.getMainFileID();
         StringRef funcContent{_manager.getCharacterData(beginLoc),
@@ -39,27 +39,27 @@ namespace wfg {
         return result;
     }
 
-    void FuncInfoGenConsumer::_travelCFGStmt(const Stmt *stmt, CFGNode &node) const {
+    void FuncInfoGenConsumer::_traverseCFGStmt(const Stmt *stmt, CFGNode &node) const {
         assert(stmt);
 //        llvm::errs() << stmt->getStmtClassName() <<'\n';
         node.lineRanges.push_back(move(_getLineRange(stmt->getSourceRange())));
         _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
-            _travelCFGStmt(*it, node);
+            _traverseCFGStmt(*it, node);
         }
     }
 
     void FuncInfoGenConsumer::_catchSpecialStmt(const Stmt *stmt, CFGNode &node) const {
         if (stmt) {
 //            llvm::errs() <<"**"<< stmt->getStmtClassName() <<'\n';
-            node.lineRanges.push_back(move(_getLineRange(stmt->getSourceRange())));
+            node.lineRanges.push_back(move(_getLineRange(stmt->getBeginLoc(), stmt->getEndLoc())));
             _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
         }
     }
 
-    pair<unsigned, unsigned> FuncInfoGenConsumer::_getLineRange(const SourceRange &sourceRange) const {
-        unsigned startLine = _context.getFullLoc(sourceRange.getBegin()).getSpellingLineNumber();
-        unsigned endLine = _context.getFullLoc(sourceRange.getEnd()).getSpellingLineNumber();
+    pair<unsigned, unsigned> FuncInfoGenConsumer::_getLineRange(const SourceLocation &beginLoc,const SourceLocation &endLoc) const {
+        unsigned startLine = _context.getFullLoc(beginLoc).getSpellingLineNumber();
+        unsigned endLine = _context.getFullLoc(endLoc).getSpellingLineNumber();
         if (startLine <= endLine) {
             return make_pair(startLine, endLine);
         }
@@ -98,7 +98,7 @@ namespace wfg {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
                     assert(stmt);
-                    _travelCFGStmt(stmt, node);
+                    _traverseCFGStmt(stmt, node);
                 }
             }
             _catchSpecialStmt(block->getTerminatorStmt(), node);
@@ -113,15 +113,13 @@ namespace wfg {
 
     bool FuncInfoGenConsumer::VisitFunctionDecl(FunctionDecl *funcDecl) {
         if (funcDecl->doesThisDeclarationHaveABody() &&
-            _manager.getFileID(funcDecl->getSourceRange().getBegin()) == _manager.getMainFileID()) {
+            _manager.getFileID(funcDecl->getLocation()) == _manager.getMainFileID()) {
             const string funcName = funcDecl->getQualifiedNameAsString();
             if (_config.matchDestFunc(funcName)) {
-//                FullSourceLoc beginLoc = _context.getFullLoc(funcDecl->getSourceRange().getBegin());
-//                FullSourceLoc endLoc = _context.getFullLoc(funcDecl->getSourceRange().getEnd());
-                pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getSourceRange());
+                pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc());
 
                 FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, move(_buildMiniCFG(funcDecl)));
-                funcInfo.setSensitiveLines(move(_findSensitiveLines(funcDecl->getSourceRange(), lineRange)));
+                funcInfo.setSensitiveLines(move(_findSensitiveLines(funcDecl, lineRange)));
                 _funcInfoList.push_back(funcInfo);
             }
         }

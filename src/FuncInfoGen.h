@@ -33,21 +33,20 @@ namespace wfg {
     private:
         const Configuration &_config;
         ASTContext &_context;
-        SourceManager &_manager;
+        const SourceManager &_manager;
         vector<FuncInfo> &_funcInfoList;
         unordered_set<string> &_varDeclSet;
 
-
         vector<pair<unsigned, unsigned>>
-        _findSensitiveLines(const SourceRange &sourceRange, const pair<unsigned, unsigned> &lineRange) const;
+        _findSensitiveLines(const FunctionDecl* functionDecl, const pair<unsigned, unsigned> &lineRange) const;
 
         MiniCFG _buildMiniCFG(const FunctionDecl *funcDecl) const;
 
-        void _travelCFGStmt(const Stmt *stmt, CFGNode &node) const;
+        void _traverseCFGStmt(const Stmt *stmt, CFGNode &node) const;
 
         void _catchSpecialStmt(const Stmt *stmt, CFGNode &node) const;
 
-        pair<unsigned, unsigned> _getLineRange(const SourceRange &sourceRange) const;
+        pair<unsigned, unsigned> _getLineRange(const SourceLocation &beginLoc,const SourceLocation &endLoc) const;
 
     public:
         FuncInfoGenConsumer(ASTContext &ctx, const Configuration &config, vector<FuncInfo> &funcInfoList,
