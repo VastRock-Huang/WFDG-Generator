@@ -40,7 +40,7 @@ namespace wfg {
         vector<pair<unsigned, unsigned>>
         _findSensitiveLines(const FunctionDecl* functionDecl, const pair<unsigned, unsigned> &lineRange) const;
 
-        void _buildMiniCFG(const FunctionDecl *funcDecl, CustomCFG& miniCFG) const;
+        void _buildCustomCFG(const FunctionDecl *funcDecl, CustomCFG& customCFG) const;
 
         void _traverseCFGStmt(const Stmt *stmt, CustomCFG::CFGNode &node) const;
 

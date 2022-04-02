@@ -49,7 +49,7 @@ namespace wfg {
 
         vector<pair<unsigned, unsigned>> _sensitiveLines{};
 
-        CustomCFG _miniCFG{};
+        CustomCFG _customCFG{};
 
         IdMapper _idMapper{};
 
@@ -60,7 +60,7 @@ namespace wfg {
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)
                    + ", sensitiveLines:" + Util::vecToString(_sensitiveLines, Util::numPairToString<unsigned, unsigned>)
-                   + ", miniCFG: " + _miniCFG.toString() + ", idMapper:" + _idMapper.toString() + "}";
+                   + ", customCFG: " + _customCFG.toString() + ", idMapper:" + _idMapper.toString() + "}";
         }
 
         void setSensitiveLines(vector<pair<unsigned, unsigned>> &&sensitiveLines) {
@@ -81,12 +81,12 @@ namespace wfg {
             return _idMapper;
         }
 
-        CustomCFG& getMiniCFG() {
-            return _miniCFG;
+        CustomCFG& getCFG() {
+            return _customCFG;
         }
 
-        const CustomCFG& getMiniCFG() const {
-            return _miniCFG;
+        const CustomCFG& getCFG() const {
+            return _customCFG;
         }
 
         string getFuncName() const {

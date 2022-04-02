@@ -16,7 +16,7 @@ namespace wfg {
     private:
         const Configuration &_config;
         const FuncInfo &_funcInfo;
-        const CustomCFG &_miniCFG;
+        const CustomCFG &_customCFG;
 
         void _genLineWeight(unsigned rootLine, map<unsigned, double> &lineWeightMap);
 
@@ -32,7 +32,7 @@ namespace wfg {
 
     public:
         WFGGenerator(const Configuration &config, const FuncInfo &funcInfo) : _config(config), _funcInfo(funcInfo),
-                                                                              _miniCFG(_funcInfo.getMiniCFG()) {}
+                                                                              _customCFG(_funcInfo.getCFG()) {}
 
         vector<WFG> genWFGs();
     };

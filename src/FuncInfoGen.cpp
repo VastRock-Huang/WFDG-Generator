@@ -73,11 +73,11 @@ namespace wfg {
         return make_pair(endLine, startLine);
     }
 
-    void FuncInfoGenConsumer::_buildMiniCFG(const FunctionDecl *funcDecl, CustomCFG& miniCFG) const {
+    void FuncInfoGenConsumer::_buildCustomCFG(const FunctionDecl *funcDecl, CustomCFG& customCFG) const {
         Stmt *funcBody = funcDecl->getBody();
         unique_ptr <CFG> wholeCFG = CFG::buildCFG(funcDecl, funcBody, &_context, CFG::BuildOptions());
 
-        miniCFG.extendNodeCnt(wholeCFG->size());
+        customCFG.extendNodeCnt(wholeCFG->size());
         for (auto &block: *wholeCFG) {
             unsigned cur = block->getBlockID();
 
@@ -86,18 +86,18 @@ namespace wfg {
                 if (!b && !(b = it->getPossiblyUnreachableBlock())) {
                     continue;
                 }
-                miniCFG.addSuccEdge(cur, b->getBlockID());
+                customCFG.addSuccEdge(cur, b->getBlockID());
             }
-            miniCFG.finishSuccEdges();
+            customCFG.finishSuccEdges();
 
             for (auto it = block->pred_begin(); it != block->pred_end(); ++it) {
                 CFGBlock *b = *it;
                 if (!b && !(b = it->getPossiblyUnreachableBlock())) {
                     continue;
                 }
-                miniCFG.addPredEdge(cur, b->getBlockID());
+                customCFG.addPredEdge(cur, b->getBlockID());
             }
-            miniCFG.finishPredEdges();
+            customCFG.finishPredEdges();
 
             CustomCFG::CFGNode node(vector<unsigned>(_config.ASTStmtKindMap.size()));
             for (const CFGElement &element: *block) {
@@ -111,7 +111,7 @@ namespace wfg {
             _catchSpecialStmt(block->getLoopTarget(), node);
             _catchSpecialStmt(block->getLabel(), node);
             node.mergeLineRanges();
-            miniCFG.setCFGNode(cur, node);
+            customCFG.setCFGNode(cur, node);
         }
     }
 
@@ -124,7 +124,7 @@ namespace wfg {
 
                 FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange);
                 funcInfo.setSensitiveLines(move(_findSensitiveLines(funcDecl, lineRange)));
-                _buildMiniCFG(funcDecl, funcInfo.getMiniCFG());
+                _buildCustomCFG(funcDecl, funcInfo.getCFG());
                 _funcInfoList.push_back(funcInfo);
             }
         }
