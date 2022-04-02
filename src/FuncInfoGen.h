@@ -6,7 +6,8 @@
 #define WFG_GENERATOR_FUNCINFOGEN_H
 
 #include "MiniCFG.h"
-#include "GlobalInstance.h"
+#include "FuncInfo.h"
+#include "Configuration.h"
 #include <clang/Analysis/CFG.h>
 #include <clang/AST/AST.h>
 #include <clang/AST/RecursiveASTVisitor.h>
@@ -18,6 +19,7 @@
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <utility>
 #include <vector>
+#include <memory>
 
 using namespace std;
 using namespace clang;
@@ -32,10 +34,12 @@ namespace wfg {
         const Configuration &_config;
         ASTContext &_context;
         SourceManager &_manager;
+        vector<FuncInfo> &_funcInfoList;
         unordered_set<string> &_varDeclSet;
 
+
         vector<pair<unsigned, unsigned>>
-        _findSensitiveLines(const SourceRange &sourceRange, const pair<unsigned,unsigned>& lineRange) const;
+        _findSensitiveLines(const SourceRange &sourceRange, const pair<unsigned, unsigned> &lineRange) const;
 
         MiniCFG _buildMiniCFG(const FunctionDecl *funcDecl) const;
 
@@ -46,8 +50,10 @@ namespace wfg {
         pair<unsigned, unsigned> _getLineRange(const SourceRange &sourceRange) const;
 
     public:
-        FuncInfoGenConsumer(ASTContext &ctx, const Configuration &config, unordered_set<string> &varDeclSet) :
-                _config(config), _context(ctx), _manager(ctx.getSourceManager()), _varDeclSet(varDeclSet) {}
+        FuncInfoGenConsumer(ASTContext &ctx, const Configuration &config, vector<FuncInfo> &funcInfoList,
+                            unordered_set<string> &varDeclSet) :
+                _config(config), _context(ctx), _manager(ctx.getSourceManager()), _funcInfoList(funcInfoList),
+                _varDeclSet(varDeclSet) {}
 
         void HandleTranslationUnit(ASTContext &ctx) override {
             TraverseDecl(ctx.getTranslationUnitDecl());
@@ -66,11 +72,13 @@ namespace wfg {
     class FuncInfoGenAction
             : public ASTFrontendAction {
     private:
+        const Configuration &_config;
+        vector<FuncInfo> &_funcInfoList;
         unordered_set<string> _varDeclSet{};
 
-        unique_ptr <ASTConsumer> CreateASTConsumer(CompilerInstance &compiler, StringRef file) override {
+        unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &compiler, StringRef file) override {
             return llvm::make_unique<FuncInfoGenConsumer>(compiler.getASTContext(),
-                                                          GlobalInstance::getInstance().Config, _varDeclSet);
+                                                          _config, _funcInfoList, _varDeclSet);
         }
 
         void ExecuteAction() override {
@@ -79,6 +87,25 @@ namespace wfg {
         }
 
         void _lexToken() const;
+
+    public:
+        FuncInfoGenAction(const Configuration &config, vector<FuncInfo> &funcInfoList) : _config(config),
+                                                                                         _funcInfoList(funcInfoList) {}
+    };
+
+
+    class FuncInfoGenFactory
+            : public FrontendActionFactory {
+    private:
+        const Configuration &_config;
+        vector<FuncInfo> &_funcInfoList;
+    public:
+        FuncInfoGenFactory(const Configuration &config, vector<FuncInfo> &funcInfoList) : _config(config),
+                                                                                          _funcInfoList(funcInfoList) {}
+
+        FrontendAction *create() override {
+            return new FuncInfoGenAction(_config, _funcInfoList);
+        }
     };
 
 }

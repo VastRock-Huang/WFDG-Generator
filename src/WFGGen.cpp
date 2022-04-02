@@ -3,13 +3,11 @@
 //
 
 #include "WFGGen/WFG.h"
-#include "GlobalInstance.h"
 #include "WFGGen.h"
 #include <set>
 #include <map>
 #include <queue>
 #include <cmath>
-#include <iostream>
 
 namespace wfg {
     void WFGGenerator::_genLineWeight(unsigned rootLine, map<unsigned, double> &lineWeightMap) {

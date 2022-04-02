@@ -122,7 +122,7 @@ namespace wfg {
 
                 FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, move(_buildMiniCFG(funcDecl)));
                 funcInfo.setSensitiveLines(move(_findSensitiveLines(funcDecl->getSourceRange(), lineRange)));
-                GlobalInstance::getInstance().FuncInfoList.push_back(funcInfo);
+                _funcInfoList.push_back(funcInfo);
             }
         }
         return true;
@@ -132,8 +132,7 @@ namespace wfg {
         Preprocessor &preprocessor = getCompilerInstance().getPreprocessor();
         Token token;
         preprocessor.EnterMainSourceFile();
-        vector<FuncInfo> &funInfoList = GlobalInstance::getInstance().FuncInfoList;
-        size_t funcCnt = funInfoList.size();
+        size_t funcCnt = _funcInfoList.size();
         size_t i = 0;
         string preId{};
         unsigned preLine{0};
@@ -150,7 +149,7 @@ namespace wfg {
                 unsigned lineNo = getCompilerInstance().getASTContext()
                         .getFullLoc(token.getLocation()).getSpellingLineNumber();
                 while (i < funcCnt) {
-                    int ret = Util::numInRange(lineNo, funInfoList[i].getLineRange());
+                    int ret = Util::numInRange(lineNo, _funcInfoList[i].getLineRange());
                     if (ret == 0) {
                         preLine = lineNo;
                         break;
@@ -161,7 +160,7 @@ namespace wfg {
                     ++i;
                 }
             } else if(preLine != 0) {
-                funInfoList[i].insertIdentifier(preId, preLine);
+                _funcInfoList[i].insertIdentifier(preId, preLine);
                 preId.clear();
                 preLine = 0;
             } else {
