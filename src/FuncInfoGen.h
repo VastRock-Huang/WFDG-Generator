@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 #include <memory>
+#include <array>
 
 using namespace std;
 using namespace clang;
@@ -37,16 +38,25 @@ namespace wfg {
         vector<FuncInfo> &_funcInfoList;
         unordered_set<string> &_varDeclSet;
 
-        pair<unsigned, unsigned> _getLineRange(const SourceLocation &beginLoc,const SourceLocation &endLoc) const;
+        pair<unsigned, unsigned> _getLineRange(const SourceLocation &beginLoc, const SourceLocation &endLoc) const;
 
         vector<pair<unsigned, unsigned>>
-        _findSensitiveLines(const FunctionDecl* functionDecl, const pair<unsigned, unsigned> &lineRange) const;
+        _findSensitiveLines(const FunctionDecl *functionDecl, const pair<unsigned, unsigned> &lineRange) const;
 
-        void _buildCustomCPG(const unique_ptr<CFG>& wholeCFG, CustomCPG& customCPG) const;
+        void _buildCustomCPG(const FunctionDecl *funcDecl, CustomCPG &customCPG) const;
 
-        void _traverseCFGStmt(const Stmt *stmt, CustomCPG::CPGNode &node) const;
+        static void _buildDepnInCPG(const unique_ptr<CFG> &wholeCFG, CustomCPG &customCPG);
 
-        void _catchSpecialStmt(const Stmt *stmt, CustomCPG::CPGNode &node) const;
+        void _traverseCFGStmtToUpdateStmtVec(const Stmt *stmt, CustomCPG &customCPG, unsigned nodeID) const;
+
+        void _catchSpecialStmt(const Stmt *stmt, CustomCPG &customCPG, unsigned nodeID) const;
+
+        static void _traverseCFGStmtToBuildDepn(const Stmt *stmt, CustomCPG &customCPG, unsigned nodeID,
+                                                vector<unordered_set<const string *>>& writtenVarVec);
+
+        static void _traceWrittenVar(CustomCPG &customCPG, unsigned curNode, unsigned searchNode,
+                                     const string *writtenVar,
+                                     vector<unordered_set<const string *>> &writtenVarVec);
 
     public:
         FuncInfoGenConsumer(ASTContext &ctx, const Configuration &config, vector<FuncInfo> &funcInfoList,

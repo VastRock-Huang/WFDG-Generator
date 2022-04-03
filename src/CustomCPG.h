@@ -9,8 +9,10 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_set>
 #include <unordered_map>
 #include <functional>
+#include <tuple>
 #include <cassert>
 
 using namespace std;
@@ -19,23 +21,16 @@ namespace wfg {
     class CustomCPG {
     public:
         struct CPGNode {
-            const unordered_map<string, unsigned> &ASTStmtKindMap;
-            // 升序且合并后的区间
-            vector<pair<unsigned, unsigned>> lineRanges{};
+// 升序且合并后的区间
+            vector<pair<unsigned, unsigned>> lineRanges{};  // FIXME: need to remove
             vector<unsigned> stmtVec;
+            unordered_map<const string *, tuple<vector<const string *>, unsigned>> writenVarMap{};
+            unordered_map<const string *, vector<tuple<const string *, unsigned >>> readVarMap{};
 
-            explicit CPGNode(const unordered_map<string, unsigned> &stmtKindMap) : ASTStmtKindMap(stmtKindMap),
-                                                                                   stmtVec(ASTStmtKindMap.size()) {}
+            explicit CPGNode(unsigned size) : stmtVec(size) {}
 
             void mergeLineRanges() {
                 Util::mergeLineRanges(lineRanges);
-            }
-
-            void updateStmtVec(const string &stmtName) {
-                auto it = ASTStmtKindMap.find(stmtName);
-                if (it != ASTStmtKindMap.end()) {
-                    ++(stmtVec.at(it->second));
-                }
             }
 
             static string toString(const CPGNode &node) {
@@ -58,6 +53,10 @@ namespace wfg {
         vector<unsigned> _nodesPredCnt{};
         vector<unsigned> _nodesPredVec{};
 
+        unordered_set<string> _varSet{};
+
+        set<pair<unsigned, unsigned>> _depnEdges{};
+
     public:
         const unordered_map<string, unsigned> &ASTStmtKindMap;
 
@@ -65,7 +64,7 @@ namespace wfg {
 
         void initNodeCnt(unsigned nodeCnt) {
             _nodeCnt = nodeCnt;
-            _nodes = vector<CPGNode>(nodeCnt, CPGNode(ASTStmtKindMap));
+            _nodes.assign(nodeCnt, CPGNode(ASTStmtKindMap.size()));
             _nodesSuccCnt.assign(nodeCnt + 1, 0);
             _nodesPredCnt.assign(nodeCnt + 1, 0);
         }
@@ -94,6 +93,22 @@ namespace wfg {
             return _nodes;
         }
 
+        void updateNodeStmtVec(unsigned nodeID, const string &stmtName) {
+            auto it = ASTStmtKindMap.find(stmtName);
+            if (it != ASTStmtKindMap.end()) {
+                ++(_nodes.at(nodeID).stmtVec.at(it->second));
+            }
+        }
+
+        const string *getVarPointer(const string& varName) {
+            auto res = _varSet.insert(varName);
+            return &(*res.first);
+        }
+
+        void addDepnEdge(unsigned pred, unsigned cur) {
+            _depnEdges.emplace(pred,cur);
+        }
+
         unsigned pred_begin(unsigned nodeId) const {
             return _nodesPredCnt.at(nodeId);
         }
@@ -108,8 +123,8 @@ namespace wfg {
 
         void for_each_pred(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
             for (unsigned vecIdx = pred_begin(curNode); vecIdx != pred_end(curNode); ++vecIdx) {
-                unsigned succNode = pred_at(vecIdx);
-                execution(succNode, curNode);
+                unsigned predNode = pred_at(vecIdx);
+                execution(predNode, curNode);
             }
         }
 
@@ -127,9 +142,13 @@ namespace wfg {
 
         void for_each_succ(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
             for (unsigned vecIdx = succ_begin(curNode); vecIdx != succ_end(curNode); ++vecIdx) {
-                unsigned predNode = succ_at(vecIdx);
-                execution(predNode, curNode);
+                unsigned succNode = succ_at(vecIdx);
+                execution(succNode, curNode);
             }
+        }
+
+        const set<pair<unsigned,unsigned>>& getDepnEdges() const {
+            return _depnEdges;
         }
 
         string toString() const {
@@ -140,7 +159,8 @@ namespace wfg {
                    ", nodesSuccVec: " + Util::vecToString(_nodesSuccVec, Util::numToString<unsigned>) +
                    ", predCnt: " + to_string(_predCnt) + ", nodesPredCnt: " +
                    Util::vecToString(_nodesPredCnt, Util::numToString<unsigned>) + ", nodesPredVec: " +
-                   Util::vecToString(_nodesPredVec, Util::numToString<unsigned>) +
+                   Util::vecToString(_nodesPredVec, Util::numToString<unsigned>) + ", depnEdges: " +
+                   Util::setToString(_depnEdges, Util::numPairToString<unsigned,unsigned>) +
                    +"}";
         }
     };
