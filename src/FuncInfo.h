@@ -5,7 +5,7 @@
 #ifndef WFG_GENERATOR_FUNCINFO_H
 #define WFG_GENERATOR_FUNCINFO_H
 
-#include "CustomCFG.h"
+#include "CustomCPG.h"
 #include "util.h"
 #include <string>
 #include <utility>
@@ -49,18 +49,18 @@ namespace wfg {
 
         vector<pair<unsigned, unsigned>> _sensitiveLines{};
 
-        CustomCFG _customCFG{};
+        CustomCPG _customCPG;
 
         IdMapper _idMapper{};
 
     public:
-        FuncInfo(string funcName, pair<unsigned,unsigned> lineRange)
-                : _funcName(std::move(funcName)), _lineRange(move(lineRange)) {}
+        FuncInfo(string funcName, pair<unsigned,unsigned> lineRange, const unordered_map<string, unsigned>& ASTStmtKindMap)
+                : _funcName(std::move(funcName)), _lineRange(move(lineRange)), _customCPG(ASTStmtKindMap) {}
 
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)
                    + ", sensitiveLines:" + Util::vecToString(_sensitiveLines, Util::numPairToString<unsigned, unsigned>)
-                   + ", customCFG: " + _customCFG.toString() + ", idMapper:" + _idMapper.toString() + "}";
+                   + ", customCPG: " + _customCPG.toString() + ", idMapper:" + _idMapper.toString() + "}";
         }
 
         void setSensitiveLines(vector<pair<unsigned, unsigned>> &&sensitiveLines) {
@@ -81,12 +81,12 @@ namespace wfg {
             return _idMapper;
         }
 
-        CustomCFG& getCFG() {
-            return _customCFG;
+        CustomCPG& getCustomCPG() {
+            return _customCPG;
         }
 
-        const CustomCFG& getCFG() const {
-            return _customCFG;
+        const CustomCPG& getCustomCPG() const {
+            return _customCPG;
         }
 
         string getFuncName() const {

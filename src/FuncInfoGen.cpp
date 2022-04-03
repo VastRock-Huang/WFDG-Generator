@@ -39,28 +39,19 @@ namespace wfg {
         return result;
     }
 
-    void FuncInfoGenConsumer::_traverseCFGStmt(const Stmt *stmt, CustomCFG::CFGNode &node) const {
+    void FuncInfoGenConsumer::_traverseCFGStmt(const Stmt *stmt, CustomCPG::CPGNode &node) const {
         assert(stmt);
-//        if (stmt->getStmtClass() == Stmt::BinaryOperatorClass || stmt->getStmtClass() == Stmt::CompoundAssignOperatorClass) {
-//            const BinaryOperator *binOp = static_cast<const BinaryOperator *>(stmt);
-//            if (binOp->isAssignmentOp()) {
-//                binOp->dump();
-//            }
-//        } else if (stmt->getStmtClass() == Stmt::DeclStmtClass) {
-//            stmt->dump();
-//        }
-
         node.lineRanges.push_back(move(_getLineRange(stmt->getBeginLoc(), stmt->getEndLoc())));
-        _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
+        node.updateStmtVec(stmt->getStmtClassName());
         for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
             _traverseCFGStmt(*it, node);
         }
     }
 
-    void FuncInfoGenConsumer::_catchSpecialStmt(const Stmt *stmt, CustomCFG::CFGNode &node) const {
+    void FuncInfoGenConsumer::_catchSpecialStmt(const Stmt *stmt, CustomCPG::CPGNode &node) const {
         if (stmt) {
             node.lineRanges.push_back(move(_getLineRange(stmt->getBeginLoc(), stmt->getEndLoc())));
-            _config.updateStmtVec(node.stmtVec, stmt->getStmtClassName());
+            node.updateStmtVec(stmt->getStmtClassName());
         }
     }
 
@@ -73,11 +64,9 @@ namespace wfg {
         return make_pair(endLine, startLine);
     }
 
-    void FuncInfoGenConsumer::_buildCustomCFG(const FunctionDecl *funcDecl, CustomCFG& customCFG) const {
-        Stmt *funcBody = funcDecl->getBody();
-        unique_ptr <CFG> wholeCFG = CFG::buildCFG(funcDecl, funcBody, &_context, CFG::BuildOptions());
 
-        customCFG.extendNodeCnt(wholeCFG->size());
+    void FuncInfoGenConsumer::_buildCustomCPG(const unique_ptr<CFG>& wholeCFG, CustomCPG& customCPG) const {
+        customCPG.initNodeCnt(wholeCFG->size());
         for (auto &block: *wholeCFG) {
             unsigned cur = block->getBlockID();
 
@@ -86,22 +75,22 @@ namespace wfg {
                 if (!b && !(b = it->getPossiblyUnreachableBlock())) {
                     continue;
                 }
-                customCFG.addSuccEdge(cur, b->getBlockID());
+                customCPG.addSuccEdge(cur, b->getBlockID());
             }
-            customCFG.finishSuccEdges();
+            customCPG.finishSuccEdges();
 
             for (auto it = block->pred_begin(); it != block->pred_end(); ++it) {
                 CFGBlock *b = *it;
                 if (!b && !(b = it->getPossiblyUnreachableBlock())) {
                     continue;
                 }
-                customCFG.addPredEdge(cur, b->getBlockID());
+                customCPG.addPredEdge(cur, b->getBlockID());
             }
-            customCFG.finishPredEdges();
+            customCPG.finishPredEdges();
 
-            CustomCFG::CFGNode node(vector<unsigned>(_config.ASTStmtKindMap.size()));
+            CustomCPG::CPGNode& node = customCPG.getNode(cur);
             for (const CFGElement &element: *block) {
-                if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
+                if (Optional<CFGStmt> cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
                     assert(stmt);
                     _traverseCFGStmt(stmt, node);
@@ -111,9 +100,10 @@ namespace wfg {
             _catchSpecialStmt(block->getLoopTarget(), node);
             _catchSpecialStmt(block->getLabel(), node);
             node.mergeLineRanges();
-            customCFG.setCFGNode(cur, node);
         }
     }
+
+
 
     bool FuncInfoGenConsumer::VisitFunctionDecl(FunctionDecl *funcDecl) {
         if (funcDecl->doesThisDeclarationHaveABody() &&
@@ -122,9 +112,12 @@ namespace wfg {
             if (_config.matchDestFunc(funcName)) {
                 pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc());
 
-                FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange);
+                FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, _config.ASTStmtKindMap);
                 funcInfo.setSensitiveLines(move(_findSensitiveLines(funcDecl, lineRange)));
-                _buildCustomCFG(funcDecl, funcInfo.getCFG());
+
+                Stmt *funcBody = funcDecl->getBody();
+                unique_ptr<CFG> wholeCFG = CFG::buildCFG(funcDecl, funcBody, &_context, CFG::BuildOptions());
+                _buildCustomCPG(wholeCFG, funcInfo.getCustomCPG());
                 _funcInfoList.push_back(funcInfo);
             }
         }

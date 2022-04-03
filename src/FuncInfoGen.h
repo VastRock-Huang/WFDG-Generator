@@ -5,8 +5,8 @@
 #ifndef WFG_GENERATOR_FUNCINFOGEN_H
 #define WFG_GENERATOR_FUNCINFOGEN_H
 
-#include "CustomCFG.h"
 #include "FuncInfo.h"
+#include "CustomCPG.h"
 #include "Configuration.h"
 #include <clang/Analysis/CFG.h>
 #include <clang/AST/AST.h>
@@ -37,16 +37,16 @@ namespace wfg {
         vector<FuncInfo> &_funcInfoList;
         unordered_set<string> &_varDeclSet;
 
+        pair<unsigned, unsigned> _getLineRange(const SourceLocation &beginLoc,const SourceLocation &endLoc) const;
+
         vector<pair<unsigned, unsigned>>
         _findSensitiveLines(const FunctionDecl* functionDecl, const pair<unsigned, unsigned> &lineRange) const;
 
-        void _buildCustomCFG(const FunctionDecl *funcDecl, CustomCFG& customCFG) const;
+        void _buildCustomCPG(const unique_ptr<CFG>& wholeCFG, CustomCPG& customCPG) const;
 
-        void _traverseCFGStmt(const Stmt *stmt, CustomCFG::CFGNode &node) const;
+        void _traverseCFGStmt(const Stmt *stmt, CustomCPG::CPGNode &node) const;
 
-        void _catchSpecialStmt(const Stmt *stmt, CustomCFG::CFGNode &node) const;
-
-        pair<unsigned, unsigned> _getLineRange(const SourceLocation &beginLoc,const SourceLocation &endLoc) const;
+        void _catchSpecialStmt(const Stmt *stmt, CustomCPG::CPGNode &node) const;
 
     public:
         FuncInfoGenConsumer(ASTContext &ctx, const Configuration &config, vector<FuncInfo> &funcInfoList,

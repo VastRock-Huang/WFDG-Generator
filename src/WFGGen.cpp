@@ -60,7 +60,7 @@ namespace wfg {
     void WFGGenerator::_getWFGNodes(const map<unsigned, double> &lineWeightMap, map<unsigned, WFGNode> &wfgNodes) {
         // 遍历所有结点
         int i = 0;
-        for (const CustomCFG::CFGNode &cfgNode: _customCFG.getNodes()) {
+        for (const CustomCPG::CPGNode &cfgNode: _customCPG.getNodes()) {
             set<unsigned> markedLines{};
             double lineWeight = 0.;
             // 遍历所有标记行
@@ -126,8 +126,8 @@ namespace wfg {
 
         for (unsigned rootNode: rootNodes) {
             wfgNodes[rootNode].nodeWeight = 1;
-            _customCFG.for_each_pred(rootNode, predExecution);
-            _customCFG.for_each_succ(rootNode, succExecution);
+            _customCPG.for_each_pred(rootNode, predExecution);
+            _customCPG.for_each_succ(rootNode, succExecution);
         }
 
         for (unsigned depth = 0; depth < _config.graphPredDepth && !predNodeQue.empty(); ++depth) {
@@ -140,7 +140,7 @@ namespace wfg {
                     continue;
                 }
                 it->second.nodeWeight = curPredWeight;
-                _customCFG.for_each_pred(node, predExecution);
+                _customCPG.for_each_pred(node, predExecution);
             }
         }
 
@@ -154,7 +154,7 @@ namespace wfg {
                     continue;
                 }
                 it->second.nodeWeight = curSuccWeight;
-                _customCFG.for_each_succ(node, succExecution);
+                _customCPG.for_each_succ(node, succExecution);
             }
         }
     }
@@ -177,7 +177,7 @@ namespace wfg {
             }
         };
         for (auto &nodePair: w.getNodes()) {
-            _customCFG.for_each_succ(nodePair.first, insertEdges);
+            _customCPG.for_each_succ(nodePair.first, insertEdges);
         }
         return w;
     }
@@ -204,7 +204,7 @@ namespace wfg {
     WFG WFGGenerator::_genWFGWithoutSensitiveLine() {
         map<unsigned, WFGNode> wfgNodes{};
         int i = 0;
-        for (const CustomCFG::CFGNode &cfgNode: _customCFG.getNodes()) {
+        for (const CustomCPG::CPGNode &cfgNode: _customCPG.getNodes()) {
             WFGNode wfgNode{};
             wfgNode.id = i;
             wfgNode.stmtVec = cfgNode.stmtVec;
@@ -218,7 +218,7 @@ namespace wfg {
             w.addEdge(curNode, succNode);
         };
         for (auto &nodePair: w.getNodes()) {
-            _customCFG.for_each_succ(nodePair.first, insertEdges);
+            _customCPG.for_each_succ(nodePair.first, insertEdges);
         }
         return w;
     }

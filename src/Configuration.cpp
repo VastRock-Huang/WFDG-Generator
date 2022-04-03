@@ -23,10 +23,4 @@ namespace wfg {
         return _destFunc.empty() || funcName == _destFunc;
     }
 
-    void Configuration::updateStmtVec(vector<unsigned> &stmtVec, const string &stmtName) const {
-        auto it = ASTStmtKindMap.find(stmtName);
-        if (it != ASTStmtKindMap.end()) {
-            ++stmtVec[it->second];
-        }
-    }
 }

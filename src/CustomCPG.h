@@ -2,8 +2,8 @@
 // Created by Unravel on 2022/3/14.
 //
 
-#ifndef WFG_GENERATOR_CUSTOMCFG_H
-#define WFG_GENERATOR_CUSTOMCFG_H
+#ifndef WFG_GENERATOR_CUSTOMCPG_H
+#define WFG_GENERATOR_CUSTOMCPG_H
 
 #include "util.h"
 #include <string>
@@ -16,22 +16,29 @@
 using namespace std;
 
 namespace wfg {
-    class CustomCFG {
+    class CustomCPG {
     public:
-        struct CFGNode {
+        struct CPGNode {
+            const unordered_map<string, unsigned> &ASTStmtKindMap;
             // 升序且合并后的区间
             vector<pair<unsigned, unsigned>> lineRanges{};
-            vector<unsigned> stmtVec{};
+            vector<unsigned> stmtVec;
 
-            CFGNode() = default;
-
-            explicit CFGNode(vector<unsigned> &&vec) : stmtVec(vec) {}
+            explicit CPGNode(const unordered_map<string, unsigned> &stmtKindMap) : ASTStmtKindMap(stmtKindMap),
+                                                                                   stmtVec(ASTStmtKindMap.size()) {}
 
             void mergeLineRanges() {
                 Util::mergeLineRanges(lineRanges);
             }
 
-            static string toString(const CFGNode &node) {
+            void updateStmtVec(const string &stmtName) {
+                auto it = ASTStmtKindMap.find(stmtName);
+                if (it != ASTStmtKindMap.end()) {
+                    ++(stmtVec.at(it->second));
+                }
+            }
+
+            static string toString(const CPGNode &node) {
                 return "{lineRanges: " + Util::vecToString(node.lineRanges, Util::numPairToString<unsigned, unsigned>) +
                        ", stmtVec: " + Util::vecToString(node.stmtVec, Util::numToString<unsigned>) + "}";
             }
@@ -39,7 +46,7 @@ namespace wfg {
 
     private:
         unsigned _nodeCnt{0};
-        vector<CFGNode> _nodes{};
+        vector<CPGNode> _nodes{};
 
         unsigned _succIdx{0};
         unsigned _succCnt{0};   // succ边的总数
@@ -52,14 +59,15 @@ namespace wfg {
         vector<unsigned> _nodesPredVec{};
 
     public:
-        void extendNodeCnt(unsigned nodeCnt) {
-            if (nodeCnt <= _nodeCnt) {
-                return;
-            }
+        const unordered_map<string, unsigned> &ASTStmtKindMap;
+
+        explicit CustomCPG(const unordered_map<string, unsigned> &ASTStmtKindMap) : ASTStmtKindMap(ASTStmtKindMap) {}
+
+        void initNodeCnt(unsigned nodeCnt) {
             _nodeCnt = nodeCnt;
-            _nodes.resize(nodeCnt);
-            _nodesSuccCnt.resize(nodeCnt + 1);
-            _nodesPredCnt.resize(nodeCnt + 1);
+            _nodes = vector<CPGNode>(nodeCnt, CPGNode(ASTStmtKindMap));
+            _nodesSuccCnt.assign(nodeCnt + 1, 0);
+            _nodesPredCnt.assign(nodeCnt + 1, 0);
         }
 
         void addSuccEdge(unsigned cur, unsigned succ);
@@ -78,11 +86,11 @@ namespace wfg {
 
         void addPredEdge(unsigned cur, unsigned pred);
 
-        void setCFGNode(unsigned nodeID, const CFGNode &node) {
-            _nodes.at(nodeID) = node;
+        CPGNode &getNode(unsigned nodeID) {
+            return _nodes.at(nodeID);
         }
 
-        const vector<CFGNode> &getNodes() const {
+        const vector<CPGNode> &getNodes() const {
             return _nodes;
         }
 
@@ -126,7 +134,7 @@ namespace wfg {
 
         string toString() const {
             return "{nodeCnt: " + to_string(_nodeCnt) +
-                   ", nodes: " + Util::vecToString(_nodes, CFGNode::toString) +
+                   ", nodes: " + Util::vecToString(_nodes, CPGNode::toString) +
                    ", succCnt: " + to_string(_succCnt) +
                    ", nodesSuccCnt: " + Util::vecToString(_nodesSuccCnt, Util::numToString<unsigned>) +
                    ", nodesSuccVec: " + Util::vecToString(_nodesSuccVec, Util::numToString<unsigned>) +
@@ -139,4 +147,4 @@ namespace wfg {
 
 }
 
-#endif //WFG_GENERATOR_CUSTOMCFG_H
+#endif //WFG_GENERATOR_CUSTOMCPG_H

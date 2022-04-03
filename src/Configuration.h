@@ -78,8 +78,6 @@ namespace wfg {
         unsigned getSensitiveLine() const {
             return _sensitiveLine;
         }
-
-        void updateStmtVec(vector<unsigned> &stmtVec, const string &stmtName) const;
     };
 }
 
