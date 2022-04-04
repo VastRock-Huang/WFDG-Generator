@@ -51,13 +51,6 @@ namespace wfg {
 
         void _catchSpecialStmt(const Stmt *stmt, CustomCPG &customCPG, unsigned nodeID) const;
 
-        static void _traverseCFGStmtToBuildDepn(const Stmt *stmt, CustomCPG &customCPG, unsigned nodeID,
-                                                vector<unordered_set<const string *>>& writtenVarVec);
-
-        static void _traceWrittenVar(CustomCPG &customCPG, unsigned curNode, unsigned searchNode,
-                                     const string *writtenVar,
-                                     vector<unordered_set<const string *>> &writtenVarVec);
-
     public:
         FuncInfoGenConsumer(ASTContext &ctx, const Configuration &config, vector<FuncInfo> &funcInfoList,
                             unordered_set<string> &varDeclSet) :
