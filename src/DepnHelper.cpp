@@ -75,8 +75,12 @@ namespace wfg {
 
 // TODO: 递归的struct结构a.b.c
     void DepnHelper::_traceReadVar(unsigned searchNode, VarIdType varId) {
-        for (unsigned vecIdx = _customCPG.pred_begin(searchNode); vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
+        for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
+             vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
+            if (predNode <= searchNode) {
+                continue;
+            }
             if (_noneWrittenVarInNode(predNode, varId)) {
                 _traceReadVar(predNode, varId);
             } else {
