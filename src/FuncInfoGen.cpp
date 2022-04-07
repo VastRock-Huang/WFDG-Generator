@@ -109,7 +109,7 @@ namespace wfg {
             node.mergeLineRanges();
         }
 
-        _buildDepnInCPG(wholeCFG, customCPG);
+        _buildDepnInCPG(funcDecl, wholeCFG, customCPG);
     }
 
 
@@ -130,8 +130,16 @@ namespace wfg {
         return true;
     }
 
-    void FuncInfoGenConsumer::_buildDepnInCPG(const unique_ptr<CFG> &wholeCFG, CustomCPG &customCPG) {
-        vector<unordered_set<const string *>> writtenVarVec{wholeCFG->size()};
+    void FuncInfoGenConsumer::_buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
+                                              CustomCPG &customCPG) {
+        vector<unordered_set<int64_t>> writtenVarVec{wholeCFG->size()};
+        vector<set<pair<int64_t, int64_t>>> writtenStructVec{wholeCFG->size()};
+
+        for(const ParmVarDecl* paramVarDecl : funcDecl->parameters()) {
+            DepnHelper depnHelper(customCPG, writtenVarVec, writtenStructVec, wholeCFG->size()-1);
+            depnHelper.depnOfDecl(paramVarDecl);
+        }
+
         for (auto it = wholeCFG->rbegin(); it != wholeCFG->rend(); ++it) {
             CFGBlock *block = *it;
             block->dump();
@@ -139,11 +147,12 @@ namespace wfg {
             for (const CFGElement &element: *block) {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
-                    DepnHelper depnHelper(customCPG, writtenVarVec, nodeID);
+                    DepnHelper depnHelper(customCPG, writtenVarVec, writtenStructVec, nodeID);
                     depnHelper.buildDepn(stmt);
                 }
             }
-            llvm::outs() << "depE:"
+
+            llvm::outs() << "Depn Edges: "
                          << Util::setToString(customCPG.getDepnEdges(), Util::numPairToString<unsigned, unsigned>)
                          << '\n';
         }

@@ -45,7 +45,8 @@ namespace wfg {
 
         void _buildCustomCPG(const FunctionDecl *funcDecl, CustomCPG &customCPG) const;
 
-        static void _buildDepnInCPG(const unique_ptr<CFG> &wholeCFG, CustomCPG &customCPG);
+        static void _buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
+                                    CustomCPG &customCPG);
 
         void _traverseCFGStmtToUpdateStmtVec(const Stmt *stmt, CustomCPG &customCPG, unsigned nodeID) const;
 

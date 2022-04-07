@@ -13,12 +13,15 @@
 #include <unordered_map>
 #include <functional>
 #include <tuple>
+#include <map>
 #include <cassert>
 
 using namespace std;
 
 namespace wfg {
     class CustomCPG {
+    private:
+        using VarIdType = int64_t;
     public:
         struct CPGNode {
 // 升序且合并后的区间
@@ -53,8 +56,8 @@ namespace wfg {
         vector<unsigned> _nodesPredCnt{};
         vector<unsigned> _nodesPredVec{};
 
-        unordered_set<string> _varSet{};
-
+        unordered_map<VarIdType,string> _varMap{};
+        unordered_map<VarIdType, map<VarIdType, string>> _structMap{};
         set<pair<unsigned, unsigned>> _depnEdges{};
 
     public:
@@ -67,6 +70,14 @@ namespace wfg {
             _nodes.assign(nodeCnt, CPGNode(ASTStmtKindMap.size()));
             _nodesSuccCnt.assign(nodeCnt + 1, 0);
             _nodesPredCnt.assign(nodeCnt + 1, 0);
+        }
+
+        unordered_map<VarIdType, string>& getVarMap() {
+            return _varMap;
+        }
+
+        unordered_map<VarIdType, map<VarIdType, string>>& getStructMap() {
+            return _structMap;
         }
 
         void addSuccEdge(unsigned cur, unsigned succ);
@@ -100,10 +111,10 @@ namespace wfg {
             }
         }
 
-        const string *getVarPointer(const string& varName) {
-            auto res = _varSet.insert(varName);
-            return &(*res.first);
-        }
+//       VarIdType getVarPointer(const string& varName) {
+//            auto res = _varMap.insert(varName);
+//            return &(*res.first);
+//        }
 
         void addDepnEdge(unsigned pred, unsigned cur) {
             _depnEdges.emplace(pred,cur);
