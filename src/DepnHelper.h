@@ -27,7 +27,6 @@ namespace wfg {
         unordered_map<VarIdType, string> &_varMap;
         unordered_map<VarIdType, map<VarIdType, string>> &_structMap;
 
-
         bool _noneWrittenVarInNode(unsigned nodeID, VarIdType writtenVar) const {
             return _writtenVarVec.at(nodeID).count(writtenVar) == 0;
         }
@@ -82,7 +81,7 @@ namespace wfg {
         }
 
         void _insertStructId(VarIdType structId, string structName) {
-            llvm::outs() << structName << ":" << structName << '\n';
+            llvm::outs() << "insert struct:" << structName << '\n';
             _varMap.emplace(structId, move(structName));
             _structMap.emplace(structId, map<VarIdType, string>());
         }
@@ -137,6 +136,8 @@ namespace wfg {
             return type->isStructureType();
         }
 
+        void _buildDepn(const Stmt *stmt, bool canVisitCall = false);
+
 
     public:
         DepnHelper(CustomCPG &customCPG, VarVec &writtenVarVec, StructVec &writtenStructVec, unsigned nodeID)
@@ -144,7 +145,9 @@ namespace wfg {
                   _nodeID(nodeID), _varMap(customCPG.getVarMap()),
                   _structMap(customCPG.getStructMap()) {}
 
-        void buildDepn(const Stmt *stmt);
+        void buildDepn(const Stmt *stmt) {
+            _buildDepn(stmt, true);
+        }
 
         void depnOfDecl(const VarDecl *varDecl) {
             VarIdType id = varDecl->getID();
@@ -154,7 +157,7 @@ namespace wfg {
                 _insertVarId(id, varDecl->getNameAsString());
             }
             if (const Expr *initExpr = varDecl->getInit()) {
-                buildDepn(initExpr);
+                _buildDepn(initExpr);
             }
 
             llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';

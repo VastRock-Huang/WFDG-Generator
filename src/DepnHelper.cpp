@@ -6,7 +6,7 @@
 
 namespace wfg {
 
-    void DepnHelper::buildDepn(const Stmt *stmt) {
+    void DepnHelper::_buildDepn(const Stmt *stmt, bool canVisitCall) {
         auto it = stmt->child_begin();
         switch (stmt->getStmtClass()) {
             case Stmt::MemberExprClass:
@@ -18,13 +18,25 @@ namespace wfg {
                 return;
 
             case Stmt::CallExprClass: {
-                for (; it != stmt->child_end(); ++it) {
-                    buildDepn(*it);
-                    if (isa<UnaryOperator>(*it)) {
-                        const UnaryOperator *op = cast<UnaryOperator>(*it);
-                        if (op->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
-                            _depnOfWrittenVar(op);
+                if(!canVisitCall) {
+                    return;
+                }
+                // 跳过函数类型转换
+                for (++it; it != stmt->child_end(); ++it) {
+                    if (isa<ImplicitCastExpr>(*it)) {
+                        const ImplicitCastExpr *castExpr = cast<ImplicitCastExpr>(*it);
+                        const Expr *expr = castExpr->getSubExpr();
+                        _buildDepn(expr);
+                        // 对于非const指针的处理
+                        if (!castExpr->getType().isConstQualified() && castExpr->getType().getTypePtr()->isPointerType()
+                            && isa<UnaryOperator>(expr)) {
+                            const UnaryOperator *op = cast<UnaryOperator>(expr);
+                            if (op->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+                                _depnOfWrittenVar(op);
+                            }
                         }
+                    } else {
+                        _buildDepn(*it);
                     }
                 }
             }
@@ -47,7 +59,7 @@ namespace wfg {
             }
             case Stmt::CompoundAssignOperatorClass: {
                 for (; it != stmt->child_end(); ++it) {
-                    buildDepn(*it);
+                    _buildDepn(*it);
                 }
                 const BinaryOperator *binOp = cast<BinaryOperator>(stmt);
                 if (binOp->isAssignmentOp()) {
@@ -69,7 +81,7 @@ namespace wfg {
             default:;
         }
         for (; it != stmt->child_end(); ++it) {
-            buildDepn(*it);
+            _buildDepn(*it);
         }
     }
 

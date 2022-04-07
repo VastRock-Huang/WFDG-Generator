@@ -118,6 +118,7 @@ namespace wfg {
             _manager.getFileID(funcDecl->getLocation()) == _manager.getMainFileID()) {
             const string funcName = funcDecl->getQualifiedNameAsString();
             if (_config.matchDestFunc(funcName)) {
+                llvm::outs() << "\nFUNC: " << funcName <<'\n';
                 pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc());
 
                 FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, _config.ASTStmtKindMap);
@@ -144,10 +145,10 @@ namespace wfg {
             CFGBlock *block = *it;
             block->dump();
             unsigned nodeID = block->getBlockID();
+            DepnHelper depnHelper(customCPG, writtenVarVec, writtenStructVec, nodeID);
             for (const CFGElement &element: *block) {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
-                    DepnHelper depnHelper(customCPG, writtenVarVec, writtenStructVec, nodeID);
                     depnHelper.buildDepn(stmt);
                 }
             }
