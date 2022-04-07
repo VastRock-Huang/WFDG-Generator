@@ -130,7 +130,11 @@ namespace wfg {
         }
 
         static bool _isStructDecl(const VarDecl *varDecl) {
-            return varDecl->getType().getTypePtr()->isStructureType();
+            const Type *type = varDecl->getType().getTypePtr();
+            while (type->isPointerType()) {
+                type = type->getPointeeOrArrayElementType();
+            }
+            return type->isStructureType();
         }
 
 
