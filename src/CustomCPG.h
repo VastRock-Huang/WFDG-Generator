@@ -25,7 +25,7 @@ namespace wfg {
         using VarIdPair = pair<VarIdType, VarIdType>;
 
         struct CPGNode {
-// 升序且合并后的区间
+            // 升序且合并后的区间
             vector<pair<unsigned, unsigned>> lineRanges{};  // FIXME: need to remove
             vector<unsigned> stmtVec;
 
@@ -59,8 +59,34 @@ namespace wfg {
 
     public:
         struct DepnMap {
-            unordered_map<unsigned, vector<pair<VarIdPair, unsigned >>> wVarMap{};
-            unordered_map<unsigned, pair<unsigned, unsigned>> rVarMap{};
+            unordered_map<unsigned, vector<pair<VarIdPair, unsigned>>> wVarMap{};
+            unordered_map<unsigned, vector<pair<unsigned, unsigned>>> rVarMap{};
+
+            static string varIdPairToString(const VarIdPair& idPair) {
+                return Util::numPairToString(idPair);
+            }
+
+            static string idToString(const unordered_map<VarIdPair, string, pair_hash>& varMap, const VarIdPair& idPair) {
+                return varMap.at(idPair);
+            }
+
+            static string wPairToString(const pair<VarIdPair, unsigned>& p) {
+                return Util::pairToString(p, varIdPairToString, Util::numToString<unsigned>);
+            }
+
+            static string wVarVecToString(const vector<pair<VarIdPair, unsigned>>& wVarVec) {
+                return Util::vecToString(wVarVec, wPairToString);
+            }
+
+            static string rVarVecToString(const vector<pair<unsigned, unsigned>>& rVarVec) {
+                return Util::vecToString(rVarVec, Util::numPairToString<unsigned,unsigned>);
+            }
+
+            static string toString(const DepnMap& depnMap) {
+                return "{wVarMap: " + Util::hashmapToString(depnMap.wVarMap, Util::numToString<unsigned>, wVarVecToString)
+                + ", rVarMap: " + Util::hashmapToString(depnMap.rVarMap, Util::numToString<unsigned>, rVarVecToString)
+                +"}";
+            }
         };
 
         unordered_map<VarIdPair, DepnMap, pair_hash> depnPredMap{};
@@ -109,7 +135,7 @@ namespace wfg {
         }
 
         void addDepnEdge(unsigned pred, unsigned cur) {
-            _depnEdges.emplace(pred,cur);
+            _depnEdges.emplace(pred, cur);
         }
 
         unsigned pred_begin(unsigned nodeId) const {
@@ -150,7 +176,7 @@ namespace wfg {
             }
         }
 
-        const set<pair<unsigned,unsigned>>& getDepnEdges() const {
+        const set<pair<unsigned, unsigned>> &getDepnEdges() const {
             return _depnEdges;
         }
 
@@ -163,7 +189,7 @@ namespace wfg {
                    ", predCnt: " + to_string(_predCnt) + ", nodesPredCnt: " +
                    Util::vecToString(_nodesPredCnt, Util::numToString<unsigned>) + ", nodesPredVec: " +
                    Util::vecToString(_nodesPredVec, Util::numToString<unsigned>) + ", depnEdges: " +
-                   Util::setToString(_depnEdges, Util::numPairToString<unsigned,unsigned>) +
+                   Util::setToString(_depnEdges, Util::numPairToString<unsigned, unsigned>) +
                    +"}";
         }
     };

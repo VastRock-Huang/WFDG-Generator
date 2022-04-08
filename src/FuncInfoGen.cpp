@@ -154,6 +154,7 @@ namespace wfg {
             llvm::outs() << "Depn Edges: "
                          << Util::setToString(customCPG.getDepnEdges(), Util::numPairToString<unsigned, unsigned>)
                          << '\n';
+            llvm::outs() << depnHelper.depnMapToString() << '\n';
         }
     }
 

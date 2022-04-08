@@ -41,8 +41,14 @@ namespace wfg {
         }
 
         template<typename T, typename U>
+        static string pairToString(const pair<T,U>& p,const function<string(decltype(p.first))>& tFunc,
+                                   const function<string(decltype(p.second))>& uFunc) {
+            return "(" + tFunc(p.first) + ", " + uFunc(p.second) + ")";
+        }
+
+        template<typename T, typename U, typename H>
         static string
-        hashmapToString(const unordered_map<T, U>& hashmap, const function<string(decltype(hashmap.begin()->first))>& tFunc,
+        hashmapToString(const unordered_map<T, U, H>& hashmap, const function<string(decltype(hashmap.begin()->first))>& tFunc,
                         const function<string(decltype(hashmap.begin()->second))>& uFunc) {
             string str = "[";
             size_t i = 0, sz = hashmap.size();
@@ -94,7 +100,6 @@ namespace wfg {
         }
 
         static void mergeLineRanges(vector<pair<unsigned, unsigned>> &ranges);
-
     };
 
 

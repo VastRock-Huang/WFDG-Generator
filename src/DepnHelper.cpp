@@ -5,6 +5,7 @@
 #include "DepnHelper.h"
 
 namespace wfg {
+    unsigned DepnHelper::_varIdx = 0;
 
     void DepnHelper::_buildDepn(const Stmt *stmt, bool canVisitCall) {
         auto it = stmt->child_begin();
@@ -18,7 +19,7 @@ namespace wfg {
                 return;
 
             case Stmt::CallExprClass: {
-                if(!canVisitCall) {
+                if (!canVisitCall) {
                     return;
                 }
                 // 跳过函数类型转换
@@ -32,7 +33,7 @@ namespace wfg {
                             && isa<UnaryOperator>(expr)) {
                             const UnaryOperator *op = cast<UnaryOperator>(expr);
                             if (op->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
-                                _depnOfWrittenVar(op);
+                                _depnOfWrittenVar(op->getSubExpr(), op->getSubExpr());
                             }
                         }
                     } else {
@@ -54,20 +55,23 @@ namespace wfg {
             case Stmt::BinaryOperatorClass: {
                 const BinaryOperator *binOp = cast<BinaryOperator>(stmt);
                 if (binOp->isAssignmentOp()) {
-                    ++it;
+                    _buildDepn(binOp->getRHS());
+                    _depnOfWrittenVar(binOp->getLHS(), binOp->getRHS());
+                    return;
                 }
             }
+                break;
+
             case Stmt::CompoundAssignOperatorClass: {
-                for (; it != stmt->child_end(); ++it) {
-                    _buildDepn(*it);
-                }
-                const BinaryOperator *binOp = cast<BinaryOperator>(stmt);
+                const CompoundAssignOperator *binOp = cast<CompoundAssignOperator>(stmt);
                 if (binOp->isAssignmentOp()) {
-                    const Stmt *writtenExpr = *(binOp->child_begin());
-                    _depnOfWrittenVar(writtenExpr);
+                    _buildDepn(binOp->getLHS());
+                    _buildDepn(binOp->getRHS());
+                    _depnOfWrittenVar(binOp->getLHS(), stmt);
+                    return;
                 }
             }
-                return;
+                break;
 
             case Stmt::DeclStmtClass: {
                 const DeclStmt *declStmt = cast<DeclStmt>(stmt);
@@ -86,42 +90,59 @@ namespace wfg {
         }
     }
 
-    void DepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids) {
+    void DepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids, vector<pair<unsigned, unsigned>> &pres) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
             if (predNode <= searchNode) {
                 continue;
             }
-            if (_noneWrittenVarInNode(predNode, ids)) {
-                _traceReadVar(predNode, ids);
-            } else {
+            unsigned preIdx = 0;
+            if ((preIdx = _hasWrittenVarInNode(predNode, ids)) != 0) {
                 llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
                 _customCPG.addDepnEdge(predNode, _nodeID);
+                pres.emplace_back(preIdx, predNode);
+            } else {
+                _traceReadVar(predNode, ids, pres);
             }
+//            if (_noneWrittenVarInNode(predNode, ids)) {
+//                _traceReadVar(predNode, ids, pres);
+//            } else {
+//                llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
+//                _customCPG.addDepnEdge(predNode, _nodeID);
+//            }
         }
     }
 
 
-    void DepnHelper::_traceReadStructVar(unsigned searchNode, const VarIdPair &varIds, const VarIdPair &memIds) {
+    void DepnHelper::_traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
+                                         const VarIdPair &memIds, vector<pair<unsigned, unsigned>> &pres) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
-            if (_noneWrittenVarInNode(predNode, varIds)
-                && _noneWrittenVarInNode(predNode, memIds)) {
-                _traceReadStructVar(predNode, varIds, memIds);
-            } else {
+            unsigned preIdx = 0;
+            if ((preIdx = _hasWrittenStructInNode(predNode, varIds, memIds))) {
                 llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';
                 _customCPG.addDepnEdge(predNode, _nodeID);
+                pres.emplace_back(preIdx, predNode);
+            } else {
+                _traceReadStructVar(predNode, varIds, memIds, pres);
             }
+
+//            if (_noneWrittenVarInNode(predNode, varIds)
+//                && _noneWrittenVarInNode(predNode, memIds)) {
+//                _traceReadStructVar(predNode, varIds, memIds);
+//            } else {
+//                llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';
+//                _customCPG.addDepnEdge(predNode, _nodeID);
+//            }
         }
     }
 
     void DepnHelper::_depnOfDeclRefExpr(const Stmt *stmt) {
         const DeclRefExpr *declRefExpr = cast<DeclRefExpr>(stmt);
         if (isa<VarDecl>(declRefExpr->getDecl())) {
-            VarIdType rVarId = _getRefVarId(declRefExpr);
-            _traceReadVar(rVarId);
+            _traceReadVar(_getRefVarIds(declRefExpr));
             llvm::outs() << "R_Decl:" << declRefExpr->getNameInfo().getAsString() << '\n';
         }
     }
@@ -135,7 +156,7 @@ namespace wfg {
     }
 
     void DepnHelper::_depnOfIncDecOp(const UnaryOperator *op) {
-        const Stmt *childExpr = *(op->child_begin());
+        const Stmt *childExpr = op->getSubExpr();
         while (!isa<DeclRefExpr>(childExpr) && !isa<MemberExpr>(childExpr)) {
             if (childExpr->child_begin() == childExpr->child_end()) {
                 return;
@@ -143,41 +164,55 @@ namespace wfg {
             childExpr = *(childExpr->child_begin());
         }
 
+        pair<VarIdType, VarIdType> ids{};
+        unsigned idx = 0;
         if (isa<DeclRefExpr>(childExpr)) {
             const DeclRefExpr *declRefExpr = cast<DeclRefExpr>(childExpr);
-            VarIdType varId = _getRefVarId(declRefExpr);
-            _traceReadVar(varId);
-            _recordWrittenVar(varId);
+            ids = _getRefVarIds(declRefExpr);
+            _traceReadVar(ids);
+            idx = _recordWrittenVar(ids);
+            _insertWVarInDepnMap(ids, idx,
+                                 {make_pair(ids, _hasWrittenVarInNode(_nodeID, ids))});
             llvm::outs() << "RW_Decl:" << declRefExpr->getNameInfo().getAsString() << '\n';
         } else if (isa<MemberExpr>(childExpr)) {
             const MemberExpr *memberExpr = cast<MemberExpr>(childExpr);
-            pair<VarIdType, VarIdType> ids{0, 0};
             string name = _getStructIdsAndName(memberExpr, ids);
             _traceReadStructVar(ids, name);
-            _recordWrittenStruct(ids, name);
+            idx = _recordWrittenVar(ids);
+            _insertWVarInDepnMap(
+                    ids, idx, {
+                            make_pair(ids,
+                                      _hasWrittenStructInNode(_nodeID, make_pair(0, ids.first), ids)
+                            )
+                    });
             llvm::outs() << "RW_Mem:" << name << '\n';
         }
     }
 
-    void DepnHelper::_depnOfWrittenVar(const Stmt *writtenExpr) {
+    void DepnHelper::_depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) {
         while (!isa<DeclRefExpr>(writtenExpr) && !isa<MemberExpr>(writtenExpr)) {
             if (writtenExpr->child_begin() == writtenExpr->child_end()) {
                 return;
             }
             writtenExpr = *(writtenExpr->child_begin());
         }
-
+        vector<pair<VarIdPair, unsigned>> res{};
+        _collectRVarsOfWVar(readExpr, res);
+        pair<VarIdType, VarIdType> ids{};
+        unsigned idx = 0;
         if (isa<DeclRefExpr>(writtenExpr)) {
             const DeclRefExpr *writtenRefDecl = cast<DeclRefExpr>(writtenExpr);
             llvm::outs() << "W_Ref:" << writtenRefDecl->getNameInfo().getAsString() << '\n';
-            VarIdType wVarId = _getRefVarId(writtenRefDecl);
-            _recordWrittenVar(wVarId);
+            ids = _getRefVarIds(writtenRefDecl);
+            idx = _recordWrittenVar(ids);
         } else if (isa<MemberExpr>(writtenExpr)) {
             const MemberExpr *memberExpr = cast<MemberExpr>(writtenExpr);
-            pair<VarIdType, VarIdType> ids{0, 0};
             string name = _getStructIdsAndName(memberExpr, ids);
-            _recordWrittenStruct(ids, name);
+            idx = _recordWrittenStruct(ids, name);
             llvm::outs() << "W_Mem:" << name << '\n';
+        }
+        if (!res.empty()) {
+            _insertWVarInDepnMap(ids, idx, move(res));
         }
     }
 }
