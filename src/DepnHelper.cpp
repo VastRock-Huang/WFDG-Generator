@@ -86,32 +86,32 @@ namespace wfg {
         }
     }
 
-    void DepnHelper::_traceReadVar(unsigned searchNode, VarIdType varId) {
+    void DepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
             if (predNode <= searchNode) {
                 continue;
             }
-            if (_noneWrittenVarInNode(predNode, varId)) {
-                _traceReadVar(predNode, varId);
+            if (_noneWrittenVarInNode(predNode, ids)) {
+                _traceReadVar(predNode, ids);
             } else {
-                llvm::outs() << "find " << _getVarNameById(varId) << " at " << predNode << '\n';
+                llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
                 _customCPG.addDepnEdge(predNode, _nodeID);
             }
         }
     }
 
 
-    void DepnHelper::_traceReadStructVar(unsigned int searchNode, const VarIdPair &ids) {
+    void DepnHelper::_traceReadStructVar(unsigned searchNode, const VarIdPair &varIds, const VarIdPair &memIds) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
-            if (_noneWrittenVarInNode(predNode, ids.first)
-                && _noneWrittenStructInNode(predNode, ids)) {
-                _traceReadStructVar(predNode, ids);
+            if (_noneWrittenVarInNode(predNode, varIds)
+                && _noneWrittenVarInNode(predNode, memIds)) {
+                _traceReadStructVar(predNode, varIds, memIds);
             } else {
-                llvm::outs() << "find " << _getStructNameByIds(ids) << " at " << predNode << '\n';
+                llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';
                 _customCPG.addDepnEdge(predNode, _nodeID);
             }
         }

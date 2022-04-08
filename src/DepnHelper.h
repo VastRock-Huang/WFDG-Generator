@@ -18,49 +18,50 @@ namespace wfg {
     public:
         using VarIdType = CustomCPG::VarIdType;
         using VarIdPair = CustomCPG::VarIdPair;
-        using VarVec = CustomCPG::VarVec;
+        using VarVec = vector<unordered_set<VarIdPair, pair_hash>>;
 
     private:
         CustomCPG &_customCPG;
         VarVec &_writtenVarVec;
         unsigned _nodeID;
 
-        unordered_map<VarIdType, map<VarIdType, string>> &_varMap;
+        unordered_map<VarIdPair, string, pair_hash>& _hashMap;
 
-        bool _noneWrittenVarInNode(unsigned nodeID, VarIdType writtenVar) const {
-            return _writtenVarVec.at(nodeID).count({0, writtenVar}) == 0;
+        bool _noneWrittenVarInNode(unsigned nodeID, const VarIdPair  &ids) const {
+            return _writtenVarVec.at(nodeID).count(ids) == 0;
         }
 
-        bool _noneWrittenStructInNode(unsigned nodeID, const VarIdPair &memIds) const {
-            return _writtenVarVec.at(nodeID).count(memIds) == 0;
-        }
+        void _traceReadVar(unsigned searchNode, const VarIdPair &ids);
 
-        void _traceReadVar(unsigned searchNode, VarIdType varId);
-
-        void _traceReadStructVar(unsigned searchNode, const VarIdPair &ids);
+        void _traceReadStructVar(unsigned searchNode, const VarIdPair &varIds, const VarIdPair &memIds);
 
         void _traceReadVar(VarIdType varId) {
-            if (_noneWrittenVarInNode(_nodeID, varId)) {
-                _traceReadVar(_nodeID, varId);
+            VarIdPair ids = make_pair(0, varId);
+            if (_noneWrittenVarInNode(_nodeID, ids)) {
+                _traceReadVar(_nodeID, ids);
             }
         }
 
-        void _traceReadStructVar(const VarIdPair &ids, string name) {
-            _varMap.at(ids.first).emplace(ids.second, move(name));
-            if (_noneWrittenVarInNode(_nodeID, ids.first)
-                && _noneWrittenStructInNode(_nodeID, ids)) {
-                _traceReadStructVar(_nodeID, ids);
+        void _traceReadStructVar(const VarIdPair &memIds, string name) {
+            if(memIds.first == 0) {
+                return;
+            }
+            _hashMap.emplace(memIds, move(name));
+            VarIdPair varIds = make_pair(0, memIds.first);
+            if (_noneWrittenVarInNode(_nodeID, varIds)
+                && _noneWrittenVarInNode(_nodeID, memIds)) {
+                _traceReadStructVar(_nodeID, varIds, memIds);
             }
         }
 
         void _recordWrittenVar(VarIdType varId) {
-            _writtenVarVec.at(_nodeID).insert({0, varId});
+            _writtenVarVec.at(_nodeID).emplace(0, varId);
         }
 
         void _recordWrittenStruct(const VarIdPair &ids, string name) {
             if (ids.first != 0) {
-                _varMap.at(ids.first).emplace(ids.second, move(name));
-                _writtenVarVec.at(_nodeID).insert(ids);
+                _hashMap.emplace(ids, move(name));
+                _writtenVarVec.at(_nodeID).emplace(ids);
             }
         }
 
@@ -73,29 +74,11 @@ namespace wfg {
         void _depnOfWrittenVar(const Stmt *writtenExpr);
 
         void _insertVarId(VarIdType varId, string varName) {
-            _varMap.at(0).emplace(varId, move(varName));
+            _hashMap.emplace(make_pair(0, varId), move(varName));
         }
 
-        void _insertStructId(VarIdType structId, string structName) {
-            llvm::outs() << "insert struct:" << structName << '\n';
-            _varMap.at(0).emplace(structId, move(structName));
-            _varMap.emplace(structId, map<VarIdType, string>());
-        }
-
-        string _getVarNameById(VarIdType varId) const {
-            return _varMap.at(0).at(varId);
-        }
-
-        string _getStructNameByIds(const VarIdPair &ids) const {
-            return _varMap.at(ids.first).at(ids.second);
-        }
-
-        static bool _hasVarId(VarIdType varId) {
-            return varId != 0;
-        }
-
-        static string _getStructVar(const string &structWholeName) {
-            return structWholeName.substr(0, structWholeName.find_first_of(".-"));
+        string _getVarNameByIds(const VarIdPair &ids) const {
+            return _hashMap.at(ids);
         }
 
         static VarIdType _getRefVarId(const DeclRefExpr *refExpr) {
@@ -114,8 +97,8 @@ namespace wfg {
             if (isa<DeclRefExpr>(childStmt)) {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(childStmt);
                 name.append(refExpr->getNameInfo().getAsString());
-                ids = {_getRefVarId(refExpr), memberExpr->getMemberDecl()->getID()};
-                llvm::outs() << "ids:" << ids.first << "," << ids.second << '\n';
+                ids = make_pair(_getRefVarId(refExpr), memberExpr->getMemberDecl()->getID());
+//                llvm::outs() << "ids:" << ids.first << "," << ids.second << '\n';
             } else if (isa<MemberExpr>(childStmt)) {
                 const MemberExpr *childMem = cast<MemberExpr>(childStmt);
                 name.append(_getStructIdsAndName(childMem, ids));
@@ -125,13 +108,13 @@ namespace wfg {
             return name;
         }
 
-        static bool _isStructDecl(const VarDecl *varDecl) {
-            const Type *type = varDecl->getType().getTypePtr();
-            while (type->isPointerType()) {
-                type = type->getPointeeOrArrayElementType();
-            }
-            return type->isStructureType();
-        }
+//        static bool _isStructDecl(const VarDecl *varDecl) {
+//            const Type *type = varDecl->getType().getTypePtr();
+//            while (type->isPointerType()) {
+//                type = type->getPointeeOrArrayElementType();
+//            }
+//            return type->isStructureType();
+//        }
 
         void _buildDepn(const Stmt *stmt, bool canVisitCall = false);
 
@@ -139,9 +122,7 @@ namespace wfg {
     public:
         DepnHelper(CustomCPG &customCPG, VarVec &writtenVarVec, unsigned nodeID)
                 : _customCPG(customCPG), _writtenVarVec(writtenVarVec), _nodeID(nodeID),
-                  _varMap(customCPG.getVarMap()) {
-            _varMap.emplace(0, map<VarIdType, string>());
-        }
+                 _hashMap(customCPG.varMap) {}
 
         void buildDepn(const Stmt *stmt) {
             _buildDepn(stmt, true);
@@ -149,11 +130,8 @@ namespace wfg {
 
         void depnOfDecl(const VarDecl *varDecl) {
             VarIdType id = varDecl->getID();
-            if (_isStructDecl(varDecl)) {
-                _insertStructId(id, varDecl->getNameAsString());
-            } else {
-                _insertVarId(id, varDecl->getNameAsString());
-            }
+            _insertVarId(id, varDecl->getNameAsString());
+
             if (const Expr *initExpr = varDecl->getInit()) {
                 _buildDepn(initExpr);
             }

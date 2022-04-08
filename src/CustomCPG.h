@@ -20,19 +20,14 @@ using namespace std;
 
 namespace wfg {
     class CustomCPG {
-    private:
-        using VarIdType = int64_t;
     public:
         using VarIdType = int64_t;
         using VarIdPair = pair<VarIdType, VarIdType>;
-        using VarVec = vector<set<VarIdPair>>;
 
         struct CPGNode {
 // 升序且合并后的区间
             vector<pair<unsigned, unsigned>> lineRanges{};  // FIXME: need to remove
             vector<unsigned> stmtVec;
-            unordered_map<const string *, tuple<vector<const string *>, unsigned>> writenVarMap{};
-            unordered_map<const string *, vector<tuple<const string *, unsigned >>> readVarMap{};
 
             explicit CPGNode(unsigned size) : stmtVec(size) {}
 
@@ -60,11 +55,17 @@ namespace wfg {
         vector<unsigned> _nodesPredCnt{};
         vector<unsigned> _nodesPredVec{};
 
-        unordered_map<VarIdType,string> _varMap{};
-        unordered_map<VarIdType, map<VarIdType, string>> _structMap{};
         set<pair<unsigned, unsigned>> _depnEdges{};
 
     public:
+        struct DepnMap {
+            unordered_map<unsigned, vector<pair<VarIdPair, unsigned >>> wVarMap{};
+            unordered_map<unsigned, pair<unsigned, unsigned>> rVarMap{};
+        };
+
+        unordered_map<VarIdPair, DepnMap, pair_hash> depnPredMap{};
+
+        unordered_map<VarIdPair, string, pair_hash> varMap{};
         const unordered_map<string, unsigned> &ASTStmtKindMap;
 
         explicit CustomCPG(const unordered_map<string, unsigned> &ASTStmtKindMap) : ASTStmtKindMap(ASTStmtKindMap) {}
@@ -74,14 +75,6 @@ namespace wfg {
             _nodes.assign(nodeCnt, CPGNode(ASTStmtKindMap.size()));
             _nodesSuccCnt.assign(nodeCnt + 1, 0);
             _nodesPredCnt.assign(nodeCnt + 1, 0);
-        }
-
-        unordered_map<VarIdType, string>& getVarMap() {
-            return _varMap;
-        }
-
-        unordered_map<VarIdType, map<VarIdType, string>>& getStructMap() {
-            return _structMap;
         }
 
         void addSuccEdge(unsigned cur, unsigned succ);
@@ -114,11 +107,6 @@ namespace wfg {
                 ++(_nodes.at(nodeID).stmtVec.at(it->second));
             }
         }
-
-//       VarIdType getVarPointer(const string& varName) {
-//            auto res = _varMap.insert(varName);
-//            return &(*res.first);
-//        }
 
         void addDepnEdge(unsigned pred, unsigned cur) {
             _depnEdges.emplace(pred,cur);

@@ -133,7 +133,7 @@ namespace wfg {
 
     void FuncInfoGenConsumer::_buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
                                               CustomCPG &customCPG) {
-        vector<set<CustomCPG::VarIdPair>> writtenVarVec{wholeCFG->size()};
+        DepnHelper::VarVec writtenVarVec{wholeCFG->size()};
         DepnHelper depnHelper(customCPG, writtenVarVec, wholeCFG->size()-1);
         for(const ParmVarDecl* paramVarDecl : funcDecl->parameters()) {
             depnHelper.depnOfDecl(paramVarDecl);
