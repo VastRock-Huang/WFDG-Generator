@@ -133,11 +133,9 @@ namespace wfg {
 
     void FuncInfoGenConsumer::_buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
                                               CustomCPG &customCPG) {
-        vector<unordered_set<int64_t>> writtenVarVec{wholeCFG->size()};
-        vector<set<pair<int64_t, int64_t>>> writtenStructVec{wholeCFG->size()};
-
+        vector<set<CustomCPG::VarIdPair>> writtenVarVec{wholeCFG->size()};
+        DepnHelper depnHelper(customCPG, writtenVarVec, wholeCFG->size()-1);
         for(const ParmVarDecl* paramVarDecl : funcDecl->parameters()) {
-            DepnHelper depnHelper(customCPG, writtenVarVec, writtenStructVec, wholeCFG->size()-1);
             depnHelper.depnOfDecl(paramVarDecl);
         }
 
@@ -145,7 +143,7 @@ namespace wfg {
             CFGBlock *block = *it;
             block->dump();
             unsigned nodeID = block->getBlockID();
-            DepnHelper depnHelper(customCPG, writtenVarVec, writtenStructVec, nodeID);
+            depnHelper.updateNodeID(nodeID);
             for (const CFGElement &element: *block) {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();

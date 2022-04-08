@@ -23,6 +23,10 @@ namespace wfg {
     private:
         using VarIdType = int64_t;
     public:
+        using VarIdType = int64_t;
+        using VarIdPair = pair<VarIdType, VarIdType>;
+        using VarVec = vector<set<VarIdPair>>;
+
         struct CPGNode {
 // 升序且合并后的区间
             vector<pair<unsigned, unsigned>> lineRanges{};  // FIXME: need to remove

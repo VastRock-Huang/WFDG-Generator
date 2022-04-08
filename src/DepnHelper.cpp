@@ -68,6 +68,7 @@ namespace wfg {
                 }
             }
                 return;
+
             case Stmt::DeclStmtClass: {
                 const DeclStmt *declStmt = cast<DeclStmt>(stmt);
                 for (auto &decl: declStmt->decls()) {
@@ -85,7 +86,6 @@ namespace wfg {
         }
     }
 
-// TODO: 递归的struct结构a.b.c
     void DepnHelper::_traceReadVar(unsigned searchNode, VarIdType varId) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
