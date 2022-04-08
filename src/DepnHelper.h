@@ -18,103 +18,111 @@ namespace wfg {
     public:
         using VarIdType = CustomCPG::VarIdType;
         using VarIdPair = CustomCPG::VarIdPair;
-        using VarVec = vector<unordered_map<VarIdPair,unsigned, pair_hash>>;
+        using VarVec = vector<unordered_map<VarIdPair, int, pair_hash>>;
 
     private:
         CustomCPG &_customCPG;
         VarVec &_writtenVarVec;
         unsigned _nodeID;
 
-        unordered_map<VarIdPair, string, pair_hash>& _varMap;
+        unordered_map<VarIdPair, string, pair_hash> &_varMap;
 
-        unordered_map<VarIdPair, CustomCPG::DepnMap, pair_hash>& _depnPredMap;
-        static unsigned _varIdx;
+//        unordered_map<VarIdPair, CustomCPG::DepnMap, pair_hash> &_depnPredMap;
+//        static unsigned _varIdx;
 
-        void _insertWVarInDepnMap(const VarIdPair& wVarIds, unsigned wVarIdx, vector<pair<VarIdPair, unsigned>> &&rVars) {
-            _depnPredMap.at(wVarIds).wVarMap.emplace(wVarIdx, rVars);
-        }
+        CustomCPG::DepnMapper &_depnPredMapper;
 
-        void _insertRVarInDepnMap(const VarIdPair& rVarIds, unsigned rVarIdx, vector<pair<unsigned, unsigned>> &&pres) {
-            _depnPredMap.at(rVarIds).rVarMap.emplace(rVarIdx, pres);
-        }
+//        void
+//        _insertWVarInDepnMap(const VarIdPair &wVarIds, unsigned wVarIdx, vector<pair<VarIdPair, unsigned>> &&rVars) {
+////            _depnPredMap.at(wVarIds).wVarMap.emplace(wVarIdx, rVars);
+//            _depnPredMapper.predMap.at(wVarIds).first.emplace(_depnPredMapper.wVarVec.size());
+//            _depnPredMapper.wVarVec.emplace_back(rVars);
+//
+//        }
 
-        unsigned _hasWrittenVarInNode(unsigned nodeID, const VarIdPair &ids) const {
+//        void _insertRVarInDepnMap(const VarIdPair &rVarIds, unsigned rVarIdx, vector<pair<unsigned, unsigned>> &&pres) {
+////            _depnPredMap.at(rVarIds).rVarMap.emplace(rVarIdx, pres);
+//            _depnPredMapper.predMap.at(rVarIds).second.emplace(_depnPredMapper.rVarVec.size());
+//            _depnPredMapper.rVarVec.emplace_back(pres);
+//        }
+
+        int _hasWrittenVarInNode(unsigned nodeID, const VarIdPair &ids) const {
             auto it = _writtenVarVec.at(nodeID).find(ids);
-            if(it != _writtenVarVec.at(nodeID).end()) {
+            if (it != _writtenVarVec.at(nodeID).end()) {
                 return it->second;
             }
-            return 0;
+            return -1;
         }
 
-        unsigned _hasWrittenStructInNode(unsigned nodeID, const VarIdPair& varIds, const VarIdPair& memIds) const {
+        int _hasWrittenStructInNode(unsigned nodeID, const VarIdPair &varIds, const VarIdPair &memIds) const {
             auto it1 = _writtenVarVec.at(nodeID).find(varIds);
             auto it2 = _writtenVarVec.at(nodeID).find(memIds);
             auto end = _writtenVarVec.at(nodeID).end();
-            if(it1 != end && it2 != end) {
+            if (it1 != end && it2 != end) {
                 return max(it1->second, it2->second);
-            } else if(it1 != end) {
+            } else if (it1 != end) {
                 return it1->second;
-            } else if(it2 != end) {
+            } else if (it2 != end) {
                 return it2->second;
             }
-            return 0;
+            return -1;
         }
 
-        void _traceReadVar(unsigned searchNode, const VarIdPair &ids,vector<pair<unsigned,unsigned>>& pres);
+        void _traceReadVar(unsigned searchNode, const VarIdPair &ids, vector<pair<int, unsigned>> &pres);
 
         void _traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                 const VarIdPair &memIds, vector<pair<unsigned,unsigned>>& pres);
+                                 const VarIdPair &memIds, vector<pair<int, unsigned>> &pres);
 
-        void _traceReadVar(const VarIdPair& ids) {
-            vector<pair<unsigned,unsigned>> pres{};
-            unsigned predIdx = 0;
-            if((predIdx = _hasWrittenVarInNode(_nodeID, ids)) == 0) {
+        void _traceReadVar(const VarIdPair &ids) {
+            vector<pair<int, unsigned>> pres{};
+            int predIdx = -1;
+            if ((predIdx = _hasWrittenVarInNode(_nodeID, ids)) == -1) {
                 _traceReadVar(_nodeID, ids, pres);
             } else {
-                pres.emplace_back(predIdx,_nodeID);
+                pres.emplace_back(predIdx, _nodeID);
             }
-            if(!pres.empty()) {
-                _insertRVarInDepnMap(ids, ++_varIdx, move(pres));
-            }
+            _depnPredMapper.predMap.at(ids).second.emplace(_depnPredMapper.rVarVec.size());
+            _depnPredMapper.rVarVec.emplace_back(pres);
+
 //            if (_noneWrittenVarInNode(_nodeID, ids)) {
 //                _traceReadVar(_nodeID, ids);
 //            }
         }
 
         void _traceReadStructVar(const VarIdPair &memIds, string name) {
-            if(memIds.first == 0) {
+            if (memIds.first == 0) {
                 return;
             }
             _insertVarIds(memIds, move(name));
             VarIdPair varIds = make_pair(0, memIds.first);
-            vector<pair<unsigned,unsigned>> pres{};
-            unsigned predIdx = 0;
-            if((predIdx = _hasWrittenStructInNode(_nodeID, varIds, memIds)) == 0) {
+            vector<pair<int, unsigned>> pres{};
+            int predIdx = -1;
+            if ((predIdx = _hasWrittenStructInNode(_nodeID, varIds, memIds)) == -1) {
                 _traceReadStructVar(_nodeID, varIds, memIds, pres);
             } else {
                 pres.emplace_back(predIdx, _nodeID);
             }
-            if(!pres.empty()) {
-                _insertRVarInDepnMap(memIds,++_varIdx, move(pres));
-            }
+            _depnPredMapper.predMap.at(memIds).second.emplace(_depnPredMapper.rVarVec.size());
+            _depnPredMapper.rVarVec.emplace_back(pres);
 //            if (_noneWrittenVarInNode(_nodeID, varIds)
 //                && _noneWrittenVarInNode(_nodeID, memIds)) {
 //                _traceReadStructVar(_nodeID, varIds, memIds);
 //            }
         }
 
-        unsigned _recordWrittenVar(const VarIdPair& ids) {
-            _writtenVarVec.at(_nodeID).emplace(ids, ++_varIdx);
-            return _varIdx;
+        void _recordWrittenVar(const VarIdPair &ids, vector<pair<VarIdPair, int>> &&rVars) {
+            _writtenVarVec.at(_nodeID).emplace(ids, _depnPredMapper.wVarVec.size());
+            _depnPredMapper.predMap.at(ids).first.emplace(_depnPredMapper.wVarVec.size());
+            _depnPredMapper.wVarVec.emplace_back(rVars);
         }
 
-        unsigned _recordWrittenStruct(const VarIdPair &memIds, string name) {
+        void _recordWrittenStruct(const VarIdPair &memIds, string name, vector<pair<VarIdPair, int>> &&rVars) {
             if (memIds.first != 0) {
                 _insertVarIds(memIds, move(name));
-                _writtenVarVec.at(_nodeID).emplace(memIds, ++_varIdx);
-                return _varIdx;
+                _writtenVarVec.at(_nodeID).emplace(memIds, _depnPredMapper.wVarVec.size());
+                _depnPredMapper.predMap.at(memIds).first.emplace(_depnPredMapper.wVarVec.size());
+                _depnPredMapper.wVarVec.emplace_back(rVars);
             }
-            return 0;
         }
 
         void _depnOfDeclRefExpr(const Stmt *stmt);
@@ -126,7 +134,7 @@ namespace wfg {
         void _depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr);
 
         void _insertVarIds(VarIdPair ids, string varName) {
-            _depnPredMap.emplace(ids, CustomCPG::DepnMap());
+            _depnPredMapper.predMap.emplace(ids, make_pair(unordered_set<int>(),unordered_set<int>()));
             _varMap.emplace(move(ids), move(varName));
         }
 
@@ -134,7 +142,7 @@ namespace wfg {
             return _varMap.at(ids);
         }
 
-        static string getVarNameByIds(const DepnHelper& helper, const VarIdPair &ids) {
+        static string getVarNameByIds(const DepnHelper &helper, const VarIdPair &ids) {
             return helper._varMap.at(ids);
         }
 
@@ -180,10 +188,11 @@ namespace wfg {
             return name;
         }
 
-        void _collectRVarsOfWVar(const Stmt* stmt, vector<pair<VarIdPair, unsigned>>& res) const {
-            if(isa<DeclRefExpr>(stmt)) {
+        void _collectRVarsOfWVar(const Stmt *stmt, vector<pair<VarIdPair, int>> &res) const {
+            if (isa<DeclRefExpr>(stmt)) {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
                 VarIdPair ids = _getRefVarIds(refExpr);
+                // FIXME: 变量的读idx错误
                 res.emplace_back(ids, _hasWrittenVarInNode(_nodeID, ids));
             } else if (isa<MemberExpr>(stmt)) {
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
@@ -191,7 +200,7 @@ namespace wfg {
                 VarIdPair varIds = make_pair(0, memIds.first);
                 res.emplace_back(memIds, _hasWrittenStructInNode(_nodeID, varIds, memIds));
             } else {
-                for(auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
+                for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
                     _collectRVarsOfWVar(*it, res);
                 }
             }
@@ -205,32 +214,28 @@ namespace wfg {
 //            return type->isStructureType();
 //        }
 
-        void _buildDepn(const Stmt *stmt, bool canVisitCall = false);
+        void _buildDepn(const Stmt *stmt, bool canVisitCall = true);
 
     public:
         DepnHelper(CustomCPG &customCPG, VarVec &writtenVarVec, unsigned nodeID)
                 : _customCPG(customCPG), _writtenVarVec(writtenVarVec), _nodeID(nodeID),
-                  _varMap(customCPG.varMap),_depnPredMap(customCPG.depnPredMap) {}
+                  _varMap(customCPG.varMap),
+                  _depnPredMapper(customCPG.depnPredMapper) {}
 
         void buildDepn(const Stmt *stmt) {
             _buildDepn(stmt, true);
         }
 
         void depnOfDecl(const VarDecl *varDecl) {
-            VarIdPair ids = make_pair(0,varDecl->getID());
+            VarIdPair ids = make_pair(0, varDecl->getID());
             _insertVarIds(ids, varDecl->getNameAsString());
-
+            vector<pair<VarIdPair, int>> res{};
             if (const Expr *initExpr = varDecl->getInit()) {
                 _buildDepn(initExpr);
-            }
-
-            llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
-            unsigned idx = _recordWrittenVar(ids);
-            vector<pair<VarIdPair, unsigned>> res{};
-            if (const Expr *initExpr = varDecl->getInit()) {
                 _collectRVarsOfWVar(initExpr, res);
             }
-            _insertWVarInDepnMap(ids,idx, move(res));
+            _recordWrittenVar(ids, move(res));
+            llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
 
         void updateNodeID(unsigned nodeID) {
@@ -238,9 +243,7 @@ namespace wfg {
         }
 
         string depnMapToString() const {
-            return "depnPredMap: " + Util::hashmapToString(_depnPredMap,
-                                                           [this](const VarIdPair &p)-> string { return getVarNameByIds(*this, p); },
-                                                           CustomCPG::DepnMap::toString);
+            return "depnPredMapper: " + _depnPredMapper.toString(_varMap);
         }
     };
 }

@@ -5,8 +5,6 @@
 #include "DepnHelper.h"
 
 namespace wfg {
-    unsigned DepnHelper::_varIdx = 0;
-
     void DepnHelper::_buildDepn(const Stmt *stmt, bool canVisitCall) {
         auto it = stmt->child_begin();
         switch (stmt->getStmtClass()) {
@@ -90,15 +88,15 @@ namespace wfg {
         }
     }
 
-    void DepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids, vector<pair<unsigned, unsigned>> &pres) {
+    void DepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids, vector<pair<int, unsigned>> &pres) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
             if (predNode <= searchNode) {
                 continue;
             }
-            unsigned preIdx = 0;
-            if ((preIdx = _hasWrittenVarInNode(predNode, ids)) != 0) {
+            int preIdx = -1;
+            if ((preIdx = _hasWrittenVarInNode(predNode, ids)) != -1) {
                 llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
                 _customCPG.addDepnEdge(predNode, _nodeID);
                 pres.emplace_back(preIdx, predNode);
@@ -116,12 +114,12 @@ namespace wfg {
 
 
     void DepnHelper::_traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                         const VarIdPair &memIds, vector<pair<unsigned, unsigned>> &pres) {
+                                         const VarIdPair &memIds, vector<pair<int, unsigned>> &pres) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
-            unsigned preIdx = 0;
-            if ((preIdx = _hasWrittenStructInNode(predNode, varIds, memIds))) {
+            int preIdx = -1;
+            if ((preIdx = _hasWrittenStructInNode(predNode, varIds, memIds)) != -1) {
                 llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';
                 _customCPG.addDepnEdge(predNode, _nodeID);
                 pres.emplace_back(preIdx, predNode);
@@ -165,28 +163,26 @@ namespace wfg {
         }
 
         pair<VarIdType, VarIdType> ids{};
-        unsigned idx = 0;
         if (isa<DeclRefExpr>(childExpr)) {
             const DeclRefExpr *declRefExpr = cast<DeclRefExpr>(childExpr);
             ids = _getRefVarIds(declRefExpr);
             _traceReadVar(ids);
-            idx = _recordWrittenVar(ids);
-            _insertWVarInDepnMap(ids, idx,
-                                 {make_pair(ids, _hasWrittenVarInNode(_nodeID, ids))});
+//            _insertWVarInDepnMap(ids, idx,
+//                                 {make_pair(ids, _hasWrittenVarInNode(_nodeID, ids))});
             llvm::outs() << "RW_Decl:" << declRefExpr->getNameInfo().getAsString() << '\n';
         } else if (isa<MemberExpr>(childExpr)) {
             const MemberExpr *memberExpr = cast<MemberExpr>(childExpr);
             string name = _getStructIdsAndName(memberExpr, ids);
             _traceReadStructVar(ids, name);
-            idx = _recordWrittenVar(ids);
-            _insertWVarInDepnMap(
-                    ids, idx, {
-                            make_pair(ids,
-                                      _hasWrittenStructInNode(_nodeID, make_pair(0, ids.first), ids)
-                            )
-                    });
+//            _insertWVarInDepnMap(
+//                    ids, idx, {
+//                            make_pair(ids,
+//                                      _hasWrittenStructInNode(_nodeID, make_pair(0, ids.first), ids)
+//                            )
+//                    });
             llvm::outs() << "RW_Mem:" << name << '\n';
         }
+        _recordWrittenVar(ids, {make_pair(ids, _depnPredMapper.rVarVec.size()-1)});
     }
 
     void DepnHelper::_depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) {
@@ -196,23 +192,21 @@ namespace wfg {
             }
             writtenExpr = *(writtenExpr->child_begin());
         }
-        vector<pair<VarIdPair, unsigned>> res{};
+        vector<pair<VarIdPair, int>> res{};
+        // 必须在record之前,防止同一变量被覆盖
         _collectRVarsOfWVar(readExpr, res);
         pair<VarIdType, VarIdType> ids{};
-        unsigned idx = 0;
         if (isa<DeclRefExpr>(writtenExpr)) {
             const DeclRefExpr *writtenRefDecl = cast<DeclRefExpr>(writtenExpr);
             llvm::outs() << "W_Ref:" << writtenRefDecl->getNameInfo().getAsString() << '\n';
             ids = _getRefVarIds(writtenRefDecl);
-            idx = _recordWrittenVar(ids);
+            _recordWrittenVar(ids, move(res));
         } else if (isa<MemberExpr>(writtenExpr)) {
             const MemberExpr *memberExpr = cast<MemberExpr>(writtenExpr);
             string name = _getStructIdsAndName(memberExpr, ids);
-            idx = _recordWrittenStruct(ids, name);
+            _recordWrittenStruct(ids, name, move(res));
             llvm::outs() << "W_Mem:" << name << '\n';
         }
-        if (!res.empty()) {
-            _insertWVarInDepnMap(ids, idx, move(res));
-        }
+//        _insertWVarInDepnMap(ids, idx, move(res));
     }
 }

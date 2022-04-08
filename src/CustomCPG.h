@@ -59,37 +59,75 @@ namespace wfg {
 
     public:
         struct DepnMap {
+            // 写变量idx-[(依赖的读变量id,读变量idx)...]
             unordered_map<unsigned, vector<pair<VarIdPair, unsigned>>> wVarMap{};
+            // 读变量idx-[(依赖的写变量idx, 所在结点)...]
             unordered_map<unsigned, vector<pair<unsigned, unsigned>>> rVarMap{};
 
-            static string varIdPairToString(const VarIdPair& idPair) {
+            static string varIdPairToString(const VarIdPair &idPair) {
                 return Util::numPairToString(idPair);
             }
 
-            static string idToString(const unordered_map<VarIdPair, string, pair_hash>& varMap, const VarIdPair& idPair) {
+            static string
+            idToString(const unordered_map<VarIdPair, string, pair_hash> &varMap, const VarIdPair &idPair) {
                 return varMap.at(idPair);
             }
 
-            static string wPairToString(const pair<VarIdPair, unsigned>& p) {
+            static string wPairToString(const pair<VarIdPair, unsigned> &p) {
                 return Util::pairToString(p, varIdPairToString, Util::numToString<unsigned>);
             }
 
-            static string wVarVecToString(const vector<pair<VarIdPair, unsigned>>& wVarVec) {
+            static string wVarVecToString(const vector<pair<VarIdPair, unsigned>> &wVarVec) {
                 return Util::vecToString(wVarVec, wPairToString);
             }
 
-            static string rVarVecToString(const vector<pair<unsigned, unsigned>>& rVarVec) {
-                return Util::vecToString(rVarVec, Util::numPairToString<unsigned,unsigned>);
+            static string rVarVecToString(const vector<pair<unsigned, unsigned>> &rVarVec) {
+                return Util::vecToString(rVarVec, Util::numPairToString<unsigned, unsigned>);
             }
 
-            static string toString(const DepnMap& depnMap) {
-                return "{wVarMap: " + Util::hashmapToString(depnMap.wVarMap, Util::numToString<unsigned>, wVarVecToString)
-                + ", rVarMap: " + Util::hashmapToString(depnMap.rVarMap, Util::numToString<unsigned>, rVarVecToString)
-                +"}";
+            static string toString(const DepnMap &depnMap) {
+                return "{wVarMap: " +
+                       Util::hashmapToString(depnMap.wVarMap, Util::numToString<unsigned>, wVarVecToString)
+                       + ", rVarMap: " +
+                       Util::hashmapToString(depnMap.rVarMap, Util::numToString<unsigned>, rVarVecToString)
+                       + "}";
             }
         };
 
-        unordered_map<VarIdPair, DepnMap, pair_hash> depnPredMap{};
+        struct DepnMapper {
+            // 写变量idx->[(依赖的读变量id,读变量idx)...]
+            vector<vector<pair<VarIdPair, int>>> wVarVec{};
+            // 读变量idx->[(依赖的写变量idx, 所在结点)...]
+            vector<vector<pair<int, unsigned>>> rVarVec{};
+            // 变量id->(写idx集合, 读idx集合)
+            unordered_map<VarIdPair, pair<unordered_set<int>, unordered_set<int>>, pair_hash> predMap{};
+
+            static string depnPairToString(const pair<unordered_set<int>, unordered_set<int>> &p) {
+                auto lbd = [](const unordered_set<int> &s) -> string {
+                    return Util::hashsetToString(s, Util::numToString<int>);
+                };
+                return Util::pairToString(p, lbd, lbd);
+            }
+
+            static string wPairToString(const pair<VarIdPair, int> &p) {
+                return Util::pairToString(p, Util::numPairToString<VarIdType, VarIdType>, Util::numToString<int>);
+            }
+
+            string toString(const unordered_map<VarIdPair, string, pair_hash> &varMap) const {
+                return "{wVarVec: " + Util::vecToString(
+                        wVarVec, [](const auto &v) -> string {
+                            return Util::vecToString(v, DepnMapper::wPairToString);
+                        }) + ", rVarVec: " + Util::vecToString(
+                        rVarVec, [](const auto &v) -> string {
+                            return Util::vecToString(v, Util::numPairToString<int, unsigned>);
+                        }) + ", predMap: " + Util::hashmapToString(
+                        predMap, [&varMap](const auto &p) -> string {
+                            return varMap.at(p);
+                        }, DepnMapper::depnPairToString) + "}";
+            }
+        };
+
+        DepnMapper depnPredMapper{};
 
         unordered_map<VarIdPair, string, pair_hash> varMap{};
         const unordered_map<string, unsigned> &ASTStmtKindMap;

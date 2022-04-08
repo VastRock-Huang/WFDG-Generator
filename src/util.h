@@ -9,6 +9,7 @@
 #include <vector>
 #include <utility>
 #include <unordered_map>
+#include <unordered_set>
 #include <functional>
 #include <set>
 #include <map>
@@ -75,6 +76,20 @@ namespace wfg {
             }
             return str += "]";
         }
+
+        template<typename T, typename H>
+        static string hashsetToString(const unordered_set<T, H>& s, const function<string(decltype(*s.begin()))>& toStrFunc) {
+            string str = "[";
+            size_t i = 0, sz = s.size();
+            for(auto &item : s) {
+                str += toStrFunc(item);
+                if(++i != sz) {
+                    str += ", ";
+                }
+            }
+            return str += "]";
+        }
+
 
         template<typename T>
         static string setToString(const set<T>& s, const function<string(decltype(*s.begin()))>& toStrFunc) {
