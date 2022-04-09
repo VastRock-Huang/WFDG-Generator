@@ -67,7 +67,7 @@ namespace wfg {
             for (auto &lineWeightPair: lineWeightMap) {
                 // 遍历结点的所有区间
                 for (auto &lineRange: cfgNode.lineRanges) {
-                    int pos = Util::numInRange(lineWeightPair.first, lineRange);
+                    int pos = util::numInRange(lineWeightPair.first, lineRange);
                     if (pos == 0) {
                         markedLines.emplace(lineWeightPair.first);
                         lineWeight = max(lineWeight, lineWeightPair.second);

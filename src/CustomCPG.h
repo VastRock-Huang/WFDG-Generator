@@ -30,12 +30,12 @@ namespace wfg {
             explicit CPGNode(unsigned size) : stmtVec(size) {}
 
             void mergeLineRanges() {
-                Util::mergeLineRanges(lineRanges);
+                util::mergeLineRanges(lineRanges);
             }
 
             static string toString(const CPGNode &node) {
-                return "{lineRanges: " + Util::vecToString(node.lineRanges, Util::numPairToString<unsigned, unsigned>) +
-                       ", stmtVec: " + Util::vecToString(node.stmtVec, Util::numToString<unsigned>) + "}";
+                return "{lineRanges: " + util::vecToString(node.lineRanges, util::numPairToString<unsigned, unsigned>) +
+                       ", stmtVec: " + util::vecToString(node.stmtVec, util::numToString<unsigned>) + "}";
             }
         };
 
@@ -152,14 +152,14 @@ namespace wfg {
 
         string toString() const {
             return "{nodeCnt: " + to_string(_nodeCnt) +
-                   ", nodes: " + Util::vecToString(_nodes, CPGNode::toString) +
+                   ", nodes: " + util::vecToString(_nodes, CPGNode::toString) +
                    ", succCnt: " + to_string(_succCnt) +
-                   ", nodesSuccCnt: " + Util::vecToString(_nodesSuccCnt, Util::numToString<unsigned>) +
-                   ", nodesSuccVec: " + Util::vecToString(_nodesSuccVec, Util::numToString<unsigned>) +
+                   ", nodesSuccCnt: " + util::vecToString(_nodesSuccCnt, util::numToString<unsigned>) +
+                   ", nodesSuccVec: " + util::vecToString(_nodesSuccVec, util::numToString<unsigned>) +
                    ", predCnt: " + to_string(_predCnt) + ", nodesPredCnt: " +
-                   Util::vecToString(_nodesPredCnt, Util::numToString<unsigned>) + ", nodesPredVec: " +
-                   Util::vecToString(_nodesPredVec, Util::numToString<unsigned>) + ", depnEdges: " +
-                   Util::setToString(_depnEdges, Util::numPairToString<unsigned, unsigned>) +
+                   util::vecToString(_nodesPredCnt, util::numToString<unsigned>) + ", nodesPredVec: " +
+                   util::vecToString(_nodesPredVec, util::numToString<unsigned>) + ", depnEdges: " +
+                   util::setToString(_depnEdges, util::numPairToString<unsigned, unsigned>) +
                    +"}";
         }
     };

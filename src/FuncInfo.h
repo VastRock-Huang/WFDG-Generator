@@ -27,16 +27,16 @@ namespace wfg {
         }
 
         static string vecToString(const vector<const string *> &vec) {
-            return Util::vecToString(vec, getIdName);
+            return util::vecToString(vec, getIdName);
         }
 
         static string numVecToString(const vector<unsigned> &vec) {
-            return Util::vecToString(vec, Util::numToString<unsigned>);
+            return util::vecToString(vec, util::numToString<unsigned>);
         }
 
         string toString() const {
-            return "{idMap: " + Util::hashmapToString(idMap, getIdName, numVecToString) + ", lineMap: "
-                   + Util::hashmapToString(lineMap, Util::numToString<unsigned>, vecToString) + "}";
+            return "{idMap: " + util::hashmapToString(idMap, getIdName, numVecToString) + ", lineMap: "
+                   + util::hashmapToString(lineMap, util::numToString<unsigned>, vecToString) + "}";
         }
     };
 
@@ -58,8 +58,8 @@ namespace wfg {
                 : _funcName(std::move(funcName)), _lineRange(move(lineRange)), _customCPG(ASTStmtKindMap) {}
 
         string toString() const {
-            return "{funcName: " + _funcName + ", lineRange: " + Util::numPairToString(_lineRange)
-                   + ", sensitiveLines:" + Util::vecToString(_sensitiveLines, Util::numPairToString<unsigned, unsigned>)
+            return "{funcName: " + _funcName + ", lineRange: " + util::numPairToString(_lineRange)
+                   + ", sensitiveLines:" + util::vecToString(_sensitiveLines, util::numPairToString<unsigned, unsigned>)
                    + ", customCPG: " + _customCPG.toString() + ", idMapper:" + _idMapper.toString() + "}";
         }
 

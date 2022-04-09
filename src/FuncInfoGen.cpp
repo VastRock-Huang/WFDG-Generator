@@ -15,7 +15,7 @@ namespace wfg {
     FuncInfoGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
                                              const pair<unsigned, unsigned> &lineRange) const {
         unsigned sensitiveLine = _config.getSensitiveLine();
-        if (sensitiveLine != 0 && Util::numInRange(sensitiveLine, lineRange) == 0) {
+        if (sensitiveLine != 0 && util::numInRange(sensitiveLine, lineRange) == 0) {
             return {{sensitiveLine, 0}};
         }
         const SourceLocation &beginLoc = functionDecl->getLocation();
@@ -151,7 +151,7 @@ namespace wfg {
             }
 
             llvm::outs() << "Depn Edges: "
-                         << Util::setToString(customCPG.getDepnEdges(), Util::numPairToString<unsigned, unsigned>)
+                         << util::setToString(customCPG.getDepnEdges(), util::numPairToString<unsigned, unsigned>)
                          << '\n';
             llvm::outs() << depnHelper.depnMapToString() << '\n';
         }
@@ -178,7 +178,7 @@ namespace wfg {
                 unsigned lineNo = getCompilerInstance().getASTContext()
                         .getFullLoc(token.getLocation()).getSpellingLineNumber();
                 while (i < funcCnt) {
-                    int ret = Util::numInRange(lineNo, _funcInfoList[i].getLineRange());
+                    int ret = util::numInRange(lineNo, _funcInfoList[i].getLineRange());
                     if (ret == 0) {
                         preLine = lineNo;
                         break;

@@ -22,7 +22,7 @@ namespace wfg {
         using WVarVec = vector<pair<VarIdPair, int>>;
         using RVarVec = vector<pair<int, unsigned>>;
         template<typename T>
-        using VarMap = unordered_map<VarIdPair, T, pair_hash>;
+        using VarMap = unordered_map<VarIdPair, T, util::pair_hash>;
 
     private:
         VarMap<string> _varMap{};
@@ -66,18 +66,18 @@ namespace wfg {
         template<typename T>
         static string
         varMapToString(const VarMap<T> &vMap, const function<string(decltype(vMap.begin()->second))> &vFunc) {
-            return Util::hashmapToString(vMap, Util::numPairToString<VarIdType, VarIdType>, vFunc);
+            return util::hashmapToString(vMap, util::numPairToString<VarIdType, VarIdType>, vFunc);
         }
 
         static string depnPairToString(const pair<unordered_set<int>, unordered_set<int>> &p) {
             auto lbd = [](const unordered_set<int> &s) -> string {
-                return Util::hashsetToString(s, Util::numToString<int>);
+                return util::hashsetToString(s, util::numToString<int>);
             };
-            return Util::pairToString(p, lbd, lbd);
+            return util::pairToString(p, lbd, lbd);
         }
 
         static string wPairToString(const pair<VarIdPair, int> &p) {
-            return Util::pairToString(p, Util::numPairToString<VarIdType, VarIdType>, Util::numToString<int>);
+            return util::pairToString(p, util::numPairToString<VarIdType, VarIdType>, util::numToString<int>);
         }
 
         string toString() const {
@@ -85,12 +85,12 @@ namespace wfg {
                                                             [](const string &s) {
                                                                 return s;
                                                             }) +
-                   ", wVarVec: " + Util::vecToString(
+                   ", wVarVec: " + util::vecToString(
                     _wVarVec, [](const auto &v) -> string {
-                        return Util::vecToString(v, DepnMapper::wPairToString);
-                    }) + ", rVarVec: " + Util::vecToString(
+                        return util::vecToString(v, DepnMapper::wPairToString);
+                    }) + ", rVarVec: " + util::vecToString(
                     _rVarVec, [](const auto &v) -> string {
-                        return Util::vecToString(v, Util::numPairToString<int, unsigned>);
+                        return util::vecToString(v, util::numPairToString < int, unsigned >);
                     }) + ", predMap: " + DepnMapper::varMapToString(
                     _predMap, DepnMapper::depnPairToString) + "}";
         }
