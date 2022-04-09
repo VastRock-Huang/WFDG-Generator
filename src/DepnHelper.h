@@ -6,6 +6,7 @@
 #define WFG_GENERATOR_DEPNHELPER_H
 
 #include "CustomCPG.h"
+#include "DepnMapper.h"
 #include "util.h"
 #include <clang/AST/AST.h>
 #include <unordered_map>
@@ -16,35 +17,29 @@ using namespace clang;
 namespace wfg {
     class DepnHelper {
     public:
-        using VarIdType = CustomCPG::VarIdType;
-        using VarIdPair = CustomCPG::VarIdPair;
-        using VarVec = vector<unordered_map<VarIdPair, int, pair_hash>>;
+        using VarIdType = DepnMapper::VarIdType;
+        using VarIdPair = DepnMapper::VarIdPair;
+        using RVarVec = DepnMapper::RVarVec;
+        using WVarVec = DepnMapper::WVarVec;
+        template<typename T>
+        using VarMap = DepnMapper::VarMap<T>;
 
     private:
         CustomCPG &_customCPG;
-        VarVec &_writtenVarVec;
+        DepnMapper &_depnPredMapper;
+
+        vector<VarMap<int>> _writtenVarVec;
+        VarMap<int> _readVarMap{};
         unsigned _nodeID;
 
-        unordered_map<VarIdPair, string, pair_hash> &_varMap;
 
-//        unordered_map<VarIdPair, CustomCPG::DepnMap, pair_hash> &_depnPredMap;
-//        static unsigned _varIdx;
-
-        CustomCPG::DepnMapper &_depnPredMapper;
-
-//        void
-//        _insertWVarInDepnMap(const VarIdPair &wVarIds, unsigned wVarIdx, vector<pair<VarIdPair, unsigned>> &&rVars) {
-////            _depnPredMap.at(wVarIds).wVarMap.emplace(wVarIdx, rVars);
-//            _depnPredMapper.predMap.at(wVarIds).first.emplace(_depnPredMapper.wVarVec.size());
-//            _depnPredMapper.wVarVec.emplace_back(rVars);
-//
-//        }
-
-//        void _insertRVarInDepnMap(const VarIdPair &rVarIds, unsigned rVarIdx, vector<pair<unsigned, unsigned>> &&pres) {
-////            _depnPredMap.at(rVarIds).rVarMap.emplace(rVarIdx, pres);
-//            _depnPredMapper.predMap.at(rVarIds).second.emplace(_depnPredMapper.rVarVec.size());
-//            _depnPredMapper.rVarVec.emplace_back(pres);
-//        }
+        int _getReadVarIdx(const VarIdPair &ids) const {
+            auto it = _readVarMap.find(ids);
+            if (it != _readVarMap.end()) {
+                return it->second;
+            }
+            return -1;
+        }
 
         int _hasWrittenVarInNode(unsigned nodeID, const VarIdPair &ids) const {
             auto it = _writtenVarVec.at(nodeID).find(ids);
@@ -81,48 +76,62 @@ namespace wfg {
             } else {
                 pres.emplace_back(predIdx, _nodeID);
             }
-            _depnPredMapper.predMap.at(ids).second.emplace(_depnPredMapper.rVarVec.size());
-            _depnPredMapper.rVarVec.emplace_back(pres);
-
-//            if (_noneWrittenVarInNode(_nodeID, ids)) {
-//                _traceReadVar(_nodeID, ids);
-//            }
+            _readVarMap.emplace(ids, _depnPredMapper.pushRVarDetails(ids, move(pres)));
         }
 
-        void _traceReadStructVar(const VarIdPair &memIds, string name) {
+        void _traceReadStructVar(const VarIdPair &memIds, const string &name) {
             if (memIds.first == 0) {
                 return;
             }
-            _insertVarIds(memIds, move(name));
+            _insertVarIds(memIds, name);
             VarIdPair varIds = make_pair(0, memIds.first);
-            vector<pair<int, unsigned>> pres{};
+            RVarVec pres{};
             int predIdx = -1;
             if ((predIdx = _hasWrittenStructInNode(_nodeID, varIds, memIds)) == -1) {
                 _traceReadStructVar(_nodeID, varIds, memIds, pres);
             } else {
                 pres.emplace_back(predIdx, _nodeID);
             }
-            _depnPredMapper.predMap.at(memIds).second.emplace(_depnPredMapper.rVarVec.size());
-            _depnPredMapper.rVarVec.emplace_back(pres);
-//            if (_noneWrittenVarInNode(_nodeID, varIds)
-//                && _noneWrittenVarInNode(_nodeID, memIds)) {
-//                _traceReadStructVar(_nodeID, varIds, memIds);
-//            }
+            _readVarMap.emplace(memIds, _depnPredMapper.pushRVarDetails(memIds, move(pres)));
         }
 
-        void _recordWrittenVar(const VarIdPair &ids, vector<pair<VarIdPair, int>> &&rVars) {
-            _writtenVarVec.at(_nodeID).emplace(ids, _depnPredMapper.wVarVec.size());
-            _depnPredMapper.predMap.at(ids).first.emplace(_depnPredMapper.wVarVec.size());
-            _depnPredMapper.wVarVec.emplace_back(rVars);
-        }
-
-        void _recordWrittenStruct(const VarIdPair &memIds, string name, vector<pair<VarIdPair, int>> &&rVars) {
-            if (memIds.first != 0) {
-                _insertVarIds(memIds, move(name));
-                _writtenVarVec.at(_nodeID).emplace(memIds, _depnPredMapper.wVarVec.size());
-                _depnPredMapper.predMap.at(memIds).first.emplace(_depnPredMapper.wVarVec.size());
-                _depnPredMapper.wVarVec.emplace_back(rVars);
+        void _collectRVarsOfWVar(const Stmt *stmt, WVarVec &res) const {
+            if (isa<DeclRefExpr>(stmt)) {
+                const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
+                if (isa<VarDecl>(refExpr->getDecl())) {
+                    VarIdPair ids = _getRefVarIds(refExpr);
+                    res.emplace_back(ids, _getReadVarIdx(ids));
+                }
+            } else if (isa<MemberExpr>(stmt)) {
+                const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
+                VarIdPair memIds = _getStructIds(memberExpr);
+                res.emplace_back(memIds, _getReadVarIdx(memIds));
+            } else {
+                for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
+                    _collectRVarsOfWVar(*it, res);
+                }
             }
+        }
+
+        void _recordWrittenVar(const VarIdPair &ids, WVarVec &&vars) {
+            _writtenVarVec.at(_nodeID)
+                    .emplace(ids, _depnPredMapper.pushWVarDetails(ids, move(vars)));
+        }
+
+        void _recordWrittenStruct(const VarIdPair &memIds, const string &name, WVarVec &&vars) {
+            if (memIds.first != 0) {
+                _insertVarIds(memIds, name);
+                _writtenVarVec.at(_nodeID)
+                        .emplace(memIds, _depnPredMapper.pushWVarDetails(memIds, move(vars)));
+            }
+        }
+
+        void _insertVarIds(const VarIdPair &ids, const string &varName) {
+            _depnPredMapper.pushVar(ids, varName);
+        }
+
+        string _getVarNameByIds(const VarIdPair &ids) const {
+            return _depnPredMapper.getVarNameByIds(ids);
         }
 
         void _depnOfDeclRefExpr(const Stmt *stmt);
@@ -132,19 +141,6 @@ namespace wfg {
         void _depnOfIncDecOp(const UnaryOperator *op);
 
         void _depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr);
-
-        void _insertVarIds(VarIdPair ids, string varName) {
-            _depnPredMapper.predMap.emplace(ids, make_pair(unordered_set<int>(),unordered_set<int>()));
-            _varMap.emplace(move(ids), move(varName));
-        }
-
-        string _getVarNameByIds(const VarIdPair &ids) const {
-            return _varMap.at(ids);
-        }
-
-        static string getVarNameByIds(const DepnHelper &helper, const VarIdPair &ids) {
-            return helper._varMap.at(ids);
-        }
 
         static VarIdPair _getRefVarIds(const DeclRefExpr *refExpr) {
             return make_pair(0, refExpr->getDecl()->getID());
@@ -188,24 +184,6 @@ namespace wfg {
             return name;
         }
 
-        void _collectRVarsOfWVar(const Stmt *stmt, vector<pair<VarIdPair, int>> &res) const {
-            if (isa<DeclRefExpr>(stmt)) {
-                const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
-                VarIdPair ids = _getRefVarIds(refExpr);
-                // FIXME: 变量的读idx错误
-                res.emplace_back(ids, _hasWrittenVarInNode(_nodeID, ids));
-            } else if (isa<MemberExpr>(stmt)) {
-                const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
-                VarIdPair memIds = _getStructIds(memberExpr);
-                VarIdPair varIds = make_pair(0, memIds.first);
-                res.emplace_back(memIds, _hasWrittenStructInNode(_nodeID, varIds, memIds));
-            } else {
-                for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
-                    _collectRVarsOfWVar(*it, res);
-                }
-            }
-        }
-
 //        static bool _isStructDecl(const VarDecl *varDecl) {
 //            const Type *type = varDecl->getType().getTypePtr();
 //            while (type->isPointerType()) {
@@ -214,13 +192,12 @@ namespace wfg {
 //            return type->isStructureType();
 //        }
 
-        void _buildDepn(const Stmt *stmt, bool canVisitCall = true);
+        void _buildDepn(const Stmt *stmt, bool canVisitCall = false);
 
     public:
-        DepnHelper(CustomCPG &customCPG, VarVec &writtenVarVec, unsigned nodeID)
-                : _customCPG(customCPG), _writtenVarVec(writtenVarVec), _nodeID(nodeID),
-                  _varMap(customCPG.varMap),
-                  _depnPredMapper(customCPG.depnPredMapper) {}
+        DepnHelper(CustomCPG &customCPG, unsigned nodeCnt, unsigned nodeID)
+                : _customCPG(customCPG), _depnPredMapper(customCPG.getDepnMapper()),
+                  _writtenVarVec(nodeCnt), _nodeID(nodeID) {}
 
         void buildDepn(const Stmt *stmt) {
             _buildDepn(stmt, true);
@@ -240,10 +217,11 @@ namespace wfg {
 
         void updateNodeID(unsigned nodeID) {
             _nodeID = nodeID;
+            _readVarMap.clear();
         }
 
         string depnMapToString() const {
-            return "depnPredMapper: " + _depnPredMapper.toString(_varMap);
+            return "depnPredMapper: " + _depnPredMapper.toString();
         }
     };
 }

@@ -103,12 +103,6 @@ namespace wfg {
             } else {
                 _traceReadVar(predNode, ids, pres);
             }
-//            if (_noneWrittenVarInNode(predNode, ids)) {
-//                _traceReadVar(predNode, ids, pres);
-//            } else {
-//                llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
-//                _customCPG.addDepnEdge(predNode, _nodeID);
-//            }
         }
     }
 
@@ -126,14 +120,6 @@ namespace wfg {
             } else {
                 _traceReadStructVar(predNode, varIds, memIds, pres);
             }
-
-//            if (_noneWrittenVarInNode(predNode, varIds)
-//                && _noneWrittenVarInNode(predNode, memIds)) {
-//                _traceReadStructVar(predNode, varIds, memIds);
-//            } else {
-//                llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';
-//                _customCPG.addDepnEdge(predNode, _nodeID);
-//            }
         }
     }
 
@@ -182,7 +168,7 @@ namespace wfg {
 //                    });
             llvm::outs() << "RW_Mem:" << name << '\n';
         }
-        _recordWrittenVar(ids, {make_pair(ids, _depnPredMapper.rVarVec.size()-1)});
+        _recordWrittenVar(ids, {make_pair(ids, _depnPredMapper.rVarVecSize()-1)});
     }
 
     void DepnHelper::_depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) {
