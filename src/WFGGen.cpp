@@ -183,12 +183,12 @@ namespace wfg {
     }
 
     vector<WFG> WFGGenerator::genWFGs() {
-        if (_funcInfo.getSensitiveLinePairs().empty()) {
+        if (_funcInfo.getCustomCPG().getSensitiveLinePairs().empty()) {
             return {_genWFGWithoutSensitiveLine()};
         }
 
         vector<WFG> wfgs{};
-        for (const auto &linePair: _funcInfo.getSensitiveLinePairs()) {
+        for (const auto &linePair: _funcInfo.getCustomCPG().getSensitiveLinePairs()) {
             unsigned rootLine = linePair.first;
             map<unsigned, double> lineWeightMap{};
             _genLineWeight(rootLine, lineWeightMap);

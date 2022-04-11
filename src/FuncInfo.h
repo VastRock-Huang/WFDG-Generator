@@ -59,22 +59,13 @@ namespace wfg {
 
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + util::numPairToString(_lineRange)
-                   + ", sensitiveLines:" + util::vecToString(_sensitiveLines, util::numPairToString<unsigned, unsigned>)
                    + ", customCPG: " + _customCPG.toString() + ", idMapper:" + _idMapper.toString() + "}";
-        }
-
-        void setSensitiveLines(vector<pair<unsigned, unsigned>> &&sensitiveLines) {
-            _sensitiveLines = sensitiveLines;
         }
 
         void insertIdentifier(const string &id, unsigned lineNo);
 
         pair<unsigned, unsigned> getLineRange() const {
             return _lineRange;
-        }
-
-        const vector<pair<unsigned ,unsigned >>& getSensitiveLinePairs() const {
-            return _sensitiveLines;
         }
 
         const IdMapper& getIdMapper() const {

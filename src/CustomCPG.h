@@ -53,6 +53,7 @@ namespace wfg {
         vector<unsigned> _nodesPredCnt{};
         vector<unsigned> _nodesPredVec{};
 
+        vector<pair<unsigned, unsigned>> _sensitiveLines{};
         set<pair<unsigned, unsigned>> _depnEdges{};
         DepnMapper _depnPredMapper{};
 
@@ -62,7 +63,7 @@ namespace wfg {
 
         explicit CustomCPG(const unordered_map<string, unsigned> &ASTStmtKindMap) : ASTStmtKindMap(ASTStmtKindMap) {}
 
-        DepnMapper& getDepnMapper() {
+        DepnMapper &getDepnMapper() {
             return _depnPredMapper;
         }
 
@@ -146,6 +147,14 @@ namespace wfg {
             }
         }
 
+        void pushSensitiveLine(unsigned lineNum, unsigned typeID) {
+            _sensitiveLines.emplace_back(lineNum, typeID);
+        }
+
+        const vector<pair<unsigned, unsigned>> &getSensitiveLinePairs() const {
+            return _sensitiveLines;
+        }
+
         const set<pair<unsigned, unsigned>> &getDepnEdges() const {
             return _depnEdges;
         }
@@ -156,11 +165,16 @@ namespace wfg {
                    ", succCnt: " + to_string(_succCnt) +
                    ", nodesSuccCnt: " + util::vecToString(_nodesSuccCnt, util::numToString<unsigned>) +
                    ", nodesSuccVec: " + util::vecToString(_nodesSuccVec, util::numToString<unsigned>) +
-                   ", predCnt: " + to_string(_predCnt) + ", nodesPredCnt: " +
-                   util::vecToString(_nodesPredCnt, util::numToString<unsigned>) + ", nodesPredVec: " +
-                   util::vecToString(_nodesPredVec, util::numToString<unsigned>) + ", depnEdges: " +
+                   ", predCnt: " + to_string(_predCnt) +
+                   ", nodesPredCnt: " +
+                   util::vecToString(_nodesPredCnt, util::numToString<unsigned>) +
+                   ", nodesPredVec: " +
+                   util::vecToString(_nodesPredVec, util::numToString<unsigned>) +
+                   ", sensitiveLines:" +
+                   util::vecToString(_sensitiveLines, util::numPairToString<unsigned, unsigned>) +
+                   ", depnEdges: " +
                    util::setToString(_depnEdges, util::numPairToString<unsigned, unsigned>) +
-                   +"}";
+                   "}";
         }
     };
 
