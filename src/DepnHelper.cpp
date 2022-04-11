@@ -88,37 +88,37 @@ namespace wfg {
         }
     }
 
-    void DepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids, vector<pair<int, unsigned>> &pres) {
+    void DepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids, vector<RefPair> &refFrom) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
             if (predNode <= searchNode) {
                 continue;
             }
-            int preIdx = -1;
-            if ((preIdx = _hasWrittenVarInNode(predNode, ids)) != -1) {
+            int leftIdx = -1;
+            if ((leftIdx = _hasWrittenVarInNode(predNode, ids)) != -1) {
                 llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
                 _customCPG.addDepnEdge(predNode, _nodeID);
-                pres.emplace_back(preIdx, predNode);
+                refFrom.emplace_back(leftIdx, predNode);
             } else {
-                _traceReadVar(predNode, ids, pres);
+                _traceReadVar(predNode, ids, refFrom);
             }
         }
     }
 
 
     void DepnHelper::_traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                         const VarIdPair &memIds, vector<pair<int, unsigned>> &pres) {
+                                         const VarIdPair &memIds, vector<RefPair> &refFrom) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
-            int preIdx = -1;
-            if ((preIdx = _hasWrittenStructInNode(predNode, varIds, memIds)) != -1) {
+            int leftIdx = -1;
+            if ((leftIdx = _hasWrittenStructInNode(predNode, varIds, memIds)) != -1) {
                 llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';
                 _customCPG.addDepnEdge(predNode, _nodeID);
-                pres.emplace_back(preIdx, predNode);
+                refFrom.emplace_back(leftIdx, predNode);
             } else {
-                _traceReadStructVar(predNode, varIds, memIds, pres);
+                _traceReadStructVar(predNode, varIds, memIds, refFrom);
             }
         }
     }
@@ -168,7 +168,7 @@ namespace wfg {
 //                    });
             llvm::outs() << "RW_Mem:" << name << '\n';
         }
-        _recordWrittenVar(ids, {make_pair(ids, _depnPredMapper.rVarVecSize()-1)});
+        _recordWrittenVar(ids, {make_pair(ids, _depnPredMapper.rightVecSize() - 1)});
     }
 
     void DepnHelper::_depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) {

@@ -20,11 +20,11 @@ namespace wfg {
     namespace util {
         template<typename T>
         string numToString(T num) {
-            return move(to_string(num));
+            return to_string(num);
         }
 
         template<typename T>
-        string vecToString(const vector<T> &vec, const function<string(decltype(*vec.begin()))> &toStrFunc) {
+        string vecToString(const vector<T> &vec, const function<string(decltype(vec.front()))> &toStrFunc) {
             string str = "[";
             size_t sz = vec.size();
             for (size_t i = 0; i < sz; ++i) {

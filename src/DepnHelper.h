@@ -19,8 +19,8 @@ namespace wfg {
     public:
         using VarIdType = DepnMapper::VarIdType;
         using VarIdPair = DepnMapper::VarIdPair;
-        using RVarVec = DepnMapper::RVarVec;
-        using WVarVec = DepnMapper::WVarVec;
+        using RefPair = DepnMapper::RefPair;
+        using AssignPair = DepnMapper::AssignPair;
         template<typename T>
         using VarMap = DepnMapper::VarMap<T>;
 
@@ -63,20 +63,20 @@ namespace wfg {
             return -1;
         }
 
-        void _traceReadVar(unsigned searchNode, const VarIdPair &ids, vector<pair<int, unsigned>> &pres);
+        void _traceReadVar(unsigned searchNode, const VarIdPair &ids, vector<RefPair> &refFrom);
 
         void _traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                 const VarIdPair &memIds, vector<pair<int, unsigned>> &pres);
+                                 const VarIdPair &memIds, vector<RefPair> &refFrom);
 
         void _traceReadVar(const VarIdPair &ids) {
-            vector<pair<int, unsigned>> pres{};
+            vector<RefPair> refFrom{};
             int predIdx = -1;
             if ((predIdx = _hasWrittenVarInNode(_nodeID, ids)) == -1) {
-                _traceReadVar(_nodeID, ids, pres);
+                _traceReadVar(_nodeID, ids, refFrom);
             } else {
-                pres.emplace_back(predIdx, _nodeID);
+                refFrom.emplace_back(predIdx, _nodeID);
             }
-            _readVarMap.emplace(ids, _depnPredMapper.pushRVarDetails(ids, move(pres)));
+            _readVarMap.emplace(ids, _depnPredMapper.pushRefInfo(ids, _nodeID, move(refFrom)));
         }
 
         void _traceReadStructVar(const VarIdPair &memIds, const string &name) {
@@ -85,17 +85,18 @@ namespace wfg {
             }
             _insertVarIds(memIds, name);
             VarIdPair varIds = make_pair(0, memIds.first);
-            RVarVec pres{};
+            vector<RefPair> refFrom{};
             int predIdx = -1;
             if ((predIdx = _hasWrittenStructInNode(_nodeID, varIds, memIds)) == -1) {
-                _traceReadStructVar(_nodeID, varIds, memIds, pres);
+                _traceReadStructVar(_nodeID, varIds, memIds, refFrom);
             } else {
-                pres.emplace_back(predIdx, _nodeID);
+                refFrom.emplace_back(predIdx, _nodeID);
             }
-            _readVarMap.emplace(memIds, _depnPredMapper.pushRVarDetails(memIds, move(pres)));
+            _readVarMap.emplace(memIds,
+                                _depnPredMapper.pushRefInfo(memIds, _nodeID, move(refFrom)));
         }
 
-        void _collectRVarsOfWVar(const Stmt *stmt, WVarVec &res) const {
+        void _collectRVarsOfWVar(const Stmt *stmt, vector<AssignPair> &res) const {
             if (isa<DeclRefExpr>(stmt)) {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
                 if (isa<VarDecl>(refExpr->getDecl())) {
@@ -113,16 +114,16 @@ namespace wfg {
             }
         }
 
-        void _recordWrittenVar(const VarIdPair &ids, WVarVec &&vars) {
+        void _recordWrittenVar(const VarIdPair &ids, vector<AssignPair> &&assignFrom) {
             _writtenVarVec.at(_nodeID)
-                    .emplace(ids, _depnPredMapper.pushWVarDetails(ids, move(vars)));
+                    .emplace(ids, _depnPredMapper.pushAssignInfo(ids, move(assignFrom)));
         }
 
-        void _recordWrittenStruct(const VarIdPair &memIds, const string &name, WVarVec &&vars) {
+        void _recordWrittenStruct(const VarIdPair &memIds, const string &name, vector<AssignPair> &&assignFrom) {
             if (memIds.first != 0) {
                 _insertVarIds(memIds, name);
                 _writtenVarVec.at(_nodeID)
-                        .emplace(memIds, _depnPredMapper.pushWVarDetails(memIds, move(vars)));
+                        .emplace(memIds, _depnPredMapper.pushAssignInfo(memIds, move(assignFrom)));
             }
         }
 
