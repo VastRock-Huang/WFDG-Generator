@@ -113,12 +113,6 @@ namespace wfg {
             }
             writtenExpr = *(writtenExpr->child_begin());
         }
-        if (isa<DeclRefExpr>(writtenExpr)) {
-            const DeclRefExpr *writtenRefDecl = cast<DeclRefExpr>(writtenExpr);
-            _doDepnOfWrittenRef(writtenRefDecl);
-        } else if (isa<MemberExpr>(writtenExpr)) {
-            const MemberExpr *memberExpr = cast<MemberExpr>(writtenExpr);
-            _doDepnOfWrittenMember(memberExpr);
-        }
+        _doDepnOfWrittenVar(writtenExpr, readExpr);
     }
 }

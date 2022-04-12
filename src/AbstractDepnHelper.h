@@ -9,7 +9,6 @@
 #include "DepnMapper.h"
 #include "util.h"
 #include <clang/AST/AST.h>
-#include <clang/AST/ASTContext.h>
 #include <unordered_map>
 #include <utility>
 
@@ -29,9 +28,7 @@ namespace wfg {
 
         virtual void _doDepnOfReadMember(const MemberExpr *memberExpr) = 0;
 
-        virtual void _doDepnOfWrittenRef(const DeclRefExpr *refExpr) = 0;
-
-        virtual void _doDepnOfWrittenMember(const MemberExpr *memberExpr) = 0;
+        virtual void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) = 0;
 
         virtual void _doDepnOfRWVar(const Stmt *stmt) = 0;
 
@@ -45,26 +42,19 @@ namespace wfg {
             return make_pair(0, refExpr->getDecl()->getID());
         }
 
-        static string _getStructIdsAndName(const MemberExpr *memberExpr, VarIdPair &ids) {
+        static VarIdPair _getStructIds(const MemberExpr *memberExpr) {
             const Stmt *childStmt = *(memberExpr->child_begin());
-            while (!isa<DeclRefExpr>(childStmt) && !isa<MemberExpr>(childStmt)) {
+            while (!isa<DeclRefExpr>(childStmt)) {
                 if (childStmt->child_begin() == childStmt->child_end()) {
                     return {};
                 }
                 childStmt = *(childStmt->child_begin());
             }
-            string name{};
             if (isa<DeclRefExpr>(childStmt)) {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(childStmt);
-                name.append(refExpr->getNameInfo().getAsString());
-                ids = make_pair(refExpr->getDecl()->getID(), memberExpr->getMemberDecl()->getID());
-            } else if (isa<MemberExpr>(childStmt)) {
-                const MemberExpr *childMem = cast<MemberExpr>(childStmt);
-                name.append(_getStructIdsAndName(childMem, ids));
+                return make_pair(refExpr->getDecl()->getID(), memberExpr->getMemberDecl()->getID());
             }
-            name.append(memberExpr->isArrow() ? "->" : ".");
-            name.append(memberExpr->getMemberDecl()->getNameAsString());
-            return name;
+            return {};
         }
 
 //        static bool _isStructDecl(const VarDecl *varDecl) {
