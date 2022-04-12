@@ -9,6 +9,7 @@
 #include "DepnMapper.h"
 #include "util.h"
 #include <clang/AST/AST.h>
+#include <clang/AST/ASTContext.h>
 #include <unordered_map>
 #include <utility>
 
@@ -25,6 +26,7 @@ namespace wfg {
         using VarMap = DepnMapper::VarMap<T>;
 
     private:
+        const ASTContext &_context;
         CustomCPG &_customCPG;
         DepnMapper &_depnPredMapper;
 
@@ -68,7 +70,7 @@ namespace wfg {
         void _traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
                                  const VarIdPair &memIds, vector<RefPair> &refFrom);
 
-        void _traceReadVar(const VarIdPair &ids) {
+        void _traceReadVar(const VarIdPair &ids, unsigned lineNum) {
             vector<RefPair> refFrom{};
             int predIdx = -1;
             if ((predIdx = _hasWrittenVarInNode(_nodeID, ids)) == -1) {
@@ -76,10 +78,14 @@ namespace wfg {
             } else {
                 refFrom.emplace_back(predIdx, _nodeID);
             }
-            _readVarMap.emplace(ids, _depnPredMapper.pushRefInfo(ids, _nodeID, move(refFrom)));
+            int rightIdx = _depnPredMapper.pushRefInfo(ids, _nodeID, move(refFrom));
+            _readVarMap.emplace(ids, rightIdx);
+            if (_customCPG.inSensitiveLine(lineNum)) {
+                _depnPredMapper.pushSensitiveRVar(ids, rightIdx);
+            }
         }
 
-        void _traceReadStructVar(const VarIdPair &memIds, const string &name) {
+        void _traceReadStructVar(const VarIdPair &memIds, const string &name, unsigned lineNum) {
             if (memIds.first == 0) {
                 return;
             }
@@ -92,8 +98,11 @@ namespace wfg {
             } else {
                 refFrom.emplace_back(predIdx, _nodeID);
             }
-            _readVarMap.emplace(memIds,
-                                _depnPredMapper.pushRefInfo(memIds, _nodeID, move(refFrom)));
+            int rightIdx = _depnPredMapper.pushRefInfo(memIds, _nodeID, move(refFrom));
+            _readVarMap.emplace(memIds, rightIdx);
+            if (_customCPG.inSensitiveLine(lineNum)) {
+                _depnPredMapper.pushSensitiveRVar(memIds, rightIdx);
+            }
         }
 
         void _collectRVarsOfWVar(const Stmt *stmt, vector<AssignPair> &res) const {
@@ -114,16 +123,23 @@ namespace wfg {
             }
         }
 
-        void _recordWrittenVar(const VarIdPair &ids, vector<AssignPair> &&assignFrom) {
-            _writtenVarVec.at(_nodeID)
-                    .emplace(ids, _depnPredMapper.pushAssignInfo(ids, move(assignFrom)));
+        void _recordWrittenVar(const VarIdPair &ids, vector<AssignPair> &&assignFrom, unsigned lineNum) {
+            int leftIdx = _depnPredMapper.pushAssignInfo(ids, move(assignFrom));
+            _writtenVarVec.at(_nodeID).emplace(ids, leftIdx);
+            if (_customCPG.inSensitiveLine(lineNum)) {
+                _depnPredMapper.pushSensitiveWVar(ids, leftIdx);
+            }
         }
 
-        void _recordWrittenStruct(const VarIdPair &memIds, const string &name, vector<AssignPair> &&assignFrom) {
+        void _recordWrittenStruct(const VarIdPair &memIds, const string &name, vector<AssignPair> &&assignFrom,
+                                  unsigned lineNum) {
             if (memIds.first != 0) {
                 _insertVarIds(memIds, name);
-                _writtenVarVec.at(_nodeID)
-                        .emplace(memIds, _depnPredMapper.pushAssignInfo(memIds, move(assignFrom)));
+                int leftIdx = _depnPredMapper.pushAssignInfo(memIds, move(assignFrom));
+                _writtenVarVec.at(_nodeID).emplace(memIds, leftIdx);
+                if(_customCPG.inSensitiveLine(lineNum)) {
+                    _depnPredMapper.pushSensitiveWVar(memIds, leftIdx);
+                }
             }
         }
 
@@ -142,6 +158,12 @@ namespace wfg {
         void _depnOfIncDecOp(const UnaryOperator *op);
 
         void _depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr);
+
+        void _buildDepn(const Stmt *stmt, bool canVisitCall = false);
+
+        unsigned _getLineNumber(const SourceLocation &loc) const {
+            return _context.getFullLoc(loc).getSpellingLineNumber();
+        }
 
         static VarIdPair _getRefVarIds(const DeclRefExpr *refExpr) {
             return make_pair(0, refExpr->getDecl()->getID());
@@ -193,11 +215,9 @@ namespace wfg {
 //            return type->isStructureType();
 //        }
 
-        void _buildDepn(const Stmt *stmt, bool canVisitCall = false);
-
     public:
-        DepnHelper(CustomCPG &customCPG, unsigned nodeCnt, unsigned nodeID)
-                : _customCPG(customCPG), _depnPredMapper(customCPG.getDepnMapper()),
+        DepnHelper(const ASTContext &context, CustomCPG &customCPG, unsigned nodeCnt, unsigned nodeID)
+                : _context(context), _customCPG(customCPG), _depnPredMapper(customCPG.getDepnMapper()),
                   _writtenVarVec(nodeCnt), _nodeID(nodeID) {}
 
         void buildDepn(const Stmt *stmt) {
@@ -212,7 +232,7 @@ namespace wfg {
                 _buildDepn(initExpr);
                 _collectRVarsOfWVar(initExpr, res);
             }
-            _recordWrittenVar(ids, move(res));
+            _recordWrittenVar(ids, move(res), 0);
             llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
 

@@ -155,6 +155,12 @@ namespace wfg {
             return _sensitiveLines;
         }
 
+        bool inSensitiveLine(unsigned lineNum) const {
+            return any_of(_sensitiveLines.cbegin(), _sensitiveLines.cend(), [lineNum](const auto& p){
+                return lineNum == p.first;
+            });
+        }
+
         const set<pair<unsigned, unsigned>> &getDepnEdges() const {
             return _depnEdges;
         }

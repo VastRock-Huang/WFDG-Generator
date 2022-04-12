@@ -88,6 +88,9 @@ namespace wfg {
         VarMap<unordered_set<int>> _rightMap{};
         vector<RightData> _rightVec{};
 
+        vector<pair<VarIdPair, int>> _sensitiveWVars;
+        vector<pair<VarIdPair, int>> _sensitiveRVars;
+
     public:
         unsigned rightVecSize() const {
             return _rightVec.size();
@@ -125,6 +128,14 @@ namespace wfg {
             return _varMap.at(ids);
         }
 
+        void pushSensitiveWVar(const VarIdPair& ids, int leftIdx) {
+            _sensitiveWVars.emplace_back(ids, leftIdx);
+        }
+
+        void pushSensitiveRVar(const VarIdPair& ids, int rightIdx) {
+            _sensitiveRVars.emplace_back(ids, rightIdx);
+        }
+
         string toString() const {
             auto hashsetToStr = [](const unordered_set<int> &s) -> string {
                 return util::hashsetToString(s, util::numToString < int > );
@@ -137,6 +148,8 @@ namespace wfg {
                    "rightVec: " + util::vecToString(_rightVec, RightData::toString) + ",\n" +
                    "leftMap: " + varMapToString(_leftMap, hashsetToStr) + ",\n" +
                    "rightMap: " + varMapToString(_rightMap, hashsetToStr) + "\n" +
+                   "sensitiveWVars: " + util::vecToString(_sensitiveWVars, assignPairToString) + "\n" +
+                   "sensitiveRVars: " + util::vecToString(_sensitiveRVars, assignPairToString) +
                    "}";
         }
     };

@@ -126,7 +126,7 @@ namespace wfg {
     void DepnHelper::_depnOfDeclRefExpr(const Stmt *stmt) {
         const DeclRefExpr *declRefExpr = cast<DeclRefExpr>(stmt);
         if (isa<VarDecl>(declRefExpr->getDecl())) {
-            _traceReadVar(_getRefVarIds(declRefExpr));
+            _traceReadVar(_getRefVarIds(declRefExpr), _getLineNumber(declRefExpr->getLocation()));
             llvm::outs() << "R_Decl:" << declRefExpr->getNameInfo().getAsString() << '\n';
         }
     }
@@ -135,7 +135,7 @@ namespace wfg {
         const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
         pair<VarIdType, VarIdType> ids{0, 0};
         string name = _getStructIdsAndName(memberExpr, ids);
-        _traceReadStructVar(ids, name);
+        _traceReadStructVar(ids, name, _getLineNumber(memberExpr->getMemberLoc()));
         llvm::outs() << "R_Mem:" << name << '\n';
     }
 
@@ -149,17 +149,20 @@ namespace wfg {
         }
 
         pair<VarIdType, VarIdType> ids{};
+        unsigned lineNum{};
         if (isa<DeclRefExpr>(childExpr)) {
             const DeclRefExpr *declRefExpr = cast<DeclRefExpr>(childExpr);
             ids = _getRefVarIds(declRefExpr);
-            _traceReadVar(ids);
+            lineNum = _getLineNumber(declRefExpr->getLocation());
+            _traceReadVar(ids, lineNum);
 //            _insertWVarInDepnMap(ids, idx,
 //                                 {make_pair(ids, _hasWrittenVarInNode(_nodeID, ids))});
             llvm::outs() << "RW_Decl:" << declRefExpr->getNameInfo().getAsString() << '\n';
         } else if (isa<MemberExpr>(childExpr)) {
             const MemberExpr *memberExpr = cast<MemberExpr>(childExpr);
             string name = _getStructIdsAndName(memberExpr, ids);
-            _traceReadStructVar(ids, name);
+            lineNum = _getLineNumber(memberExpr->getMemberLoc());
+            _traceReadStructVar(ids, name, lineNum);
 //            _insertWVarInDepnMap(
 //                    ids, idx, {
 //                            make_pair(ids,
@@ -168,7 +171,7 @@ namespace wfg {
 //                    });
             llvm::outs() << "RW_Mem:" << name << '\n';
         }
-        _recordWrittenVar(ids, {make_pair(ids, _depnPredMapper.rightVecSize() - 1)});
+        _recordWrittenVar(ids, {make_pair(ids, _depnPredMapper.rightVecSize() - 1)}, lineNum);
     }
 
     void DepnHelper::_depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) {
@@ -186,13 +189,12 @@ namespace wfg {
             const DeclRefExpr *writtenRefDecl = cast<DeclRefExpr>(writtenExpr);
             llvm::outs() << "W_Ref:" << writtenRefDecl->getNameInfo().getAsString() << '\n';
             ids = _getRefVarIds(writtenRefDecl);
-            _recordWrittenVar(ids, move(res));
+            _recordWrittenVar(ids, move(res), _getLineNumber(writtenRefDecl->getLocation()));
         } else if (isa<MemberExpr>(writtenExpr)) {
             const MemberExpr *memberExpr = cast<MemberExpr>(writtenExpr);
             string name = _getStructIdsAndName(memberExpr, ids);
-            _recordWrittenStruct(ids, name, move(res));
+            _recordWrittenStruct(ids, name, move(res), _getLineNumber(memberExpr->getMemberLoc()));
             llvm::outs() << "W_Mem:" << name << '\n';
         }
-//        _insertWVarInDepnMap(ids, idx, move(res));
     }
 }
