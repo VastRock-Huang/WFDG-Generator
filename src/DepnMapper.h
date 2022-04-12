@@ -106,7 +106,7 @@ namespace wfg {
 
         int pushAssignInfo(const VarIdPair &ids, vector<AssignPair> &&assignFrom) {
             int leftIdx = static_cast<int>(_leftVec.size());
-            _leftMap.at(ids).emplace(leftIdx);
+            _leftMap[ids].emplace(leftIdx);
             for (const AssignPair &p: assignFrom) {
                 _rightVec.at(p.second).assignTo = make_pair(ids, leftIdx);
             }
@@ -116,7 +116,7 @@ namespace wfg {
 
         int pushRefInfo(const VarIdPair &ids, unsigned curNode, vector<RefPair> &&refFrom) {
             int rightIdx = static_cast<int>(_rightVec.size());
-            _rightMap.at(ids).emplace(rightIdx);
+            _rightMap[ids].emplace(rightIdx);
             for (const RefPair &p: refFrom) {
                 _leftVec.at(p.first).refTo.emplace_back(rightIdx, curNode);
             }
