@@ -55,7 +55,7 @@ namespace wfg {
 
         vector<pair<unsigned, unsigned>> _sensitiveLines{};
         set<pair<unsigned, unsigned>> _depnEdges{};
-        DepnMapper _depnPredMapper{};
+        DepnMapper _depnMapper{};
 
     public:
 
@@ -64,7 +64,7 @@ namespace wfg {
         explicit CustomCPG(const unordered_map<string, unsigned> &ASTStmtKindMap) : ASTStmtKindMap(ASTStmtKindMap) {}
 
         DepnMapper &getDepnMapper() {
-            return _depnPredMapper;
+            return _depnMapper;
         }
 
         void initNodeCnt(unsigned nodeCnt) {
@@ -156,7 +156,7 @@ namespace wfg {
         }
 
         bool inSensitiveLine(unsigned lineNum) const {
-            return any_of(_sensitiveLines.cbegin(), _sensitiveLines.cend(), [lineNum](const auto& p){
+            return any_of(_sensitiveLines.cbegin(), _sensitiveLines.cend(), [lineNum](const auto &p) {
                 return lineNum == p.first;
             });
         }
@@ -178,8 +178,10 @@ namespace wfg {
                    util::vecToString(_nodesPredVec, util::numToString<unsigned>) +
                    ", sensitiveLines:" +
                    util::vecToString(_sensitiveLines, util::numPairToString<unsigned, unsigned>) +
-                   ", depnEdges: " +
-                   util::setToString(_depnEdges, util::numPairToString<unsigned, unsigned>) +
+                   (_sensitiveLines.empty() ?
+                    ", depnEdges: " +
+                    util::setToString(_depnEdges, util::numPairToString<unsigned, unsigned>)
+                                            : ", depnMapper: " + _depnMapper.toString()) +
                    "}";
         }
     };
