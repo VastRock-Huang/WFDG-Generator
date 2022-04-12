@@ -5,7 +5,7 @@
 
 #include "FuncInfo.h"
 #include "FuncInfoGen.h"
-#include "DepnHelper.h"
+#include "SimplifiedDepnHelper.h"
 #include <llvm/ADT/StringRef.h>
 #include <string>
 
@@ -132,7 +132,7 @@ namespace wfg {
 
     void FuncInfoGenConsumer::_buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
                                               CustomCPG &customCPG) const {
-        DepnHelper depnHelper(_context, customCPG, wholeCFG->size(), wholeCFG->size() - 1);
+        SimplifiedDepnHelper depnHelper(customCPG, wholeCFG->size(), wholeCFG->size() - 1);
         for (const ParmVarDecl *paramVarDecl: funcDecl->parameters()) {
             depnHelper.depnOfDecl(paramVarDecl);
         }
@@ -152,7 +152,6 @@ namespace wfg {
             llvm::outs() << "Depn Edges: "
                          << util::setToString(customCPG.getDepnEdges(), util::numPairToString<unsigned, unsigned>)
                          << '\n';
-            llvm::outs() << depnHelper.depnMapToString() << '\n';
         }
     }
 
