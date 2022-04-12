@@ -51,7 +51,14 @@ namespace wfg {
             case Stmt::UnaryOperatorClass: {
                 const UnaryOperator *op = cast<UnaryOperator>(stmt);
                 if (op->isIncrementDecrementOp()) {
-                    _depnOfIncDecOp(op);
+                    const Stmt *childExpr = op->getSubExpr();
+                    while (!isa<DeclRefExpr>(childExpr) && !isa<MemberExpr>(childExpr)) {
+                        if (childExpr->child_begin() == childExpr->child_end()) {
+                            return;
+                        }
+                        childExpr = *(childExpr->child_begin());
+                    }
+                    _doDepnOfRWVar(childExpr);
                     return;
                 }
             }
@@ -93,17 +100,6 @@ namespace wfg {
         for (; it != stmt->child_end(); ++it) {
             _buildDepn(*it);
         }
-    }
-
-    void AbstractDepnHelper::_depnOfIncDecOp(const UnaryOperator *op) {
-        const Stmt *childExpr = op->getSubExpr();
-        while (!isa<DeclRefExpr>(childExpr) && !isa<MemberExpr>(childExpr)) {
-            if (childExpr->child_begin() == childExpr->child_end()) {
-                return;
-            }
-            childExpr = *(childExpr->child_begin());
-        }
-        _doDepnOfRWVar(childExpr);
     }
 
     void AbstractDepnHelper::_depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) {

@@ -6,6 +6,7 @@
 #include "FuncInfo.h"
 #include "FuncInfoGen.h"
 #include "SimplifiedDepnHelper.h"
+#include "DetailedDepnHelper.h"
 #include <llvm/ADT/StringRef.h>
 #include <string>
 
@@ -132,26 +133,41 @@ namespace wfg {
 
     void FuncInfoGenConsumer::_buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
                                               CustomCPG &customCPG) const {
-        SimplifiedDepnHelper depnHelper(customCPG, wholeCFG->size(), wholeCFG->size() - 1);
+        unique_ptr<AbstractDepnHelper> depnHelper{};
+        if (customCPG.getSensitiveLinePairs().empty()) {
+            depnHelper = unique_ptr<AbstractDepnHelper>(
+                    new SimplifiedDepnHelper(customCPG, wholeCFG->size(), wholeCFG->size() - 1));
+        } else {
+            depnHelper = unique_ptr<AbstractDepnHelper>(
+                    new DetailedDepnHelper(customCPG, wholeCFG->size(), wholeCFG->size() - 1, _context));
+        }
+
         for (const ParmVarDecl *paramVarDecl: funcDecl->parameters()) {
-            depnHelper.depnOfDecl(paramVarDecl);
+            depnHelper->depnOfDecl(paramVarDecl);
         }
 
         for (auto it = wholeCFG->rbegin(); it != wholeCFG->rend(); ++it) {
             CFGBlock *block = *it;
             block->dump();
             unsigned nodeID = block->getBlockID();
-            depnHelper.updateNodeID(nodeID);
+            depnHelper->updateNodeID(nodeID);
             for (const CFGElement &element: *block) {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
-                    depnHelper.buildDepn(stmt);
+                    depnHelper->buildDepn(stmt);
                 }
             }
-
-            llvm::outs() << "Depn Edges: "
-                         << util::setToString(customCPG.getDepnEdges(), util::numPairToString<unsigned, unsigned>)
-                         << '\n';
+            if (depnHelper.get()) {
+                auto &helper = *depnHelper.get();
+                if (typeid(helper) == typeid(SimplifiedDepnHelper)) {
+                    llvm::outs() << "Depn Edges: "
+                                 << util::setToString(customCPG.getDepnEdges(),
+                                                      util::numPairToString<unsigned, unsigned>)
+                                 << '\n';
+                } else {
+                    llvm::outs() << "DepnMapper: " + customCPG.getDepnMapper().toString() << '\n';
+                }
+            }
         }
     }
 

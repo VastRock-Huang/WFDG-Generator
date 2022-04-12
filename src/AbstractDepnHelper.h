@@ -17,7 +17,6 @@ using namespace clang;
 namespace wfg {
     class AbstractDepnHelper {
     public:
-        using VarIdType = DepnMapper::VarIdType;
         using VarIdPair = DepnMapper::VarIdPair;
 
     protected:
@@ -31,8 +30,6 @@ namespace wfg {
         virtual void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) = 0;
 
         virtual void _doDepnOfRWVar(const Stmt *stmt) = 0;
-
-        void _depnOfIncDecOp(const UnaryOperator *op);
 
         void _depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr);
 
@@ -57,14 +54,6 @@ namespace wfg {
             return {};
         }
 
-//        static bool _isStructDecl(const VarDecl *varDecl) {
-//            const Type *type = varDecl->getType().getTypePtr();
-//            while (type->isPointerType()) {
-//                type = type->getPointeeOrArrayElementType();
-//            }
-//            return type->isStructureType();
-//        }
-
     public:
         AbstractDepnHelper(CustomCPG &customCPG, unsigned nodeID)
                 : _customCPG(customCPG), _nodeID(nodeID) {}
@@ -75,7 +64,7 @@ namespace wfg {
 
         virtual void depnOfDecl(const VarDecl *varDecl) = 0;
 
-        void updateNodeID(unsigned nodeID) {
+        virtual void updateNodeID(unsigned nodeID) {
             _nodeID = nodeID;
         }
     };
