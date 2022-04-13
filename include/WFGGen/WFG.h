@@ -31,6 +31,7 @@ namespace wfg {
         const unsigned _rootLine;
         map<unsigned, WFGNode> _nodes{};
         set<pair<unsigned, unsigned>> _edges{};
+        set<pair<unsigned, unsigned>> _depnEdges{};
     public:
         explicit WFG(string funcName, unsigned rootLine = 0) : _funcName(move(funcName)), _rootLine(rootLine) {}
 
@@ -44,6 +45,10 @@ namespace wfg {
 
         void addEdge(unsigned src, unsigned dest) {
             _edges.emplace(src, dest);
+        }
+
+        void setDepnEdges(const set<pair<unsigned,unsigned>>& depnEdges) {
+            _depnEdges = depnEdges;
         }
 
         string getFuncName() const {

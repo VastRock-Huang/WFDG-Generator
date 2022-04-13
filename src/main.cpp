@@ -37,19 +37,19 @@ int main(int argc, const char **argv) {
         }
     } diagConsumer;
     tool.setDiagnosticConsumer(&diagConsumer);
-    int ret = tool.run(unique_ptr<FrontendActionFactory>(new FuncInfoGenFactory(config,funcInfoList)).get());
+    int ret = tool.run(unique_ptr<FrontendActionFactory>(new FuncInfoGenFactory(config, funcInfoList)).get());
 
-    for (auto &funcInfo: funcInfoList) {
-//        if (showFuncInfo) {
+    for (const auto &funcInfo: funcInfoList) {
+        if (showFuncInfo) {
             cout << "********************* FuncInfo *********************\n"
                  << funcInfo.toString() << endl
                  << "****************************************************\n";
-//        }
-//        WFGGenerator wfgGenerator(config, funcInfo);
-//        vector<WFG> wfgs = wfgGenerator.genWFGs();
-//        for (auto &w: wfgs) {
-//            cout << w.toString() << endl << endl;
-//        }
+        }
+        WFGGenerator wfgGenerator(config, funcInfo);
+        vector<WFG> wfgs = wfgGenerator.genWFGs();
+        for (const WFG &w: wfgs) {
+            cout << w.toString() << endl << endl;
+        }
     }
     return ret;
 }

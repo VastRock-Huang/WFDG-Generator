@@ -14,8 +14,10 @@ namespace wfg {
 
 
     string WFG::toString() const {
-        return "{funcName: " + _funcName + ", rootLine: " + to_string(_rootLine) + ", nodes: " +
-               util::mapToString(_nodes, util::numToString<unsigned>, WFGNode::toString) + ", edges: "
-               + util::setToString(_edges, util::numPairToString<unsigned,unsigned>) + "}";
+        return "{funcName: " + _funcName + ", rootLine: " + to_string(_rootLine) +
+               ", nodes: " + util::mapToString(_nodes, util::numToString<unsigned>, WFGNode::toString) +
+               ", edges: " + util::setToString(_edges, util::numPairToString<unsigned, unsigned>) +
+               ", depnEdges: " + util::setToString(_depnEdges, util::numPairToString<unsigned, unsigned>) +
+               "}";
     }
 }

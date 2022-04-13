@@ -183,12 +183,13 @@ namespace wfg {
     }
 
     vector<WFG> WFGGenerator::genWFGs() {
-        if (_funcInfo.getCustomCPG().getSensitiveLinePairs().empty()) {
-            return {_genWFGWithoutSensitiveLine()};
+        vector<WFG> wfgs{};
+        if (_customCPG.getSensitiveLinePairs().empty()) {
+            _genWFGWithoutSensitiveLine(wfgs);
+            return wfgs;
         }
 
-        vector<WFG> wfgs{};
-        for (const auto &linePair: _funcInfo.getCustomCPG().getSensitiveLinePairs()) {
+        for (const auto &linePair: _customCPG.getSensitiveLinePairs()) {
             unsigned rootLine = linePair.first;
             map<unsigned, double> lineWeightMap{};
             _genLineWeight(rootLine, lineWeightMap);
@@ -201,7 +202,7 @@ namespace wfg {
         return wfgs;
     }
 
-    WFG WFGGenerator::_genWFGWithoutSensitiveLine() {
+    void WFGGenerator::_genWFGWithoutSensitiveLine(vector<WFG>& wfgs) {
         map<unsigned, WFGNode> wfgNodes{};
         int i = 0;
         for (const CustomCPG::CPGNode &cfgNode: _customCPG.getNodes()) {
@@ -214,13 +215,14 @@ namespace wfg {
         }
         WFG w(_funcInfo.getFuncName());
         w.setNodes(move(wfgNodes));
-        auto insertEdges = [&w](unsigned succNode, unsigned curNode) {
+        auto insertEdges = [&w](unsigned succNode, unsigned curNode) -> void {
             w.addEdge(curNode, succNode);
         };
         for (auto &nodePair: w.getNodes()) {
             _customCPG.for_each_succ(nodePair.first, insertEdges);
         }
-        return w;
+        w.setDepnEdges(_customCPG.getDepnEdges());
+        wfgs.push_back(move(w));
     }
 
 }
