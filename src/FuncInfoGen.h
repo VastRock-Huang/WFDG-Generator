@@ -40,13 +40,13 @@ namespace wfg {
 
         pair<unsigned, unsigned> _getLineRange(const SourceLocation &beginLoc, const SourceLocation &endLoc) const;
 
-        void _findSensitiveLines(const FunctionDecl *functionDecl, const pair<unsigned, unsigned> &lineRange,
-                                 CustomCPG &customCPG) const;
+        vector<pair<unsigned, unsigned>> _findSensitiveLines(const FunctionDecl *functionDecl,
+                                                             const pair<unsigned, unsigned> &lineRange) const;
 
         void _buildCustomCPG(const FunctionDecl *funcDecl, CustomCPG &customCPG) const;
 
         void _buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
-                                    CustomCPG &customCPG) const;
+                             CustomCPG &customCPG) const;
 
         void _traverseCFGStmtToUpdateStmtVec(const Stmt *stmt, CustomCPG &customCPG, unsigned nodeID) const;
 

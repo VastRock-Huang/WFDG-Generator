@@ -12,13 +12,11 @@
 
 namespace wfg {
 
-    void FuncInfoGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
-                                                  const pair<unsigned, unsigned> &lineRange,
-                                                  CustomCPG &customCPG) const {
+    vector<pair<unsigned, unsigned>> FuncInfoGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
+                                                                              const pair<unsigned, unsigned> &lineRange) const {
         unsigned sensitiveLine = _config.getSensitiveLine();
         if (sensitiveLine != 0 && util::numInRange(sensitiveLine, lineRange) == 0) {
-            customCPG.pushSensitiveLine(sensitiveLine, 0);
-            return;
+            return {make_pair(sensitiveLine, 0)};
         }
         const SourceLocation &beginLoc = functionDecl->getLocation();
         const SourceLocation &endLoc = functionDecl->getEndLoc();
@@ -27,17 +25,19 @@ namespace wfg {
         StringRef funcContent{_manager.getCharacterData(beginLoc),
                               _manager.getCharacterData(endLoc) - _manager.getCharacterData(beginLoc) + 1UL};
         unsigned fileOffset = _manager.getFileOffset(beginLoc);
+        vector<pair<unsigned, unsigned>> res{};
         for (size_t i = 1; i < _config.keyWords.size(); ++i) {
             StringRef keyword{_config.keyWords[i]};
             size_t pos = 0;
             pos = funcContent.find(keyword, pos);
             while (pos != StringRef::npos) {
                 unsigned line = _manager.getLineNumber(fileId, fileOffset + pos);
-                customCPG.pushSensitiveLine(line, i);
+                res.emplace_back(line, i);
                 pos += keyword.size();
                 pos = funcContent.find(keyword, pos);
             }
         }
+        return res;
     }
 
     void FuncInfoGenConsumer::_traverseCFGStmtToUpdateStmtVec(const Stmt *stmt, CustomCPG &customCPG,
@@ -109,7 +109,6 @@ namespace wfg {
             node.mergeLineRanges();
         }
 
-        _findSensitiveLines(funcDecl, _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc()), customCPG);
         _buildDepnInCPG(funcDecl, wholeCFG, customCPG);
     }
 
@@ -122,7 +121,8 @@ namespace wfg {
                 llvm::outs() << "\nFUNC: " << funcName << '\n';
                 pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc());
 
-                FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, _config.ASTStmtKindMap);
+                FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, _config.ASTStmtKindMap,
+                                  move(_findSensitiveLines(funcDecl, lineRange)));
 
                 _buildCustomCPG(funcDecl, funcInfo.getCustomCPG());
                 _funcInfoList.push_back(funcInfo);

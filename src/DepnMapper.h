@@ -88,10 +88,12 @@ namespace wfg {
         VarMap<unordered_set<int>> _rightMap{};
         vector<RightData> _rightVec{};
 
-        vector<pair<VarIdPair, int>> _sensitiveWVars;
-        vector<pair<VarIdPair, int>> _sensitiveRVars;
+        vector<vector<pair<VarIdPair, int>>> _sensitiveWVars;
+        vector<vector<pair<VarIdPair, int>>> _sensitiveRVars;
 
     public:
+        explicit DepnMapper(unsigned sensitiveCnt) : _sensitiveWVars(sensitiveCnt), _sensitiveRVars(sensitiveCnt) {}
+
         unsigned rightVecSize() const {
             return _rightVec.size();
         }
@@ -128,17 +130,20 @@ namespace wfg {
             return _varMap.at(ids);
         }
 
-        void pushSensitiveWVar(const VarIdPair& ids, int leftIdx) {
-            _sensitiveWVars.emplace_back(ids, leftIdx);
+        void pushSensitiveWVar(int sensitiveIdx, const VarIdPair& ids, int leftIdx) {
+            _sensitiveWVars.at(sensitiveIdx).emplace_back(ids, leftIdx);
         }
 
-        void pushSensitiveRVar(const VarIdPair& ids, int rightIdx) {
-            _sensitiveRVars.emplace_back(ids, rightIdx);
+        void pushSensitiveRVar(int sensitiveIdx, const VarIdPair& ids, int rightIdx) {
+            _sensitiveRVars.at(sensitiveIdx).emplace_back(ids, rightIdx);
         }
 
         string toString() const {
             auto hashsetToStr = [](const unordered_set<int> &s) -> string {
                 return util::hashsetToString(s, util::numToString < int > );
+            };
+            auto vecToStr = [](const vector<AssignPair>& vec) -> string {
+                return util::vecToString(vec, assignPairToString);
             };
             return "{varMap: " +
                    varMapToString(_varMap, [](const string &s) -> string {
@@ -148,8 +153,8 @@ namespace wfg {
                    "rightVec: " + util::vecToString(_rightVec, RightData::toString) + ",\n" +
                    "leftMap: " + varMapToString(_leftMap, hashsetToStr) + ",\n" +
                    "rightMap: " + varMapToString(_rightMap, hashsetToStr) + "\n" +
-                   "sensitiveWVars: " + util::vecToString(_sensitiveWVars, assignPairToString) + "\n" +
-                   "sensitiveRVars: " + util::vecToString(_sensitiveRVars, assignPairToString) +
+                   "sensitiveWVars: " + util::vecToString(_sensitiveWVars, vecToStr) + "\n" +
+                   "sensitiveRVars: " + util::vecToString(_sensitiveRVars, vecToStr) +
                    "}";
         }
     };

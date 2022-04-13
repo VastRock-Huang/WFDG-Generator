@@ -2,7 +2,7 @@
 // Created by Unravel on 2022/3/24.
 //
 
-#include "WFGGen/WFG.h"
+#include "WFDGGen/WFDG.h"
 #include "WFGGen.h"
 #include <set>
 #include <map>
@@ -10,7 +10,7 @@
 #include <cmath>
 
 namespace wfg {
-    void WFGGenerator::_genLineWeight(unsigned rootLine, map<unsigned, double> &lineWeightMap) {
+    void WFDGGenerator::_genLineWeight(unsigned rootLine, map<unsigned, double> &lineWeightMap) {
         const IdMapper &idMapper = _funcInfo.getIdMapper();
         queue<const string *> idQue{};
         set<const string *> idSet{};
@@ -57,7 +57,7 @@ namespace wfg {
         }
     }
 
-    void WFGGenerator::_getWFGNodes(const map<unsigned, double> &lineWeightMap, map<unsigned, WFGNode> &wfgNodes) {
+    void WFDGGenerator::_getWFGNodes(const map<unsigned, double> &lineWeightMap, map<unsigned, WFDGNode> &wfdgNodes) {
         // 遍历所有结点
         int i = 0;
         for (const CustomCPG::CPGNode &cfgNode: _customCPG.getNodes()) {
@@ -81,17 +81,17 @@ namespace wfg {
             if (markedLines.empty()) {
                 continue;
             }
-            WFGNode wfgNode{};
+            WFDGNode wfgNode{};
             wfgNode.id = i;
             wfgNode.stmtVec = cfgNode.stmtVec;
             wfgNode.lineWeight = lineWeight;
             wfgNode.markedLines = move(markedLines);
-            wfgNodes.emplace(i, move(wfgNode));
+            wfdgNodes.emplace(i, move(wfgNode));
             ++i;
         }
     }
 
-    vector<unsigned> WFGGenerator::findRootNodes(const map<unsigned, WFGNode> &wfgNodes, unsigned rootLine) {
+    vector<unsigned> WFDGGenerator::findRootNodes(const map<unsigned, WFDGNode> &wfgNodes, unsigned rootLine) {
         vector<unsigned> rootNodes{};
         for (auto &nodePair: wfgNodes) {
             if (nodePair.second.markedLines.count(rootLine)) {
@@ -101,7 +101,7 @@ namespace wfg {
         return rootNodes;
     }
 
-    void WFGGenerator::_genNodeWeight(map<unsigned, WFGNode> &wfgNodes, const vector<unsigned> &rootNodes) {
+    void WFDGGenerator::_genNodeWeight(map<unsigned, WFDGNode> &wfdgNodes, const vector<unsigned> &rootNodes) {
 //        unsigned rootNode = rootNodes[0];
         queue<unsigned> predNodeQue{};
         queue<unsigned> succNodeQue{};
@@ -125,7 +125,7 @@ namespace wfg {
         };
 
         for (unsigned rootNode: rootNodes) {
-            wfgNodes[rootNode].nodeWeight = 1;
+            wfdgNodes[rootNode].nodeWeight = 1;
             _customCPG.for_each_pred(rootNode, predExecution);
             _customCPG.for_each_succ(rootNode, succExecution);
         }
@@ -135,8 +135,8 @@ namespace wfg {
             for (auto size = predNodeQue.size(); size > 0; --size) {
                 unsigned node = predNodeQue.front();
                 predNodeQue.pop();
-                auto it = wfgNodes.find(node);
-                if (it == wfgNodes.end()) {
+                auto it = wfdgNodes.find(node);
+                if (it == wfdgNodes.end()) {
                     continue;
                 }
                 it->second.nodeWeight = curPredWeight;
@@ -149,8 +149,8 @@ namespace wfg {
             for (auto size = succNodeQue.size(); size > 0; --size) {
                 unsigned node = succNodeQue.front();
                 succNodeQue.pop();
-                auto it = wfgNodes.find(node);
-                if (it == wfgNodes.end()) {
+                auto it = wfdgNodes.find(node);
+                if (it == wfdgNodes.end()) {
                     continue;
                 }
                 it->second.nodeWeight = curSuccWeight;
@@ -159,10 +159,10 @@ namespace wfg {
         }
     }
 
-    WFG WFGGenerator::_buildWFG(map<unsigned, WFGNode> &wfgNodes, unsigned rootLine) {
-        WFG w(_funcInfo.getFuncName(), rootLine);
+    WFDG WFDGGenerator::_buildWFG(map<unsigned, WFDGNode> &wfgNodes, unsigned rootLine) {
+        WFDG w(_funcInfo.getFuncName(), rootLine);
         for (auto it = wfgNodes.begin(); it != wfgNodes.end();) {
-            WFGNode &node = it->second;
+            WFDGNode &node = it->second;
             if (node.nodeWeight == 0.) {
                 it = wfgNodes.erase(it);
             } else {
@@ -182,10 +182,10 @@ namespace wfg {
         return w;
     }
 
-    vector<WFG> WFGGenerator::genWFGs() {
-        vector<WFG> wfgs{};
+    vector<WFDG> WFDGGenerator::genWFDGs() {
+        vector<WFDG> wfgs{};
         if (_customCPG.getSensitiveLinePairs().empty()) {
-            _genWFGWithoutSensitiveLine(wfgs);
+            _genWFDGWithoutSensitiveLine(wfgs);
             return wfgs;
         }
 
@@ -193,27 +193,27 @@ namespace wfg {
             unsigned rootLine = linePair.first;
             map<unsigned, double> lineWeightMap{};
             _genLineWeight(rootLine, lineWeightMap);
-            map<unsigned, WFGNode> wfgNodes{};
+            map<unsigned, WFDGNode> wfgNodes{};
             _getWFGNodes(lineWeightMap, wfgNodes);
             _genNodeWeight(wfgNodes, findRootNodes(wfgNodes, rootLine));
-            WFG w = _buildWFG(wfgNodes, rootLine);
+            WFDG w = _buildWFG(wfgNodes, rootLine);
             wfgs.push_back(move(w));
         }
         return wfgs;
     }
 
-    void WFGGenerator::_genWFGWithoutSensitiveLine(vector<WFG>& wfgs) {
-        map<unsigned, WFGNode> wfgNodes{};
+    void WFDGGenerator::_genWFDGWithoutSensitiveLine(vector<WFDG>& wfgs) {
+        map<unsigned, WFDGNode> wfgNodes{};
         int i = 0;
         for (const CustomCPG::CPGNode &cfgNode: _customCPG.getNodes()) {
-            WFGNode wfgNode{};
+            WFDGNode wfgNode{};
             wfgNode.id = i;
             wfgNode.stmtVec = cfgNode.stmtVec;
             wfgNode.weight = _config.useWeight ? 1 : 0;
             wfgNodes.emplace(i, move(wfgNode));
             ++i;
         }
-        WFG w(_funcInfo.getFuncName());
+        WFDG w(_funcInfo.getFuncName());
         w.setNodes(move(wfgNodes));
         auto insertEdges = [&w](unsigned succNode, unsigned curNode) -> void {
             w.addEdge(curNode, succNode);

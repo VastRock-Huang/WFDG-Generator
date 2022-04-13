@@ -53,15 +53,17 @@ namespace wfg {
         vector<unsigned> _nodesPredCnt{};
         vector<unsigned> _nodesPredVec{};
 
-        vector<pair<unsigned, unsigned>> _sensitiveLines{};
+        vector<pair<unsigned, unsigned>> _sensitiveLines;
         set<pair<unsigned, unsigned>> _depnEdges{};
-        DepnMapper _depnMapper{};
+        DepnMapper _depnMapper;
 
     public:
-
         const unordered_map<string, unsigned> &ASTStmtKindMap;
 
-        explicit CustomCPG(const unordered_map<string, unsigned> &ASTStmtKindMap) : ASTStmtKindMap(ASTStmtKindMap) {}
+        CustomCPG(const unordered_map<string, unsigned> &ASTStmtKindMap,
+                  vector<pair<unsigned, unsigned>> &&sensitiveLines) : _sensitiveLines(sensitiveLines),
+                                                                       _depnMapper(_sensitiveLines.size()),
+                                                                       ASTStmtKindMap(ASTStmtKindMap) {}
 
         DepnMapper &getDepnMapper() {
             return _depnMapper;
@@ -155,10 +157,13 @@ namespace wfg {
             return _sensitiveLines;
         }
 
-        bool inSensitiveLine(unsigned lineNum) const {
-            return any_of(_sensitiveLines.cbegin(), _sensitiveLines.cend(), [lineNum](const auto &p) {
-                return lineNum == p.first;
-            });
+        int inSensitiveLine(unsigned lineNum) const {
+            for(unsigned i = 0; i < _sensitiveLines.size(); ++i) {
+                if(lineNum == _sensitiveLines[i].first) {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         const set<pair<unsigned, unsigned>> &getDepnEdges() const {

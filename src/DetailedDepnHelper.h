@@ -17,13 +17,13 @@ namespace wfg {
         using VarMap = DepnMapper::VarMap<T>;
 
         const ASTContext &_context;
-        DepnMapper &_depnPredMapper;
+        DepnMapper &depnMapper;
 
         vector<VarMap<int>> _writtenVarVec;
         VarMap<int> _readVarMap{};
 
         string _getVarNameByIds(const VarIdPair &ids) const {
-            return _depnPredMapper.getVarNameByIds(ids);
+            return depnMapper.getVarNameByIds(ids);
         }
 
         unsigned _getLineNumber(const SourceLocation &loc) const {
@@ -31,7 +31,7 @@ namespace wfg {
         }
 
         void _insertVarIds(const VarIdPair &ids, const string &varName) {
-            _depnPredMapper.pushVar(ids, varName);
+            depnMapper.pushVar(ids, varName);
         }
 
         int _getReadVarIdx(const VarIdPair &ids) const {
@@ -74,10 +74,11 @@ namespace wfg {
             } else {
                 refFrom.emplace_back(predIdx, _nodeID);
             }
-            int rightIdx = _depnPredMapper.pushRefInfo(ids, _nodeID, move(refFrom));
+            int rightIdx = depnMapper.pushRefInfo(ids, _nodeID, move(refFrom));
             _readVarMap.emplace(ids, rightIdx);
-            if (_customCPG.inSensitiveLine(lineNum)) {
-                _depnPredMapper.pushSensitiveRVar(ids, rightIdx);
+            int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
+            if (sensitiveIdx != -1) {
+                depnMapper.pushSensitiveRVar(sensitiveIdx, ids, rightIdx);
             }
         }
 
@@ -98,10 +99,11 @@ namespace wfg {
             } else {
                 refFrom.emplace_back(predIdx, _nodeID);
             }
-            int rightIdx = _depnPredMapper.pushRefInfo(memIds, _nodeID, move(refFrom));
+            int rightIdx = depnMapper.pushRefInfo(memIds, _nodeID, move(refFrom));
             _readVarMap.emplace(memIds, rightIdx);
-            if (_customCPG.inSensitiveLine(lineNum)) {
-                _depnPredMapper.pushSensitiveRVar(memIds, rightIdx);
+            int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
+            if (sensitiveIdx != -1) {
+                depnMapper.pushSensitiveRVar(sensitiveIdx, memIds, rightIdx);
             }
         }
 
@@ -124,10 +126,11 @@ namespace wfg {
         }
 
         void _recordWrittenVar(const VarIdPair &ids, vector<AssignPair> &&assignFrom, unsigned lineNum) {
-            int leftIdx = _depnPredMapper.pushAssignInfo(ids, move(assignFrom));
+            int leftIdx = depnMapper.pushAssignInfo(ids, move(assignFrom));
             _writtenVarVec.at(_nodeID).emplace(ids, leftIdx);
-            if (_customCPG.inSensitiveLine(lineNum)) {
-                _depnPredMapper.pushSensitiveWVar(ids, leftIdx);
+            int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
+            if (sensitiveIdx != -1) {
+                depnMapper.pushSensitiveWVar(sensitiveIdx, ids, leftIdx);
             }
         }
 
@@ -137,10 +140,11 @@ namespace wfg {
                 return;
             }
             _insertVarIds(memIds, name);
-            int leftIdx = _depnPredMapper.pushAssignInfo(memIds, move(assignFrom));
+            int leftIdx = depnMapper.pushAssignInfo(memIds, move(assignFrom));
             _writtenVarVec.at(_nodeID).emplace(memIds, leftIdx);
-            if (_customCPG.inSensitiveLine(lineNum)) {
-                _depnPredMapper.pushSensitiveWVar(memIds, leftIdx);
+            int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
+            if (sensitiveIdx != -1) {
+                depnMapper.pushSensitiveWVar(sensitiveIdx, memIds, leftIdx);
             }
         }
 
@@ -212,14 +216,14 @@ namespace wfg {
                 _traceReadStructVar(ids, name, lineNum);
                 llvm::outs() << "RW_Mem:" << name << '\n';
             }
-            _recordWrittenVar(ids, {make_pair(ids, _depnPredMapper.rightVecSize() - 1)}, lineNum);
+            _recordWrittenVar(ids, {make_pair(ids, depnMapper.rightVecSize() - 1)}, lineNum);
         }
 
     public:
         DetailedDepnHelper(CustomCPG &customCPG, unsigned nodeCnt,
                            unsigned nodeID, const ASTContext &context)
                 : AbstractDepnHelper(customCPG, nodeID),
-                  _context(context), _depnPredMapper(customCPG.getDepnMapper()),
+                  _context(context), depnMapper(customCPG.getDepnMapper()),
                   _writtenVarVec(nodeCnt) {}
 
         void depnOfDecl(const VarDecl *varDecl) override {

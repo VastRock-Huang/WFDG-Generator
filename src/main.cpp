@@ -5,7 +5,7 @@
 #include "FuncInfo.h"
 #include "FuncInfoGen.h"
 #include "WFGGen.h"
-#include "WFGGen/WFG.h"
+#include "WFDGGen/WFDG.h"
 #include <clang/Basic/Diagnostic.h>
 #include <llvm/Support/CommandLine.h>
 #include <iostream>
@@ -15,8 +15,8 @@ using namespace llvm;
 
 int main(int argc, const char **argv) {
     // 构建命令行选项类别
-    cl::OptionCategory opCategory("WFG Generation");
-    cl::opt<string> destFunc("f", cl::desc("the function to generate WFG"), cl::value_desc("funcName"),
+    cl::OptionCategory opCategory("WFDG Generation");
+    cl::opt<string> destFunc("f", cl::desc("the function to generate WFDG"), cl::value_desc("funcName"),
                               cl::cat(opCategory));
     cl::opt<unsigned> sensitiveLine("s", cl::desc("the sensitive line of the function"),
                                     cl::value_desc("sensitiveLine"),
@@ -45,9 +45,9 @@ int main(int argc, const char **argv) {
                  << funcInfo.toString() << endl
                  << "****************************************************\n";
         }
-        WFGGenerator wfgGenerator(config, funcInfo);
-        vector<WFG> wfgs = wfgGenerator.genWFGs();
-        for (const WFG &w: wfgs) {
+        WFDGGenerator wfgGenerator(config, funcInfo);
+        vector<WFDG> wfgs = wfgGenerator.genWFDGs();
+        for (const WFDG &w: wfgs) {
             cout << w.toString() << endl << endl;
         }
     }

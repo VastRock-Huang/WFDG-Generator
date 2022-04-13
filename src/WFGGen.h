@@ -5,36 +5,38 @@
 #ifndef WFG_GENERATOR_WFGGEN_H
 #define WFG_GENERATOR_WFGGEN_H
 
-#include "WFGGen/WFG.h"
+#include "WFDGGen/WFDG.h"
 #include "Configuration.h"
 #include "FuncInfo.h"
 
 using namespace std;
 
 namespace wfg {
-    class WFGGenerator {
+    class WFDGGenerator {
     private:
+        using WFDGNode = WFDG::WFDGNode;
+
         const Configuration &_config;
         const FuncInfo &_funcInfo;
         const CustomCPG &_customCPG;
 
         void _genLineWeight(unsigned rootLine, map<unsigned, double> &lineWeightMap);
 
-        void _getWFGNodes(const map<unsigned, double> &lineWeightMap, map<unsigned, WFGNode> &wfgNodes);
+        void _getWFGNodes(const map<unsigned, double> &lineWeightMap, map<unsigned, WFDGNode> &wfdgNodes);
 
-        void _genNodeWeight(map<unsigned, WFGNode> &wfgNodes, const vector<unsigned> &rootNodes);
+        void _genNodeWeight(map<unsigned, WFDGNode> &wfdgNodes, const vector<unsigned> &rootNodes);
 
-        WFG _buildWFG(map<unsigned, WFGNode> &wfgNodes, unsigned rootLine);
+        WFDG _buildWFG(map<unsigned, WFDGNode> &wfgNodes, unsigned rootLine);
 
-        void _genWFGWithoutSensitiveLine(vector<WFG>& wfgs);
+        void _genWFDGWithoutSensitiveLine(vector<WFDG>& wfgs);
 
-        static vector<unsigned> findRootNodes(const map<unsigned, WFGNode> &wfgNodes, unsigned rootLine);
+        static vector<unsigned> findRootNodes(const map<unsigned, WFDGNode> &wfgNodes, unsigned rootLine);
 
     public:
-        WFGGenerator(const Configuration &config, const FuncInfo &funcInfo) : _config(config), _funcInfo(funcInfo),
-                                                                              _customCPG(_funcInfo.getCustomCPG()) {}
+        WFDGGenerator(const Configuration &config, const FuncInfo &funcInfo) : _config(config), _funcInfo(funcInfo),
+                                                                               _customCPG(_funcInfo.getCustomCPG()) {}
 
-        vector<WFG> genWFGs();
+        vector<WFDG> genWFDGs();
     };
 }
 

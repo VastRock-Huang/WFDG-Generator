@@ -2,8 +2,8 @@
 // Created by Unravel on 2022/3/15.
 //
 
-#ifndef WFG_GENERATOR_WFG_H
-#define WFG_GENERATOR_WFG_H
+#ifndef WFG_GENERATOR_WFDG_H
+#define WFG_GENERATOR_WFDG_H
 
 #include <string>
 #include <set>
@@ -14,32 +14,33 @@
 using namespace std;
 
 namespace wfg {
-    struct WFGNode {
-        unsigned id{0};
-        double lineWeight{0.};
-        double nodeWeight{0.};
-        double weight{0.};
-        set<unsigned> markedLines{};
-        vector<unsigned> stmtVec{};
+    class WFDG {
+    public:
+        struct WFDGNode {
+            unsigned id{0};
+            double lineWeight{0.};
+            double nodeWeight{0.};
+            double weight{0.};
+            set<unsigned> markedLines{};
+            vector<unsigned> stmtVec{};
 
-        static string toString(const WFGNode &node);
-    };
+            static string toString(const WFDGNode &node);
+        };
 
-    class WFG {
     private:
         const string _funcName;
         const unsigned _rootLine;
-        map<unsigned, WFGNode> _nodes{};
+        map<unsigned, WFDGNode> _nodes{};
         set<pair<unsigned, unsigned>> _edges{};
         set<pair<unsigned, unsigned>> _depnEdges{};
     public:
-        explicit WFG(string funcName, unsigned rootLine = 0) : _funcName(move(funcName)), _rootLine(rootLine) {}
+        explicit WFDG(string funcName, unsigned rootLine = 0) : _funcName(move(funcName)), _rootLine(rootLine) {}
 
-        void setNodes(map<unsigned, WFGNode> &&nodes) {
+        void setNodes(map<unsigned, WFDGNode> &&nodes) {
             _nodes = nodes;
         }
 
-        const map<unsigned, WFGNode> &getNodes() const {
+        const map<unsigned, WFDGNode> &getNodes() const {
             return _nodes;
         }
 
@@ -59,4 +60,4 @@ namespace wfg {
     };
 }
 
-#endif //WFG_GENERATOR_WFG_H
+#endif //WFG_GENERATOR_WFDG_H

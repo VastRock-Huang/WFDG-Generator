@@ -54,8 +54,11 @@ namespace wfg {
         IdMapper _idMapper{};
 
     public:
-        FuncInfo(string funcName, pair<unsigned,unsigned> lineRange, const unordered_map<string, unsigned>& ASTStmtKindMap)
-                : _funcName(std::move(funcName)), _lineRange(move(lineRange)), _customCPG(ASTStmtKindMap) {}
+        FuncInfo(string funcName, pair<unsigned, unsigned> lineRange,
+                 const unordered_map<string, unsigned> &ASTStmtKindMap,
+                 vector<pair<unsigned, unsigned>> &&sensitiveLines)
+                : _funcName(std::move(funcName)), _lineRange(move(lineRange)),
+                  _customCPG(ASTStmtKindMap, move(sensitiveLines)) {}
 
         string toString() const {
             return "{funcName: " + _funcName + ", lineRange: " + util::numPairToString(_lineRange)
@@ -68,15 +71,15 @@ namespace wfg {
             return _lineRange;
         }
 
-        const IdMapper& getIdMapper() const {
+        const IdMapper &getIdMapper() const {
             return _idMapper;
         }
 
-        CustomCPG& getCustomCPG() {
+        CustomCPG &getCustomCPG() {
             return _customCPG;
         }
 
-        const CustomCPG& getCustomCPG() const {
+        const CustomCPG &getCustomCPG() const {
             return _customCPG;
         }
 
