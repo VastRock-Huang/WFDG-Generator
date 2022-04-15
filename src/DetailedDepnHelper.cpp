@@ -17,7 +17,8 @@ namespace wfdg {
             if ((leftIdx = _hasWrittenVarInNode(predNode, ids)) != -1) {
 //                _customCPG.addDepnEdge(predNode, _nodeID);
                 refFrom.emplace(leftIdx, predNode);
-                llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
+                if (_debug)
+                    llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
             } else {
                 _traceReadVar(predNode, ids, refFrom);
             }
@@ -25,7 +26,8 @@ namespace wfdg {
     }
 
     void DetailedDepnHelper::_traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                                 const VarIdPair &memIds, unordered_set<RefPair, util::pair_hash> &refFrom) {
+                                                 const VarIdPair &memIds,
+                                                 unordered_set<RefPair, util::pair_hash> &refFrom) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
@@ -33,7 +35,8 @@ namespace wfdg {
             if ((leftIdx = _hasWrittenStructInNode(predNode, varIds, memIds)) != -1) {
 //                _customCPG.addDepnEdge(predNode, _nodeID);
                 refFrom.emplace(leftIdx, predNode);
-                llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';
+                if (_debug)
+                    llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';
             } else {
                 _traceReadStructVar(predNode, varIds, memIds, refFrom);
             }

@@ -176,14 +176,16 @@ namespace wfdg {
 
         void _doDepnOfReadRef(const DeclRefExpr *refExpr) override {
             _traceReadVar(_getRefVarIds(refExpr), _getLineNumber(refExpr->getLocation()));
-            llvm::outs() << "R_Decl:" << refExpr->getNameInfo().getAsString() << '\n';
+            if (_debug)
+                llvm::outs() << "R_Decl:" << refExpr->getNameInfo().getAsString() << '\n';
         }
 
         void _doDepnOfReadMember(const MemberExpr *memberExpr) override {
             VarIdPair ids{};
             string name = _getStructIdsAndName(memberExpr, ids);
             _traceReadStructVar(ids, name, _getLineNumber(memberExpr->getMemberLoc()));
-            llvm::outs() << "R_Mem:" << name << '\n';
+            if (_debug)
+                llvm::outs() << "R_Mem:" << name << '\n';
         }
 
         void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) override {
@@ -195,12 +197,14 @@ namespace wfdg {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(writtenExpr);
                 ids = _getRefVarIds(refExpr);
                 _recordWrittenVar(ids, assignFrom, _getLineNumber(refExpr->getLocation()));
-                llvm::outs() << "W_Ref:" << refExpr->getNameInfo().getAsString() << '\n';
+                if (_debug)
+                    llvm::outs() << "W_Ref:" << refExpr->getNameInfo().getAsString() << '\n';
             } else if (isa<MemberExpr>(writtenExpr)) {
                 const MemberExpr *memberExpr = cast<MemberExpr>(writtenExpr);
                 string name = _getStructIdsAndName(memberExpr, ids);
                 _recordWrittenStruct(ids, name, assignFrom, _getLineNumber(memberExpr->getMemberLoc()));
-                llvm::outs() << "W_Mem:" << name << '\n';
+                if (_debug)
+                    llvm::outs() << "W_Mem:" << name << '\n';
             }
         }
 
@@ -212,13 +216,15 @@ namespace wfdg {
                 ids = _getRefVarIds(refExpr);
                 lineNum = _getLineNumber(refExpr->getLocation());
                 _traceReadVar(ids, lineNum);
-                llvm::outs() << "RW_Decl:" << refExpr->getNameInfo().getAsString() << '\n';
+                if (_debug)
+                    llvm::outs() << "RW_Decl:" << refExpr->getNameInfo().getAsString() << '\n';
             } else if (isa<MemberExpr>(stmt)) {
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
                 string name = _getStructIdsAndName(memberExpr, ids);
                 lineNum = _getLineNumber(memberExpr->getMemberLoc());
                 _traceReadStructVar(ids, name, lineNum);
-                llvm::outs() << "RW_Mem:" << name << '\n';
+                if (_debug)
+                    llvm::outs() << "RW_Mem:" << name << '\n';
             }
             _recordWrittenVar(ids, {make_pair(ids, depnMapper.rightVecSize() - 1)}, lineNum);
         }
@@ -232,11 +238,13 @@ namespace wfdg {
                 _collectRVarsOfWVar(initExpr, assignFrom);
             }
             _recordWrittenVar(ids, assignFrom, _getLineNumber(varDecl->getLocation()));
-            llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
+            if (_debug)
+                llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
 
         void _runAtNodeEnding() override {
-            llvm::outs() << depnMapper.toString() <<'\n';
+            if (_debug)
+                llvm::outs() << depnMapper.toString() << '\n';
         }
 
         void _updateNodeID(unsigned nodeID) override {
@@ -245,8 +253,8 @@ namespace wfdg {
         }
 
     public:
-        DetailedDepnHelper(const unique_ptr <CFG> &cfg, const ASTContext &context, CustomCPG &customCPG)
-                : AbstractDepnHelper(cfg, customCPG), _context(context), depnMapper(customCPG.getDepnMapper()),
+        DetailedDepnHelper(const unique_ptr<CFG> &cfg, const ASTContext &context, CustomCPG &customCPG, bool debug)
+                : AbstractDepnHelper(cfg, customCPG, debug), _context(context), depnMapper(customCPG.getDepnMapper()),
                   _writtenVarVec(cfg->size()) {}
 
     };

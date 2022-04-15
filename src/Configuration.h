@@ -19,6 +19,8 @@ namespace wfdg {
 
         unsigned _sensitiveLine{0};
 
+        bool _debug{false};
+
         static vector<string> _initKeywords() {
             return DEFAULT_KEYWORDS;
         }
@@ -60,7 +62,7 @@ namespace wfdg {
         Configuration() : keyWords(_initKeywords()), ASTStmtKinds(_initASTStmtKinds()),
                           ASTStmtKindMap(_initASTStmtKindMap()) {}
 
-        void init(string destFunc, unsigned sensitiveLine) {
+        void init(string destFunc, unsigned sensitiveLine, bool debug) {
             static bool initialized{false};
             if(initialized) {
                 return;
@@ -70,7 +72,12 @@ namespace wfdg {
             if(!destFunc.empty()) {
                 _sensitiveLine = sensitiveLine;
             }
+            _debug = debug;
             _destFunc = move(destFunc);
+        }
+
+        bool debug() const {
+            return _debug;
         }
 
         bool matchDestFunc(const string& funcName) const;

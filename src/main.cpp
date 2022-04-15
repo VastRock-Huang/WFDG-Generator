@@ -22,11 +22,12 @@ int main(int argc, const char **argv) {
                                     cl::value_desc("sensitiveLine"),
                                     cl::cat(opCategory));
     cl::opt<bool> showFuncInfo("i", cl::desc("show all FuncInfo"), cl::cat(opCategory));
+    cl::opt<bool> debug("d", cl::desc("show _debug messages"), cl::cat(opCategory));
     CommonOptionsParser op(argc, argv, opCategory);
 
     vector<FuncInfo> funcInfoList{};
     Configuration config{};
-    config.init(destFunc, sensitiveLine);
+    config.init(destFunc, sensitiveLine, debug);
 
     ClangTool tool(op.getCompilations(), op.getSourcePathList());
     // 取消错误输出

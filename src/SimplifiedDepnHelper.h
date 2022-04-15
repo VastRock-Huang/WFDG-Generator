@@ -75,13 +75,15 @@ namespace wfdg {
 
         void _doDepnOfReadRef(const DeclRefExpr *refExpr) override {
             _traceReadVar(_getRefVarIds(refExpr));
-            llvm::outs() << "R_Decl:" << refExpr->getNameInfo().getAsString() << '\n';
+            if (_debug)
+                llvm::outs() << "R_Decl:" << refExpr->getNameInfo().getAsString() << '\n';
         };
 
         void _doDepnOfReadMember(const MemberExpr *memberExpr) override {
             VarIdPair ids = _getStructIds(memberExpr);
             _traceReadStructVar(ids);
-            llvm::outs() << "R_Mem:" << _getStructName(memberExpr) << '\n';
+            if (_debug)
+                llvm::outs() << "R_Mem:" << _getStructName(memberExpr) << '\n';
         }
 
         void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) override {
@@ -89,14 +91,16 @@ namespace wfdg {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(writtenExpr);
                 VarIdPair ids = _getRefVarIds(refExpr);
                 _recordWrittenVar(ids);
-                llvm::outs() << "W_Ref:" << refExpr->getNameInfo().getAsString() << '\n';
+                if (_debug)
+                    llvm::outs() << "W_Ref:" << refExpr->getNameInfo().getAsString() << '\n';
             } else if (isa<MemberExpr>(writtenExpr)) {
                 const MemberExpr *memberExpr = cast<MemberExpr>(writtenExpr);
                 VarIdPair ids = _getStructIds(memberExpr);
                 if (ids.second != 0) {
                     _recordWrittenVar(ids);
                 }
-                llvm::outs() << "W_Mem:" << _getStructName(memberExpr) << '\n';
+                if (_debug)
+                    llvm::outs() << "W_Mem:" << _getStructName(memberExpr) << '\n';
             }
         }
 
@@ -106,12 +110,14 @@ namespace wfdg {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
                 ids = _getRefVarIds(refExpr);
                 _traceReadVar(ids);
-                llvm::outs() << "RW_Decl:" << refExpr->getNameInfo().getAsString() << '\n';
+                if (_debug)
+                    llvm::outs() << "RW_Decl:" << refExpr->getNameInfo().getAsString() << '\n';
             } else if (isa<MemberExpr>(stmt)) {
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
                 ids = _getStructIds(memberExpr);
                 _traceReadStructVar(ids);
-                llvm::outs() << "RW_Mem:" << _getStructName(memberExpr) << '\n';
+                if (_debug)
+                    llvm::outs() << "RW_Mem:" << _getStructName(memberExpr) << '\n';
             }
             _recordWrittenVar(ids);
         }
@@ -122,18 +128,20 @@ namespace wfdg {
                 _buildDepn(initExpr);
             }
             _recordWrittenVar(ids);
-            llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
+            if (_debug)
+                llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
 
         void _runAtNodeEnding() override {
-            llvm::outs() << "depnEdges: "
-                         << util::setToString(_customCPG.getDepnEdges(), util::numPairToString<unsigned, unsigned>)
-                         << '\n';
+            if (_debug)
+                llvm::outs() << "depnEdges: "
+                             << util::setToString(_customCPG.getDepnEdges(), util::numPairToString<unsigned, unsigned>)
+                             << '\n';
         }
 
     public:
-        SimplifiedDepnHelper(const unique_ptr <CFG> &cfg, CustomCPG &customCPG)
-                : AbstractDepnHelper(cfg, customCPG), _writtenVarVec(cfg->size()) {}
+        SimplifiedDepnHelper(const unique_ptr <CFG> &cfg, CustomCPG &customCPG, bool debug)
+                : AbstractDepnHelper(cfg, customCPG, debug), _writtenVarVec(cfg->size()) {}
 
     };
 }

@@ -123,6 +123,7 @@ namespace wfdg {
         StmtHelper _stmtHelper;
         CustomCPG &_customCPG;
         unsigned _nodeID{};
+        bool _debug{false};
 
         virtual void _doDepnOfReadRef(const DeclRefExpr *refExpr) = 0;
 
@@ -167,11 +168,14 @@ namespace wfdg {
         AbstractDepnHelper(const unique_ptr <CFG> &cfg, CustomCPG &customCPG)
                 : _cfg(cfg), _stmtHelper(cfg.get()), _customCPG(customCPG) {}
 
+        AbstractDepnHelper(const unique_ptr <CFG> &cfg, CustomCPG &customCPG, bool debug)
+                : _cfg(cfg), _stmtHelper(cfg.get()), _customCPG(customCPG), _debug(debug) {}
 
         void buildDepnInCPG() {
             for (auto it = _cfg->rbegin(); it != _cfg->rend(); ++it) {
                 CFGBlock *block = *it;
-                block->print(llvm::outs(), _cfg.get(), LangOptions(), false);
+                if (_debug)
+                    block->print(llvm::outs(), _cfg.get(), LangOptions(), false);
                 unsigned nodeID = block->getBlockID();
                 _stmtHelper.setBlockID(nodeID);
                 _updateNodeID(nodeID);

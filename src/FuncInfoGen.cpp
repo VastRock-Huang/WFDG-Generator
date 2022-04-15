@@ -34,7 +34,7 @@ namespace wfdg {
             while (pos != StringRef::npos) {
                 unsigned line = _manager.getSpellingLineNumber(_manager.getComposedLoc(fileId, fileOffset + pos));
                 bool insert{};
-                llvm::outs() << keyword << ": " << line << '\n';
+//                llvm::outs() << keyword << ": " << line << '\n';
                 tie(std::ignore, insert) = res.emplace(line, idx);
                 if (insert) {
                     ++idx;
@@ -105,7 +105,6 @@ namespace wfdg {
             for (const CFGElement &element: *block) {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
-                    assert(stmt);
                     _traverseCFGStmtToUpdateStmtVec(stmt, customCPG, cur);
                 }
             }
@@ -124,7 +123,8 @@ namespace wfdg {
             _manager.getFileID(funcDecl->getLocation()) == _manager.getMainFileID()) {
             const string funcName = funcDecl->getQualifiedNameAsString();
             if (_config.matchDestFunc(funcName)) {
-                llvm::outs() << "\nFUNC: " << funcName << '\n';
+                if (_config.debug())
+                    llvm::outs() << "\nFUNC: " << funcName << '\n';
                 pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc());
 
                 FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, _config.ASTStmtKindMap,
@@ -142,10 +142,10 @@ namespace wfdg {
         unique_ptr<AbstractDepnHelper> depnHelper{};
         if (customCPG.getSensitiveLineMap().empty()) {
             depnHelper = unique_ptr<AbstractDepnHelper>(
-                    new SimplifiedDepnHelper(wholeCFG, customCPG));
+                    new SimplifiedDepnHelper(wholeCFG, customCPG, _config.debug()));
         } else {
             depnHelper = unique_ptr<AbstractDepnHelper>(
-                    new DetailedDepnHelper(wholeCFG, _context, customCPG));
+                    new DetailedDepnHelper(wholeCFG, _context, customCPG, _config.debug()));
         }
 
         depnHelper->depnOfParamDecl(funcDecl->parameters());
