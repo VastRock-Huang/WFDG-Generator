@@ -19,7 +19,7 @@
 
 using namespace std;
 
-namespace wfg {
+namespace wfdg {
     class CustomCPG {
     public:
         struct CPGNode {

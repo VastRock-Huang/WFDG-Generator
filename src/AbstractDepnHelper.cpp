@@ -4,7 +4,7 @@
 
 #include "AbstractDepnHelper.h"
 
-namespace wfg {
+namespace wfdg {
     void AbstractDepnHelper::_buildDepn(const Stmt *stmt, bool canVisitCall) {
         auto it = stmt->child_begin();
         switch (stmt->getStmtClass()) {

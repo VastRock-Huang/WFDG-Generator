@@ -8,7 +8,7 @@
 #include "AbstractDepnHelper.h"
 #include <clang/AST/ASTContext.h>
 
-namespace wfg {
+namespace wfdg {
     class DetailedDepnHelper : public AbstractDepnHelper {
     private:
         using RefPair = DepnMapper::RefPair;

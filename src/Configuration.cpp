@@ -4,7 +4,7 @@
 
 #include "Configuration.h"
 
-namespace wfg {
+namespace wfdg {
     const vector<string> Configuration::DEFAULT_KEYWORDS{"USER_SET","memcpy", "strcpy", "read", "free", "buf"};
 
     const vector<string> Configuration::DEFAULT_AST_STMT_KINDS{

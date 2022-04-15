@@ -16,7 +16,7 @@
 
 using namespace std;
 
-namespace wfg {
+namespace wfdg {
     namespace util {
         template<typename T>
         string numToString(T num) {

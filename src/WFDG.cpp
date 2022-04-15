@@ -4,7 +4,7 @@
 #include "WFDGGen/WFDG.h"
 #include "util.h"
 
-namespace wfg {
+namespace wfdg {
     string WFDG::WFDGNode::toString(const WFDGNode &node) {
         return "{id: " + to_string(node.id) + ", lineWeight: " + to_string(node.lineWeight) + ", nodeWeight: " +
                to_string(node.nodeWeight) + ", weight: " + to_string(node.weight) + ", markedLines: " +

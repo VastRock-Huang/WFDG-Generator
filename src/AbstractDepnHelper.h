@@ -14,7 +14,7 @@
 
 using namespace clang;
 
-namespace wfg {
+namespace wfdg {
     class AbstractDepnHelper {
     public:
         using VarIdPair = DepnMapper::VarIdPair;

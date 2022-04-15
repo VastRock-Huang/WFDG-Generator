@@ -5,7 +5,7 @@
 #include "FuncInfo.h"
 
 
-namespace wfg {
+namespace wfdg {
     void FuncInfo::insertIdentifier(const string &id, unsigned lineNo) {
         auto res = _idMapper.idSet.emplace(id);
         const string* idAddr = &(*res.first);

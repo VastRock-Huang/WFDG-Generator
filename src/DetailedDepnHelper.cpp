@@ -4,7 +4,7 @@
 
 #include "DetailedDepnHelper.h"
 
-namespace wfg {
+namespace wfdg {
     void DetailedDepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids,
                                            unordered_set<RefPair, util::pair_hash> &refFrom) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);

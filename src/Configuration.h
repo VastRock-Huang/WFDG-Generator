@@ -12,7 +12,7 @@
 
 using namespace std;
 
-namespace wfg {
+namespace wfdg {
     class Configuration {
     private:
         string _destFunc{};

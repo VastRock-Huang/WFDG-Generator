@@ -10,7 +10,7 @@
 #include <llvm/ADT/StringRef.h>
 #include <string>
 
-namespace wfg {
+namespace wfdg {
 
     vector<pair<unsigned, unsigned>> FuncInfoGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
                                                                               const pair<unsigned, unsigned> &lineRange) const {

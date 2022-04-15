@@ -7,7 +7,7 @@
 
 #include "AbstractDepnHelper.h"
 
-namespace wfg {
+namespace wfdg {
     class SimplifiedDepnHelper : public AbstractDepnHelper {
     private:
         vector<unordered_set<VarIdPair, util::pair_hash>> _writtenVarVec;

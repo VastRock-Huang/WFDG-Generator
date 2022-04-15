@@ -13,7 +13,7 @@
 
 using namespace std;
 
-namespace wfg {
+namespace wfdg {
     class WFDG {
     public:
         struct WFDGNode {

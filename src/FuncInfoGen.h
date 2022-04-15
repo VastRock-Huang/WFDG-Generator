@@ -27,7 +27,7 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
-namespace wfg {
+namespace wfdg {
 
     class FuncInfoGenConsumer
             : public ASTConsumer, public RecursiveASTVisitor<FuncInfoGenConsumer> {

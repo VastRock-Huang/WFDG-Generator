@@ -11,7 +11,7 @@
 
 using namespace std;
 
-namespace wfg {
+namespace wfdg {
     class WFDGGenerator {
     private:
         using WFDGNode = WFDG::WFDGNode;

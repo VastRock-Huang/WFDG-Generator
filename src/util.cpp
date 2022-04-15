@@ -5,7 +5,7 @@
 #include "util.h"
 #include <algorithm>
 
-namespace wfg {
+namespace wfdg {
     namespace util {
         void mergeLineRanges(vector<pair<unsigned, unsigned>> &ranges) {
             vector<pair<unsigned, unsigned>> result;

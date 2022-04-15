@@ -15,7 +15,7 @@
 
 using namespace std;
 
-namespace wfg {
+namespace wfdg {
     struct IdMapper {
         unordered_set<string> idSet{};
         // 行号向量是默认去重升序的

@@ -4,7 +4,7 @@
 
 #include "SimplifiedDepnHelper.h"
 
-namespace wfg {
+namespace wfdg {
     void SimplifiedDepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids) {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {

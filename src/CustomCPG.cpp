@@ -4,7 +4,7 @@
 
 #include "CustomCPG.h"
 
-namespace wfg {
+namespace wfdg {
     void CustomCPG::addSuccEdge(unsigned cur, unsigned succ) {
         assert((_succIdx == 0U || cur <= _succIdx) && cur < _nodeCnt);
         _succIdx = cur + 1U;

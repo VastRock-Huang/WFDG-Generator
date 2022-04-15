@@ -14,7 +14,7 @@
 
 using namespace std;
 
-namespace wfg {
+namespace wfdg {
 
     class DepnMapper {
     public:

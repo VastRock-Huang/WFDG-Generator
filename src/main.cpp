@@ -10,7 +10,7 @@
 #include <llvm/Support/CommandLine.h>
 #include <iostream>
 
-using namespace wfg;
+using namespace wfdg;
 using namespace llvm;
 
 int main(int argc, const char **argv) {

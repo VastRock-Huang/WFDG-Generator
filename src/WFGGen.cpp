@@ -9,7 +9,7 @@
 #include <cmath>
 #include <iostream>
 
-namespace wfg {
+namespace wfdg {
     void WFDGGenerator::_genLineWeight(unsigned sensitiveIdx, unordered_map<unsigned, double> &lineWeightMap) {
         const DepnMapper &depnMapper = _customCPG.getDepnMapper();
         queue<pair<int, unsigned>> idxQueue{};
