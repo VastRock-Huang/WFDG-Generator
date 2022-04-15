@@ -12,11 +12,11 @@
 
 namespace wfdg {
 
-    vector<pair<unsigned, unsigned>> FuncInfoGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
+    map<unsigned, int> FuncInfoGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
                                                                               const pair<unsigned, unsigned> &lineRange) const {
         unsigned sensitiveLine = _config.getSensitiveLine();
         if (sensitiveLine != 0 && util::numInRange(sensitiveLine, lineRange) == 0) {
-            return {make_pair(sensitiveLine, 0)};
+            return {{sensitiveLine, 0}};
         }
         const SourceLocation &beginLoc = functionDecl->getLocation();
         const SourceLocation &endLoc = functionDecl->getEndLoc();
@@ -25,14 +25,21 @@ namespace wfdg {
         StringRef funcContent{_manager.getCharacterData(beginLoc),
                               _manager.getCharacterData(endLoc) - _manager.getCharacterData(beginLoc) + 1UL};
         unsigned fileOffset = _manager.getFileOffset(beginLoc);
-        vector<pair<unsigned, unsigned>> res{};
+        llvm::outs() << funcContent <<'\n';
+        map<unsigned, int> res{};
+        int idx = 0;
         for (size_t i = 1; i < _config.keyWords.size(); ++i) {
             StringRef keyword{_config.keyWords[i]};
             size_t pos = 0;
             pos = funcContent.find(keyword, pos);
             while (pos != StringRef::npos) {
-                unsigned line = _manager.getLineNumber(fileId, fileOffset + pos);
-                res.emplace_back(line, i);
+                unsigned line = _manager.getSpellingLineNumber(_manager.getComposedLoc(fileId, fileOffset + pos));
+                bool insert{};
+                llvm::outs() << keyword << ": " << line << '\n';
+                tie(std::ignore, insert) = res.emplace(line, idx);
+                if(insert) {
+                    ++idx;
+                }
                 pos += keyword.size();
                 pos = funcContent.find(keyword, pos);
             }
@@ -134,7 +141,7 @@ namespace wfdg {
     void FuncInfoGenConsumer::_buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
                                               CustomCPG &customCPG) const {
         unique_ptr<AbstractDepnHelper> depnHelper{};
-        if (customCPG.getSensitiveLinePairs().empty()) {
+        if (customCPG.getSensitiveLineMap().empty()) {
             depnHelper = unique_ptr<AbstractDepnHelper>(
                     new SimplifiedDepnHelper(customCPG, wholeCFG->size(), wholeCFG->size() - 1));
         } else {

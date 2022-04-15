@@ -4,7 +4,7 @@
 
 #include "FuncInfo.h"
 #include "FuncInfoGen.h"
-#include "WFGGen.h"
+#include "WFDGGen.h"
 #include "WFDGGen/WFDG.h"
 #include <clang/Basic/Diagnostic.h>
 #include <llvm/Support/CommandLine.h>

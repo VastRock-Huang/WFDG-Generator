@@ -47,8 +47,6 @@ namespace wfdg {
 
         pair<unsigned, unsigned> _lineRange;
 
-        vector<pair<unsigned, unsigned>> _sensitiveLines{};
-
         CustomCPG _customCPG;
 
         IdMapper _idMapper{};
@@ -56,7 +54,7 @@ namespace wfdg {
     public:
         FuncInfo(string funcName, pair<unsigned, unsigned> lineRange,
                  const unordered_map<string, unsigned> &ASTStmtKindMap,
-                 vector<pair<unsigned, unsigned>> &&sensitiveLines)
+                 map<unsigned, int> &&sensitiveLines)
                 : _funcName(std::move(funcName)), _lineRange(move(lineRange)),
                   _customCPG(ASTStmtKindMap, move(sensitiveLines)) {}
 

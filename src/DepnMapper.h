@@ -147,15 +147,15 @@ namespace wfdg {
             _sensitiveRVars.at(sensitiveIdx).emplace_back(ids, rightIdx);
         }
 
-        const vector<pair<VarIdPair, int>> &getSensitiveRVars(unsigned sensitiveIdx) const {
+        const vector<pair<VarIdPair, int>> &getSensitiveRVars(int sensitiveIdx) const {
             return _sensitiveRVars.at(sensitiveIdx);
         }
 
-        const vector<pair<VarIdPair, int>> &getSensitiveWVars(unsigned sensitiveIdx) const {
+        const vector<pair<VarIdPair, int>> &getSensitiveWVars(int sensitiveIdx) const {
             return _sensitiveWVars.at(sensitiveIdx);
         }
 
-        const unordered_set<unsigned> &getSensitiveNodes(unsigned sensitiveIdx) const {
+        const unordered_set<unsigned> &getSensitiveNodes(int sensitiveIdx) const {
             return _sensitiveNodes.at(sensitiveIdx);
         }
 
@@ -181,12 +181,12 @@ namespace wfdg {
                    "leftVec: " + util::vecToString(_leftVec, LeftData::toString) + ",\n" +
                    "rightVec: " + util::vecToString(_rightVec, RightData::toString) + ",\n" +
                    "leftMap: " + varMapToString(_leftMap, hashsetToStr) + ",\n" +
-                   "rightMap: " + varMapToString(_rightMap, hashsetToStr) + "\n" +
+                   "rightMap: " + varMapToString(_rightMap, hashsetToStr) + ",\n" +
                    "sensitiveNodes: " +
                    util::vecToString(_sensitiveNodes, [](const unordered_set<unsigned> &hashset) -> string {
                        return util::hashsetToString(hashset, util::numToString < unsigned > );
-                   }) +
-                   "sensitiveWVars: " + util::vecToString(_sensitiveWVars, vecToStr) + "\n" +
+                   }) + ",\n"
+                   "sensitiveWVars: " + util::vecToString(_sensitiveWVars, vecToStr) + ",\n" +
                    "sensitiveRVars: " + util::vecToString(_sensitiveRVars, vecToStr) +
                    "}";
         }

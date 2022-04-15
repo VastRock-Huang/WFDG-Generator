@@ -3,19 +3,25 @@
 //
 
 #include "WFDGGen/WFDG.h"
-#include "WFGGen.h"
+#include "WFDGGen.h"
 #include <set>
 #include <queue>
 #include <cmath>
 #include <iostream>
 
 namespace wfdg {
-    void WFDGGenerator::_genLineWeight(unsigned sensitiveIdx, unordered_map<unsigned, double> &lineWeightMap) {
+    void WFDGGenerator::_genLineWeight(int sensitiveIdx, unordered_map<unsigned, double> &lineWeightMap) {
         const DepnMapper &depnMapper = _customCPG.getDepnMapper();
+        const unordered_set<unsigned> &sensitiveNodes = depnMapper.getSensitiveNodes(sensitiveIdx);
+        if(sensitiveNodes.empty()) {
+            return;
+        }
+
         queue<pair<int, unsigned>> idxQueue{};
         bool isRight = true;
         double initWeight = 1., curWeight = initWeight;
 
+        unsigned rootNode = *min_element(sensitiveNodes.begin(), sensitiveNodes.end());
         const vector<pair<VarIdPair, int>> &rVars = depnMapper.getSensitiveRVars(sensitiveIdx);
         if (!rVars.empty()) {
             for (unsigned nodeID: depnMapper.getSensitiveNodes(sensitiveIdx)) {
@@ -54,6 +60,16 @@ namespace wfdg {
 //                        cout << "D: lpush: " << util::numPairToString(make_pair(assignPair.second, p.second)) <<'\n';
                         idxQueue.emplace(assignPair.second, p.second);
                     }
+                    for(const RefPair &refPair: leftData.refTo) {
+                        if(refPair.second > rootNode) {
+                            if (lineWeightMap.count(refPair.second) == 0) {
+                                lineWeightMap[refPair.second] = curWeight;
+                            }
+                            if (refPair.second < p.second) {
+                                _customCPG.addDepnEdge(p.second, refPair.second);
+                            }
+                        }
+                    }
                 }
             }
             isRight = !isRight;
@@ -79,7 +95,7 @@ namespace wfdg {
                     idxQueue.pop();
                     const RightData &rightData = depnMapper.getRightData(p.first);
 //                    cout << "D: r2push: " << util::numPairToString(make_pair(rightData.assignTo.second, p.second)) <<'\n';
-                    if(DepnMapper::isVar(rightData.assignTo.first)) {
+                    if (DepnMapper::isVar(rightData.assignTo.first)) {
                         idxQueue.emplace(rightData.assignTo.second, p.second);
                     }
                 }
@@ -95,7 +111,7 @@ namespace wfdg {
                             || curWeight > lineWeightMap.at(refPair.second)) {
                             lineWeightMap[refPair.second] = curWeight;
                         }
-                        if(refPair.second < p.second) {
+                        if (refPair.second < p.second) {
                             _customCPG.addDepnEdge(p.second, refPair.second);
                         }
 //                        cout << "D: l2push: " << DepnMapper::refPairToString(refPair) <<'\n';
@@ -108,8 +124,12 @@ namespace wfdg {
     }
 
     void
-    WFDGGenerator::_genNodeWeight(unsigned int sensitiveIdx, const unordered_map<unsigned, double> &lineWeightMap,
+    WFDGGenerator::_genNodeWeight(int sensitiveIdx, const unordered_map<unsigned, double> &lineWeightMap,
                                   unordered_map<unsigned, double> &nodeWeightMap) const {
+        if(lineWeightMap.empty()) {
+            return;
+        }
+
         queue<unsigned> predNodeQue{};
         queue<unsigned> succNodeQue{};
         unordered_set<unsigned> nodeSet{};
@@ -188,19 +208,20 @@ namespace wfdg {
 
     vector<WFDG> WFDGGenerator::genWFDGs() {
         vector<WFDG> wfdgs{};
-        if (_customCPG.getSensitiveLinePairs().empty()) {
+        if (_customCPG.getSensitiveLineMap().empty()) {
             _genWFDGWithoutSensitiveLine(wfdgs);
             return wfdgs;
         }
-        const vector<pair<unsigned, unsigned>> &sensitiveLinePairs = _customCPG.getSensitiveLinePairs();
-        for (unsigned i = 0; i < sensitiveLinePairs.size(); ++i) {
+        const map<unsigned, int> &sensitiveLineMap = _customCPG.getSensitiveLineMap();
+        for(const auto& p: sensitiveLineMap) {
             unordered_map<unsigned, double> lineWeightMap{};
-            _genLineWeight(i, lineWeightMap);
+            _genLineWeight(p.second, lineWeightMap);
+            if(lineWeightMap.empty()) {
+                continue;
+            }
             unordered_map<unsigned, double> nodeWeightMap{};
-            _genNodeWeight(i, lineWeightMap, nodeWeightMap);
-            WFDG w = _buildWFDG(sensitiveLinePairs.at(i).first, lineWeightMap, nodeWeightMap);
-            cout << w.toString() <<'\n';
-            wfdgs.emplace_back(move(w));
+            _genNodeWeight(p.second, lineWeightMap, nodeWeightMap);
+            wfdgs.emplace_back(_buildWFDG(p.first, lineWeightMap, nodeWeightMap));
         }
         return wfdgs;
     }
@@ -222,7 +243,7 @@ namespace wfdg {
             _customCPG.for_each_succ(nodePair.first, insertEdges);
         }
         w.setDepnEdges(_customCPG.getDepnEdges());
-        cout << w.toString() <<'\n';
+        cout << w.toString() << '\n';
         wfdgs.push_back(move(w));
     }
 

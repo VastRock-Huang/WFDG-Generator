@@ -40,7 +40,7 @@ namespace wfdg {
 
         pair<unsigned, unsigned> _getLineRange(const SourceLocation &beginLoc, const SourceLocation &endLoc) const;
 
-        vector<pair<unsigned, unsigned>> _findSensitiveLines(const FunctionDecl *functionDecl,
+        map<unsigned, int> _findSensitiveLines(const FunctionDecl *functionDecl,
                                                              const pair<unsigned, unsigned> &lineRange) const;
 
         void _buildCustomCPG(const FunctionDecl *funcDecl, CustomCPG &customCPG) const;

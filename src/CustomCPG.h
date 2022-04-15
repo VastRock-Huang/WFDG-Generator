@@ -53,7 +53,7 @@ namespace wfdg {
         vector<unsigned> _nodesPredCnt{};
         vector<unsigned> _nodesPredVec{};
 
-        vector<pair<unsigned, unsigned>> _sensitiveLines;
+        map<unsigned, int> _sensitiveLines;
         set<pair<unsigned, unsigned>> _depnEdges{};
         DepnMapper _depnMapper;
 
@@ -61,9 +61,9 @@ namespace wfdg {
         const unordered_map<string, unsigned> &ASTStmtKindMap;
 
         CustomCPG(const unordered_map<string, unsigned> &ASTStmtKindMap,
-                  vector<pair<unsigned, unsigned>> &&sensitiveLines) : _sensitiveLines(sensitiveLines),
-                                                                       _depnMapper(_sensitiveLines.size()),
-                                                                       ASTStmtKindMap(ASTStmtKindMap) {}
+                  map<unsigned, int> &&sensitiveLines)
+                : _sensitiveLines(sensitiveLines), _depnMapper(_sensitiveLines.size()),
+                  ASTStmtKindMap(ASTStmtKindMap) {}
 
         DepnMapper &getDepnMapper() {
             return _depnMapper;
@@ -149,17 +149,13 @@ namespace wfdg {
             }
         }
 
-        const vector<pair<unsigned, unsigned>> &getSensitiveLinePairs() const {
+        const map<unsigned, int> &getSensitiveLineMap() const {
             return _sensitiveLines;
         }
 
         int inSensitiveLine(unsigned lineNum) const {
-            for (unsigned i = 0; i < _sensitiveLines.size(); ++i) {
-                if (lineNum == _sensitiveLines[i].first) {
-                    return static_cast<int>(i);
-                }
-            }
-            return -1;
+            auto it = _sensitiveLines.find(lineNum);
+            return it == _sensitiveLines.end() ? -1 : it->second;
         }
 
         const set<pair<unsigned, unsigned>> &getDepnEdges() const {
@@ -182,7 +178,7 @@ namespace wfdg {
                    ", nodesPredVec: " +
                    util::vecToString(_nodesPredVec, util::numToString<unsigned>) +
                    ", sensitiveLines:" +
-                   util::vecToString(_sensitiveLines, util::numPairToString<unsigned, unsigned>) +
+                   util::mapToString(_sensitiveLines, util::numToString<unsigned>, util::numToString<int>) +
                    (_sensitiveLines.empty() ?
                     ", depnEdges: " +
                     util::setToString(_depnEdges, util::numPairToString<unsigned, unsigned>)
