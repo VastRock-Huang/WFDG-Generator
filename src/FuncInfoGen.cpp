@@ -148,17 +148,14 @@ namespace wfdg {
                     new DetailedDepnHelper(wholeCFG, _context, customCPG));
         }
 
-
-        for (const ParmVarDecl *paramVarDecl: funcDecl->parameters()) {
-            depnHelper->depnOfDecl(paramVarDecl);
-        }
+        depnHelper->depnOfParamDecl(funcDecl->parameters());
         depnHelper->buildDepnInCPG();
 
 //        for (auto it = wholeCFG->rbegin(); it != wholeCFG->rend(); ++it) {
 //            CFGBlock *block = *it;
 //            block->print(llvm::outs(), wholeCFG.get(), LangOptions(), false);
 //            unsigned nodeID = block->getBlockID();
-//            depnHelper->updateNodeID(nodeID);
+//            depnHelper->_updateNodeID(nodeID);
 //            for (const CFGElement &element: *block) {
 //                if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
 //                    const Stmt *stmt = cfgStmt->getStmt();

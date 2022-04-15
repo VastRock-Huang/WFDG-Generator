@@ -114,11 +114,13 @@ namespace wfdg {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
                 if (isa<VarDecl>(refExpr->getDecl())) {
                     VarIdPair ids = _getRefVarIds(refExpr);
+//                    llvm::outs() << "push" << DepnMapper::varIdPairToString(ids) <<'\n';
                     assignFrom.emplace(ids, _getReadVarIdx(ids));
                 }
             } else if (isa<MemberExpr>(stmt)) {
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
                 VarIdPair memIds = _getStructIds(memberExpr);
+//                llvm::outs() << "push" << DepnMapper::varIdPairToString(memIds) <<'\n';
                 assignFrom.emplace(memIds, _getReadVarIdx(memIds));
             } else {
                 for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
@@ -221,12 +223,7 @@ namespace wfdg {
             _recordWrittenVar(ids, {make_pair(ids, depnMapper.rightVecSize() - 1)}, lineNum);
         }
 
-    public:
-        DetailedDepnHelper(const unique_ptr <CFG> &cfg, const ASTContext &context, CustomCPG &customCPG)
-                : AbstractDepnHelper(cfg, customCPG), _context(context), depnMapper(customCPG.getDepnMapper()),
-                  _writtenVarVec(cfg->size()) {}
-
-        void depnOfDecl(const VarDecl *varDecl) override {
+        void _depnOfDecl(const VarDecl *varDecl) override {
             VarIdPair ids = make_pair(0, varDecl->getID());
             _insertVarIds(ids, varDecl->getNameAsString());
             VarMap<int> assignFrom{};
@@ -238,10 +235,20 @@ namespace wfdg {
             llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
 
-        void updateNodeID(unsigned nodeID) override {
+        void _runAtNodeEnding() override {
+            llvm::outs() << depnMapper.toString() <<'\n';
+        }
+
+        void _updateNodeID(unsigned nodeID) override {
             _nodeID = nodeID;
             _readVarMap.clear();
         }
+
+    public:
+        DetailedDepnHelper(const unique_ptr <CFG> &cfg, const ASTContext &context, CustomCPG &customCPG)
+                : AbstractDepnHelper(cfg, customCPG), _context(context), depnMapper(customCPG.getDepnMapper()),
+                  _writtenVarVec(cfg->size()) {}
+
     };
 }
 

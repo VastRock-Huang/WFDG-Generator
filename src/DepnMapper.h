@@ -116,6 +116,7 @@ namespace wfdg {
                 _rightVec.at(p.second).assignTo = make_pair(ids, leftIdx);
                 vec.emplace_back(p);
             }
+//            cout << util::vecToString(vec, assignPairToString) <<'\n';
             _leftVec.emplace_back(move(vec));
             return leftIdx;
         }
@@ -129,6 +130,7 @@ namespace wfdg {
                 _leftVec.at(p.first).refTo.emplace_back(rightIdx, curNode);
                 vec.emplace_back(p);
             }
+//            cout << util::vecToString(vec, refPairToString) <<'\n';
             _rightVec.emplace_back(move(vec));
             return rightIdx;
         }

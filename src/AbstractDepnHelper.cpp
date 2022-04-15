@@ -90,7 +90,7 @@ namespace wfdg {
                 for (auto &decl: declStmt->decls()) {
                     if (isa<VarDecl>(decl)) {
                         const VarDecl *varDecl = cast<VarDecl>(decl);
-                        depnOfDecl(varDecl);
+                        _depnOfDecl(varDecl);
                     }
                 }
             }

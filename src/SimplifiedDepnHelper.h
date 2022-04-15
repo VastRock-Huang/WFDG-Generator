@@ -116,11 +116,7 @@ namespace wfdg {
             _recordWrittenVar(ids);
         }
 
-    public:
-        SimplifiedDepnHelper(const unique_ptr<CFG> &cfg, CustomCPG &customCPG)
-                : AbstractDepnHelper(cfg, customCPG), _writtenVarVec(cfg->size()) {}
-
-        void depnOfDecl(const VarDecl *varDecl) override {
+        void _depnOfDecl(const VarDecl *varDecl) override {
             VarIdPair ids = make_pair(0, varDecl->getID());
             if (const Expr *initExpr = varDecl->getInit()) {
                 _buildDepn(initExpr);
@@ -128,6 +124,17 @@ namespace wfdg {
             _recordWrittenVar(ids);
             llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
+
+        void _runAtNodeEnding() override {
+            llvm::outs() << "depnEdges: "
+                         << util::setToString(_customCPG.getDepnEdges(), util::numPairToString<unsigned, unsigned>)
+                         << '\n';
+        }
+
+    public:
+        SimplifiedDepnHelper(const unique_ptr <CFG> &cfg, CustomCPG &customCPG)
+                : AbstractDepnHelper(cfg, customCPG), _writtenVarVec(cfg->size()) {}
+
     };
 }
 
