@@ -149,18 +149,14 @@ namespace wfg {
             }
         }
 
-        void pushSensitiveLine(unsigned lineNum, unsigned typeID) {
-            _sensitiveLines.emplace_back(lineNum, typeID);
-        }
-
         const vector<pair<unsigned, unsigned>> &getSensitiveLinePairs() const {
             return _sensitiveLines;
         }
 
         int inSensitiveLine(unsigned lineNum) const {
-            for(unsigned i = 0; i < _sensitiveLines.size(); ++i) {
-                if(lineNum == _sensitiveLines[i].first) {
-                    return i;
+            for (unsigned i = 0; i < _sensitiveLines.size(); ++i) {
+                if (lineNum == _sensitiveLines[i].first) {
+                    return static_cast<int>(i);
                 }
             }
             return -1;
@@ -168,6 +164,10 @@ namespace wfg {
 
         const set<pair<unsigned, unsigned>> &getDepnEdges() const {
             return _depnEdges;
+        }
+
+        const DepnMapper &getDepnMapper() const {
+            return _depnMapper;
         }
 
         string toString() const {

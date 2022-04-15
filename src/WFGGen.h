@@ -15,26 +15,29 @@ namespace wfg {
     class WFDGGenerator {
     private:
         using WFDGNode = WFDG::WFDGNode;
+        using VarIdPair = DepnMapper::VarIdPair;
+        using LeftData = DepnMapper::LeftData;
+        using RightData = DepnMapper::RightData;
+        using RefPair = DepnMapper::RefPair;
+        using AssignPair = DepnMapper::AssignPair;
 
         const Configuration &_config;
-        const FuncInfo &_funcInfo;
-        const CustomCPG &_customCPG;
+        FuncInfo &_funcInfo;
+        CustomCPG &_customCPG;
 
-        void _genLineWeight(unsigned rootLine, map<unsigned, double> &lineWeightMap);
+        void _genLineWeight(unsigned sensitiveIdx, unordered_map<unsigned, double> &lineWeightMap);
 
-        void _getWFGNodes(const map<unsigned, double> &lineWeightMap, map<unsigned, WFDGNode> &wfdgNodes);
+        void _genNodeWeight(unsigned sensitiveIdx, const unordered_map<unsigned, double> &lineWeightMap,
+                            unordered_map<unsigned, double> &nodeWeightMap) const;
 
-        void _genNodeWeight(map<unsigned, WFDGNode> &wfdgNodes, const vector<unsigned> &rootNodes);
+        WFDG _buildWFDG(unsigned rootLine, const unordered_map<unsigned, double> & lineWeightMap,
+                        const unordered_map<unsigned, double>& nodeWeightMap) const;
 
-        WFDG _buildWFG(map<unsigned, WFDGNode> &wfgNodes, unsigned rootLine);
-
-        void _genWFDGWithoutSensitiveLine(vector<WFDG>& wfgs);
-
-        static vector<unsigned> findRootNodes(const map<unsigned, WFDGNode> &wfgNodes, unsigned rootLine);
+        void _genWFDGWithoutSensitiveLine(vector<WFDG> &wfdgs);
 
     public:
-        WFDGGenerator(const Configuration &config, const FuncInfo &funcInfo) : _config(config), _funcInfo(funcInfo),
-                                                                               _customCPG(_funcInfo.getCustomCPG()) {}
+        WFDGGenerator(const Configuration &config, FuncInfo &funcInfo) : _config(config), _funcInfo(funcInfo),
+                                                                               _customCPG(funcInfo.getCustomCPG()) {}
 
         vector<WFDG> genWFDGs();
     };

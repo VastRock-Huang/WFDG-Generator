@@ -88,11 +88,13 @@ namespace wfg {
         VarMap<unordered_set<int>> _rightMap{};
         vector<RightData> _rightVec{};
 
+        vector<unordered_set<unsigned>> _sensitiveNodes;
         vector<vector<pair<VarIdPair, int>>> _sensitiveWVars;
         vector<vector<pair<VarIdPair, int>>> _sensitiveRVars;
 
     public:
-        explicit DepnMapper(unsigned sensitiveCnt) : _sensitiveWVars(sensitiveCnt), _sensitiveRVars(sensitiveCnt) {}
+        explicit DepnMapper(unsigned sensitiveCnt) :
+                _sensitiveNodes(sensitiveCnt), _sensitiveWVars(sensitiveCnt), _sensitiveRVars(sensitiveCnt) {}
 
         unsigned rightVecSize() const {
             return _rightVec.size();
@@ -106,23 +108,28 @@ namespace wfg {
             }
         }
 
-        int pushAssignInfo(const VarIdPair &ids, vector<AssignPair> &&assignFrom) {
+        int pushAssignInfo(const VarIdPair &ids, const VarMap<int> &assignFrom) {
             int leftIdx = static_cast<int>(_leftVec.size());
             _leftMap[ids].emplace(leftIdx);
-            for (const AssignPair &p: assignFrom) {
+            vector<AssignPair> vec{};
+            for (const auto &p: assignFrom) {
                 _rightVec.at(p.second).assignTo = make_pair(ids, leftIdx);
+                vec.emplace_back(p);
             }
-            _leftVec.emplace_back(move(assignFrom));
+            _leftVec.emplace_back(move(vec));
             return leftIdx;
         }
 
-        int pushRefInfo(const VarIdPair &ids, unsigned curNode, vector<RefPair> &&refFrom) {
+        int
+        pushRefInfo(const VarIdPair &ids, unsigned curNode, const unordered_set<RefPair, util::pair_hash> &refFrom) {
             int rightIdx = static_cast<int>(_rightVec.size());
             _rightMap[ids].emplace(rightIdx);
+            vector<RefPair> vec{};
             for (const RefPair &p: refFrom) {
                 _leftVec.at(p.first).refTo.emplace_back(rightIdx, curNode);
+                vec.emplace_back(p);
             }
-            _rightVec.emplace_back(move(refFrom));
+            _rightVec.emplace_back(move(vec));
             return rightIdx;
         }
 
@@ -130,19 +137,41 @@ namespace wfg {
             return _varMap.at(ids);
         }
 
-        void pushSensitiveWVar(int sensitiveIdx, const VarIdPair& ids, int leftIdx) {
+        void pushSensitiveWVar(int sensitiveIdx, const VarIdPair &ids, int leftIdx, unsigned nodeID) {
+            _sensitiveNodes.at(sensitiveIdx).emplace(nodeID);
             _sensitiveWVars.at(sensitiveIdx).emplace_back(ids, leftIdx);
         }
 
-        void pushSensitiveRVar(int sensitiveIdx, const VarIdPair& ids, int rightIdx) {
+        void pushSensitiveRVar(int sensitiveIdx, const VarIdPair &ids, int rightIdx, unsigned nodeID) {
+            _sensitiveNodes.at(sensitiveIdx).emplace(nodeID);
             _sensitiveRVars.at(sensitiveIdx).emplace_back(ids, rightIdx);
+        }
+
+        const vector<pair<VarIdPair, int>> &getSensitiveRVars(unsigned sensitiveIdx) const {
+            return _sensitiveRVars.at(sensitiveIdx);
+        }
+
+        const vector<pair<VarIdPair, int>> &getSensitiveWVars(unsigned sensitiveIdx) const {
+            return _sensitiveWVars.at(sensitiveIdx);
+        }
+
+        const unordered_set<unsigned> &getSensitiveNodes(unsigned sensitiveIdx) const {
+            return _sensitiveNodes.at(sensitiveIdx);
+        }
+
+        const LeftData &getLeftData(int leftIdx) const {
+            return _leftVec.at(leftIdx);
+        }
+
+        const RightData &getRightData(int rightIdx) const {
+            return _rightVec.at(rightIdx);
         }
 
         string toString() const {
             auto hashsetToStr = [](const unordered_set<int> &s) -> string {
                 return util::hashsetToString(s, util::numToString < int > );
             };
-            auto vecToStr = [](const vector<AssignPair>& vec) -> string {
+            auto vecToStr = [](const vector<AssignPair> &vec) -> string {
                 return util::vecToString(vec, assignPairToString);
             };
             return "{varMap: " +
@@ -153,6 +182,10 @@ namespace wfg {
                    "rightVec: " + util::vecToString(_rightVec, RightData::toString) + ",\n" +
                    "leftMap: " + varMapToString(_leftMap, hashsetToStr) + ",\n" +
                    "rightMap: " + varMapToString(_rightMap, hashsetToStr) + "\n" +
+                   "sensitiveNodes: " +
+                   util::vecToString(_sensitiveNodes, [](const unordered_set<unsigned> &hashset) -> string {
+                       return util::hashsetToString(hashset, util::numToString < unsigned > );
+                   }) +
                    "sensitiveWVars: " + util::vecToString(_sensitiveWVars, vecToStr) + "\n" +
                    "sensitiveRVars: " + util::vecToString(_sensitiveRVars, vecToStr) +
                    "}";

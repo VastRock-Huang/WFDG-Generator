@@ -55,7 +55,8 @@ namespace wfg {
             auto it2 = _writtenVarVec.at(nodeID).find(memIds);
             auto end = _writtenVarVec.at(nodeID).end();
             if (it1 != end && it2 != end) {
-                return max(it1->second, it2->second);
+                // 结点序号越小越靠近出口越靠后
+                return min(it1->second, it2->second);
             } else if (it1 != end) {
                 return it1->second;
             } else if (it2 != end) {
@@ -64,26 +65,26 @@ namespace wfg {
             return -1;
         }
 
-        void _traceReadVar(unsigned searchNode, const VarIdPair &ids, vector<RefPair> &refFrom);
+        void _traceReadVar(unsigned searchNode, const VarIdPair &ids, unordered_set<RefPair, util::pair_hash> &refFrom);
 
         void _traceReadVar(const VarIdPair &ids, unsigned lineNum) {
-            vector<RefPair> refFrom{};
+            unordered_set<RefPair, util::pair_hash> refFrom{};
             int predIdx = -1;
             if ((predIdx = _hasWrittenVarInNode(_nodeID, ids)) == -1) {
                 _traceReadVar(_nodeID, ids, refFrom);
             } else {
-                refFrom.emplace_back(predIdx, _nodeID);
+                refFrom.emplace(predIdx, _nodeID);
             }
-            int rightIdx = depnMapper.pushRefInfo(ids, _nodeID, move(refFrom));
+            int rightIdx = depnMapper.pushRefInfo(ids, _nodeID, refFrom);
             _readVarMap.emplace(ids, rightIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
-                depnMapper.pushSensitiveRVar(sensitiveIdx, ids, rightIdx);
+                depnMapper.pushSensitiveRVar(sensitiveIdx, ids, rightIdx, _nodeID);
             }
         }
 
         void _traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                 const VarIdPair &memIds, vector<RefPair> &refFrom);
+                                 const VarIdPair &memIds, unordered_set<RefPair, util::pair_hash> &refFrom);
 
 
         void _traceReadStructVar(const VarIdPair &memIds, const string &name, unsigned lineNum) {
@@ -92,32 +93,32 @@ namespace wfg {
             }
             _insertVarIds(memIds, name);
             VarIdPair varIds = make_pair(0, memIds.first);
-            vector<RefPair> refFrom{};
+            unordered_set<RefPair, util::pair_hash> refFrom{};
             int predIdx = -1;
             if ((predIdx = _hasWrittenStructInNode(_nodeID, varIds, memIds)) == -1) {
                 _traceReadStructVar(_nodeID, varIds, memIds, refFrom);
             } else {
-                refFrom.emplace_back(predIdx, _nodeID);
+                refFrom.emplace(predIdx, _nodeID);
             }
-            int rightIdx = depnMapper.pushRefInfo(memIds, _nodeID, move(refFrom));
+            int rightIdx = depnMapper.pushRefInfo(memIds, _nodeID, refFrom);
             _readVarMap.emplace(memIds, rightIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
-                depnMapper.pushSensitiveRVar(sensitiveIdx, memIds, rightIdx);
+                depnMapper.pushSensitiveRVar(sensitiveIdx, memIds, rightIdx, _nodeID);
             }
         }
 
-        void _collectRVarsOfWVar(const Stmt *stmt, vector<AssignPair> &assignFrom) const {
+        void _collectRVarsOfWVar(const Stmt *stmt, VarMap<int> &assignFrom) const {
             if (isa<DeclRefExpr>(stmt)) {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
                 if (isa<VarDecl>(refExpr->getDecl())) {
                     VarIdPair ids = _getRefVarIds(refExpr);
-                    assignFrom.emplace_back(ids, _getReadVarIdx(ids));
+                    assignFrom.emplace(ids, _getReadVarIdx(ids));
                 }
             } else if (isa<MemberExpr>(stmt)) {
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
                 VarIdPair memIds = _getStructIds(memberExpr);
-                assignFrom.emplace_back(memIds, _getReadVarIdx(memIds));
+                assignFrom.emplace(memIds, _getReadVarIdx(memIds));
             } else {
                 for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
                     _collectRVarsOfWVar(*it, assignFrom);
@@ -125,26 +126,26 @@ namespace wfg {
             }
         }
 
-        void _recordWrittenVar(const VarIdPair &ids, vector<AssignPair> &&assignFrom, unsigned lineNum) {
-            int leftIdx = depnMapper.pushAssignInfo(ids, move(assignFrom));
+        void _recordWrittenVar(const VarIdPair &ids, const VarMap<int> &assignFrom, unsigned lineNum) {
+            int leftIdx = depnMapper.pushAssignInfo(ids,  assignFrom);
             _writtenVarVec.at(_nodeID).emplace(ids, leftIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
-                depnMapper.pushSensitiveWVar(sensitiveIdx, ids, leftIdx);
+                depnMapper.pushSensitiveWVar(sensitiveIdx, ids, leftIdx, _nodeID);
             }
         }
 
-        void _recordWrittenStruct(const VarIdPair &memIds, const string &name, vector<AssignPair> &&assignFrom,
+        void _recordWrittenStruct(const VarIdPair &memIds, const string &name, const VarMap<int> &assignFrom,
                                   unsigned lineNum) {
             if (memIds.first == 0) {
                 return;
             }
             _insertVarIds(memIds, name);
-            int leftIdx = depnMapper.pushAssignInfo(memIds, move(assignFrom));
+            int leftIdx = depnMapper.pushAssignInfo(memIds, assignFrom);
             _writtenVarVec.at(_nodeID).emplace(memIds, leftIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
-                depnMapper.pushSensitiveWVar(sensitiveIdx, memIds, leftIdx);
+                depnMapper.pushSensitiveWVar(sensitiveIdx, memIds, leftIdx, _nodeID);
             }
         }
 
@@ -183,19 +184,19 @@ namespace wfg {
         }
 
         void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) override {
-            vector<AssignPair> assignFrom{};
+            VarMap<int> assignFrom{};
             // 必须在record之前,防止同一变量被覆盖
             _collectRVarsOfWVar(readExpr, assignFrom);
             VarIdPair ids{};
             if (isa<DeclRefExpr>(writtenExpr)) {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(writtenExpr);
                 ids = _getRefVarIds(refExpr);
-                _recordWrittenVar(ids, move(assignFrom), _getLineNumber(refExpr->getLocation()));
+                _recordWrittenVar(ids, assignFrom, _getLineNumber(refExpr->getLocation()));
                 llvm::outs() << "W_Ref:" << refExpr->getNameInfo().getAsString() << '\n';
             } else if (isa<MemberExpr>(writtenExpr)) {
                 const MemberExpr *memberExpr = cast<MemberExpr>(writtenExpr);
                 string name = _getStructIdsAndName(memberExpr, ids);
-                _recordWrittenStruct(ids, name, move(assignFrom), _getLineNumber(memberExpr->getMemberLoc()));
+                _recordWrittenStruct(ids, name, assignFrom, _getLineNumber(memberExpr->getMemberLoc()));
                 llvm::outs() << "W_Mem:" << name << '\n';
             }
         }
@@ -229,12 +230,12 @@ namespace wfg {
         void depnOfDecl(const VarDecl *varDecl) override {
             VarIdPair ids = make_pair(0, varDecl->getID());
             _insertVarIds(ids, varDecl->getNameAsString());
-            vector<AssignPair> assignFrom{};
+            VarMap<int> assignFrom{};
             if (const Expr *initExpr = varDecl->getInit()) {
                 _buildDepn(initExpr);
                 _collectRVarsOfWVar(initExpr, assignFrom);
             }
-            _recordWrittenVar(ids, move(assignFrom), _getLineNumber(varDecl->getLocation()));
+            _recordWrittenVar(ids, assignFrom, _getLineNumber(varDecl->getLocation()));
             llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
 

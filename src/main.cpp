@@ -38,8 +38,7 @@ int main(int argc, const char **argv) {
     } diagConsumer;
     tool.setDiagnosticConsumer(&diagConsumer);
     int ret = tool.run(unique_ptr<FrontendActionFactory>(new FuncInfoGenFactory(config, funcInfoList)).get());
-
-    for (const auto &funcInfo: funcInfoList) {
+    for (auto &funcInfo: funcInfoList) {
         if (showFuncInfo) {
             cout << "********************* FuncInfo *********************\n"
                  << funcInfo.toString() << endl
@@ -47,9 +46,9 @@ int main(int argc, const char **argv) {
         }
         WFDGGenerator wfgGenerator(config, funcInfo);
         vector<WFDG> wfgs = wfgGenerator.genWFDGs();
-        for (const WFDG &w: wfgs) {
-            cout << w.toString() << endl << endl;
-        }
+//        for (const WFDG &w: wfgs) {
+//            cout << w.toString() << endl << endl;
+//        }
     }
     return ret;
 }

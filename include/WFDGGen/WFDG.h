@@ -36,6 +36,10 @@ namespace wfg {
     public:
         explicit WFDG(string funcName, unsigned rootLine = 0) : _funcName(move(funcName)), _rootLine(rootLine) {}
 
+        void addNode(unsigned nodeID, WFDGNode &&node) {
+            _nodes.emplace(nodeID, move(node));
+        }
+
         void setNodes(map<unsigned, WFDGNode> &&nodes) {
             _nodes = nodes;
         }
@@ -48,7 +52,7 @@ namespace wfg {
             _edges.emplace(src, dest);
         }
 
-        void setDepnEdges(const set<pair<unsigned,unsigned>>& depnEdges) {
+        void setDepnEdges(const set<pair<unsigned, unsigned>> &depnEdges) {
             _depnEdges = depnEdges;
         }
 

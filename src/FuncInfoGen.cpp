@@ -148,7 +148,7 @@ namespace wfg {
 
         for (auto it = wholeCFG->rbegin(); it != wholeCFG->rend(); ++it) {
             CFGBlock *block = *it;
-            block->dump();
+            block->print(llvm::outs(), wholeCFG.get(), LangOptions(), false);
             unsigned nodeID = block->getBlockID();
             depnHelper->updateNodeID(nodeID);
             for (const CFGElement &element: *block) {
