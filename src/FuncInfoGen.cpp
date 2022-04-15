@@ -13,7 +13,7 @@
 namespace wfdg {
 
     map<unsigned, int> FuncInfoGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
-                                                                              const pair<unsigned, unsigned> &lineRange) const {
+                                                                const pair<unsigned, unsigned> &lineRange) const {
         unsigned sensitiveLine = _config.getSensitiveLine();
         if (sensitiveLine != 0 && util::numInRange(sensitiveLine, lineRange) == 0) {
             return {{sensitiveLine, 0}};
@@ -25,7 +25,6 @@ namespace wfdg {
         StringRef funcContent{_manager.getCharacterData(beginLoc),
                               _manager.getCharacterData(endLoc) - _manager.getCharacterData(beginLoc) + 1UL};
         unsigned fileOffset = _manager.getFileOffset(beginLoc);
-        llvm::outs() << funcContent <<'\n';
         map<unsigned, int> res{};
         int idx = 0;
         for (size_t i = 1; i < _config.keyWords.size(); ++i) {
@@ -37,7 +36,7 @@ namespace wfdg {
                 bool insert{};
                 llvm::outs() << keyword << ": " << line << '\n';
                 tie(std::ignore, insert) = res.emplace(line, idx);
-                if(insert) {
+                if (insert) {
                     ++idx;
                 }
                 pos += keyword.size();
@@ -143,39 +142,31 @@ namespace wfdg {
         unique_ptr<AbstractDepnHelper> depnHelper{};
         if (customCPG.getSensitiveLineMap().empty()) {
             depnHelper = unique_ptr<AbstractDepnHelper>(
-                    new SimplifiedDepnHelper(customCPG, wholeCFG->size(), wholeCFG->size() - 1));
+                    new SimplifiedDepnHelper(wholeCFG, customCPG));
         } else {
             depnHelper = unique_ptr<AbstractDepnHelper>(
-                    new DetailedDepnHelper(customCPG, wholeCFG->size(), wholeCFG->size() - 1, _context));
+                    new DetailedDepnHelper(wholeCFG, _context, customCPG));
         }
+
 
         for (const ParmVarDecl *paramVarDecl: funcDecl->parameters()) {
             depnHelper->depnOfDecl(paramVarDecl);
         }
+        depnHelper->buildDepnInCPG();
 
-        for (auto it = wholeCFG->rbegin(); it != wholeCFG->rend(); ++it) {
-            CFGBlock *block = *it;
-            block->print(llvm::outs(), wholeCFG.get(), LangOptions(), false);
-            unsigned nodeID = block->getBlockID();
-            depnHelper->updateNodeID(nodeID);
-            for (const CFGElement &element: *block) {
-                if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
-                    const Stmt *stmt = cfgStmt->getStmt();
-                    depnHelper->buildDepn(stmt);
-                }
-            }
-            if (depnHelper.get()) {
-                auto &helper = *depnHelper.get();
-                if (typeid(helper) == typeid(SimplifiedDepnHelper)) {
-                    llvm::outs() << "Depn Edges: "
-                                 << util::setToString(customCPG.getDepnEdges(),
-                                                      util::numPairToString<unsigned, unsigned>)
-                                 << '\n';
-                } else {
-                    llvm::outs() << "DepnMapper: " + customCPG.getDepnMapper().toString() << '\n';
-                }
-            }
-        }
+//        for (auto it = wholeCFG->rbegin(); it != wholeCFG->rend(); ++it) {
+//            CFGBlock *block = *it;
+//            block->print(llvm::outs(), wholeCFG.get(), LangOptions(), false);
+//            unsigned nodeID = block->getBlockID();
+//            depnHelper->updateNodeID(nodeID);
+//            for (const CFGElement &element: *block) {
+//                if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
+//                    const Stmt *stmt = cfgStmt->getStmt();
+//                    depnHelper->buildDepn(stmt);
+//                }
+//            }
+//
+//        }
     }
 
     void FuncInfoGenAction::_lexToken() const {

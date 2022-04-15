@@ -7,6 +7,7 @@
 
 #include "AbstractDepnHelper.h"
 #include <clang/AST/ASTContext.h>
+#include <memory>
 
 namespace wfdg {
     class DetailedDepnHelper : public AbstractDepnHelper {
@@ -127,7 +128,7 @@ namespace wfdg {
         }
 
         void _recordWrittenVar(const VarIdPair &ids, const VarMap<int> &assignFrom, unsigned lineNum) {
-            int leftIdx = depnMapper.pushAssignInfo(ids,  assignFrom);
+            int leftIdx = depnMapper.pushAssignInfo(ids, assignFrom);
             _writtenVarVec.at(_nodeID).emplace(ids, leftIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
@@ -221,11 +222,9 @@ namespace wfdg {
         }
 
     public:
-        DetailedDepnHelper(CustomCPG &customCPG, unsigned nodeCnt,
-                           unsigned nodeID, const ASTContext &context)
-                : AbstractDepnHelper(customCPG, nodeID),
-                  _context(context), depnMapper(customCPG.getDepnMapper()),
-                  _writtenVarVec(nodeCnt) {}
+        DetailedDepnHelper(const unique_ptr <CFG> &cfg, const ASTContext &context, CustomCPG &customCPG)
+                : AbstractDepnHelper(cfg, customCPG), _context(context), depnMapper(customCPG.getDepnMapper()),
+                  _writtenVarVec(cfg->size()) {}
 
         void depnOfDecl(const VarDecl *varDecl) override {
             VarIdPair ids = make_pair(0, varDecl->getID());

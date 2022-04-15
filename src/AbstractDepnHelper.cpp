@@ -5,8 +5,11 @@
 #include "AbstractDepnHelper.h"
 
 namespace wfdg {
-    void AbstractDepnHelper::_buildDepn(const Stmt *stmt, bool canVisitCall) {
+    void AbstractDepnHelper::_buildDepn(const Stmt *stmt) {
         auto it = stmt->child_begin();
+        if(_stmtHelper.skipStmt(stmt)) {
+            return;
+        }
         switch (stmt->getStmtClass()) {
             case Stmt::MemberExprClass: {
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
@@ -24,9 +27,6 @@ namespace wfdg {
                 return;
 
             case Stmt::CallExprClass: {
-                if (!canVisitCall) {
-                    return;
-                }
                 // 跳过函数类型转换
                 for (++it; it != stmt->child_end(); ++it) {
                     if (isa<ImplicitCastExpr>(*it)) {

@@ -117,8 +117,8 @@ namespace wfdg {
         }
 
     public:
-        SimplifiedDepnHelper(CustomCPG &customCPG, unsigned nodeCnt, unsigned nodeID)
-                : AbstractDepnHelper(customCPG, nodeID), _writtenVarVec(nodeCnt) {}
+        SimplifiedDepnHelper(const unique_ptr<CFG> &cfg, CustomCPG &customCPG)
+                : AbstractDepnHelper(cfg, customCPG), _writtenVarVec(cfg->size()) {}
 
         void depnOfDecl(const VarDecl *varDecl) override {
             VarIdPair ids = make_pair(0, varDecl->getID());
