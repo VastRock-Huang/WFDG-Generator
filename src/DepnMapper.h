@@ -88,6 +88,8 @@ namespace wfdg {
         VarMap<unordered_set<int>> _rightMap{};
         vector<RightData> _rightVec{};
 
+        unordered_map<unsigned, unordered_set<int>> _contrVarMap{};
+
         vector<unordered_set<unsigned>> _sensitiveNodes;
         vector<vector<pair<VarIdPair, int>>> _sensitiveWVars;
         vector<vector<pair<VarIdPair, int>>> _sensitiveRVars;
@@ -169,6 +171,14 @@ namespace wfdg {
             return _rightVec.at(rightIdx);
         }
 
+        void pushContrVar(unsigned nodeId, int rightIdx) {
+            auto it = _contrVarMap.find(nodeId);
+            if (it == _contrVarMap.end()) {
+                std::tie(it, std::ignore) = _contrVarMap.emplace(nodeId, unordered_set<int>());
+            }
+            it->second.emplace(rightIdx);
+        }
+
         string toString() const {
             auto hashsetToStr = [](const unordered_set<int> &s) -> string {
                 return util::hashsetToString(s, util::numToString < int > );
@@ -176,6 +186,7 @@ namespace wfdg {
             auto vecToStr = [](const vector<AssignPair> &vec) -> string {
                 return util::vecToString(vec, assignPairToString);
             };
+
             return "{varMap: " +
                    varMapToString(_varMap, [](const string &s) -> string {
                        return s;
@@ -184,10 +195,15 @@ namespace wfdg {
                    "rightVec: " + util::vecToString(_rightVec, RightData::toString) + ",\n" +
                    "leftMap: " + varMapToString(_leftMap, hashsetToStr) + ",\n" +
                    "rightMap: " + varMapToString(_rightMap, hashsetToStr) + ",\n" +
+                   "contrVarMap: " +
+                   util::hashmapToString(_contrVarMap, util::numToString<unsigned>,
+                                         [](const auto &hashset) -> string {
+                                             return util::hashsetToString(hashset);
+                                         }) + ",\n" +
                    "sensitiveNodes: " +
-                   util::vecToString(_sensitiveNodes, [](const unordered_set<unsigned> &hashset) -> string {
-                       return util::hashsetToString(hashset, util::numToString < unsigned > );
-                   }) + ",\n"
+                   util::vecToString(_sensitiveNodes, [](const auto &hashset) -> string {
+                       return util::hashsetToString(hashset);
+                   }) + ",\n" +
                    "sensitiveWVars: " + util::vecToString(_sensitiveWVars, vecToStr) + ",\n" +
                    "sensitiveRVars: " + util::vecToString(_sensitiveRVars, vecToStr) +
                    "}";

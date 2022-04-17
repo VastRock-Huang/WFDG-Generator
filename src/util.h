@@ -25,7 +25,7 @@ namespace wfdg {
 
         template<typename T>
         string vecToString(const vector<T> &vec,
-                           const function<string(decltype(vec.front()))> &toStrFunc = util::numToString<T>) {
+                           const function<string(decltype(vec.front()))> &toStrFunc = numToString<T>) {
             string str = "[";
             size_t sz = vec.size();
             for (size_t i = 0; i < sz; ++i) {
@@ -78,7 +78,8 @@ namespace wfdg {
         }
 
         template<typename T, typename H>
-        string hashsetToString(const unordered_set<T, H> &s, const function<string(decltype(*s.begin()))> &toStrFunc) {
+        string hashsetToString(const unordered_set<T, H> &s,
+                               const function<string(decltype(*s.begin()))> &toStrFunc = numToString<T>) {
             string str = "[";
             size_t i = 0, sz = s.size();
             for (auto &item: s) {
@@ -92,7 +93,8 @@ namespace wfdg {
 
 
         template<typename T>
-        string setToString(const set<T> &s, const function<string(decltype(*s.begin()))> &toStrFunc) {
+        string
+        setToString(const set<T> &s, const function<string(decltype(*s.begin()))> &toStrFunc = numToString<T>) {
             string str = "[";
             size_t i = 0, sz = s.size();
             for (auto &item: s) {

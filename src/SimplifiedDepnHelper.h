@@ -139,7 +139,7 @@ namespace wfdg {
                 llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
 
-        void _runAtNodeEnding() override {
+        void _doAtNodeEnding() override {
             if (_debug)
                 llvm::outs() << "depnEdges: "
                              << util::setToString(_customCPG.getDataDepnEdges(), util::numPairToString<unsigned, unsigned>)

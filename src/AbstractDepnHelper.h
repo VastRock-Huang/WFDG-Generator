@@ -65,9 +65,11 @@ namespace wfdg {
 
         virtual void _depnOfDecl(const VarDecl *varDecl) = 0;
 
-        virtual void _runAtNodeEnding() = 0;
+        virtual void _doTerminatorCondition(const Stmt* stmt) {}
 
-        virtual void _updateNodeID(unsigned nodeID) {
+        virtual void _doAtNodeEnding() {};
+
+        virtual void _doNodeIdUpdate(unsigned nodeID) {
             _nodeID = nodeID;
         }
 
@@ -108,7 +110,7 @@ namespace wfdg {
                 block->print(llvm::outs(), _cfg.get(), LangOptions(), false);
                 unsigned nodeID = block->getBlockID();
                 _stmtHelper.setBlockID(nodeID);
-                _updateNodeID(nodeID);
+                _doNodeIdUpdate(nodeID);
                 int j = 1;
                 for (const CFGElement &element: *block) {
                     _stmtHelper.setStmtID(j);
@@ -118,12 +120,13 @@ namespace wfdg {
                     }
                     ++j;
                 }
-                _runAtNodeEnding();
+                _doTerminatorCondition(block->getTerminatorCondition());
+                _doAtNodeEnding();
             }
         }
 
         void depnOfParamDecl(llvm::ArrayRef<ParmVarDecl *> params) {
-            _updateNodeID(_cfg->size() - 1);
+            _doNodeIdUpdate(_cfg->size() - 1);
             for (const ParmVarDecl *paramVarDecl: params) {
                 _depnOfDecl(paramVarDecl);
             }

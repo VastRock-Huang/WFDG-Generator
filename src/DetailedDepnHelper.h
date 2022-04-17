@@ -9,6 +9,7 @@
 #include "CustomCPG.h"
 #include <clang/AST/ASTContext.h>
 #include <memory>
+#include <queue>
 
 namespace wfdg {
     class DetailedDepnHelper : public AbstractDepnHelper {
@@ -246,12 +247,46 @@ namespace wfdg {
                 llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
 
-        void _runAtNodeEnding() override {
+        void _doTerminatorCondition(const Stmt *stmt) override {
+            if (!stmt) {
+                return;
+            }
+            queue<const Stmt *> q{};
+            q.push(stmt);
+            while (!q.empty()) {
+                const Stmt *s = q.front();
+                q.pop();
+                if (isa<DeclRefExpr>(s)) {
+                    const DeclRefExpr *refExpr = cast<DeclRefExpr>(s);
+                    if (isa<VarDecl>(refExpr->getDecl())) {
+                        VarIdPair ids = _getRefVarIds(refExpr);
+                        _depnMapper.pushContrVar(_nodeID, _getReadVarIdx(ids));
+                    }
+                    continue;
+                } else if (isa<MemberExpr>(s)) {
+                    const MemberExpr *memberExpr = cast<MemberExpr>(s);
+                    VarIdPair memIds = _getStructIds(memberExpr);
+                    _depnMapper.pushContrVar(_nodeID, _getReadVarIdx(memIds));
+                    continue;
+                } else if (const BinaryOperator *binOp = dyn_cast<BinaryOperator>(s)) {
+                    if (binOp->isAssignmentOp()) {
+                        q.push(binOp->getLHS());
+                        continue;
+                    }
+                }
+                for (auto it = s->child_begin(); it != s->child_end(); ++it) {
+                    q.push(*it);
+                }
+            }
+
+        }
+
+        void _doAtNodeEnding() override {
             if (_debug)
                 llvm::outs() << _depnMapper.toString() << '\n';
         }
 
-        void _updateNodeID(unsigned nodeID) override {
+        void _doNodeIdUpdate(unsigned nodeID) override {
             _nodeID = nodeID;
             _readVarMap.clear();
         }
