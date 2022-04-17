@@ -140,7 +140,6 @@ namespace wfdg {
             }
         }
 
-        // TODO: 影响结构体变量本身
         void _recordWrittenStruct(const VarIdPair &memIds, const string &name, const VarMap<int> &assignFrom,
                                   unsigned lineNum) {
             if (memIds.first == 0) {
@@ -149,6 +148,8 @@ namespace wfdg {
             _insertVarIds(memIds, name);
             int leftIdx = _depnMapper.pushAssignInfo(memIds, assignFrom);
             _writtenVarVec.at(_nodeID).emplace(memIds, leftIdx);
+            // 结构体变量成员的写操作影响变量本身
+            _writtenVarVec.at(_nodeID).emplace(make_pair(0, memIds.first), leftIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
                 _depnMapper.pushSensitiveWVar(sensitiveIdx, memIds, leftIdx, _nodeID);
