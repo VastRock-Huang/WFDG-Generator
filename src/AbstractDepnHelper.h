@@ -5,7 +5,6 @@
 #ifndef WFG_GENERATOR_ABSTRACTDEPNHELPER_H
 #define WFG_GENERATOR_ABSTRACTDEPNHELPER_H
 
-#include "CustomCPG.h"
 #include "DepnMapper.h"
 #include "util.h"
 #include <clang/AST/AST.h>
@@ -24,71 +23,15 @@ namespace wfdg {
         class StmtHelper {
         private:
             using StmtMapTy = llvm::DenseMap<const Stmt *, pair<unsigned, unsigned>>;
-            using DeclMapTy = llvm::DenseMap<const Decl *, pair<unsigned, unsigned>>;
+//            using DeclMapTy = llvm::DenseMap<const Decl *, pair<unsigned, unsigned>>;
 
             StmtMapTy _StmtMap;
-            DeclMapTy _DeclMap;
+//            DeclMapTy _DeclMap;
             unsigned _currentBlock = 0;
             unsigned _currStmt = 0;
 
         public:
-            StmtHelper(const CFG *cfg) {
-                if (!cfg) {
-                    return;
-                }
-                for (CFG::const_iterator I = cfg->begin(), E = cfg->end(); I != E; ++I) {
-                    unsigned j = 1;
-                    for (CFGBlock::const_iterator BI = (*I)->begin(), BEnd = (*I)->end();
-                         BI != BEnd; ++BI, ++j) {
-                        if (Optional < CFGStmt > SE = BI->getAs<CFGStmt>()) {
-                            const Stmt *stmt = SE->getStmt();
-                            pair<unsigned, unsigned> P((*I)->getBlockID(), j);
-                            _StmtMap[stmt] = P;
-
-                            switch (stmt->getStmtClass()) {
-                                case Stmt::DeclStmtClass:
-                                    _DeclMap[cast<DeclStmt>(stmt)->getSingleDecl()] = P;
-                                    break;
-                                case Stmt::IfStmtClass: {
-                                    const VarDecl *var = cast<IfStmt>(stmt)->getConditionVariable();
-                                    if (var)
-                                        _DeclMap[var] = P;
-                                    break;
-                                }
-                                case Stmt::ForStmtClass: {
-                                    const VarDecl *var = cast<ForStmt>(stmt)->getConditionVariable();
-                                    if (var)
-                                        _DeclMap[var] = P;
-                                    break;
-                                }
-                                case Stmt::WhileStmtClass: {
-                                    const VarDecl *var =
-                                            cast<WhileStmt>(stmt)->getConditionVariable();
-                                    if (var)
-                                        _DeclMap[var] = P;
-                                    break;
-                                }
-                                case Stmt::SwitchStmtClass: {
-                                    const VarDecl *var =
-                                            cast<SwitchStmt>(stmt)->getConditionVariable();
-                                    if (var)
-                                        _DeclMap[var] = P;
-                                    break;
-                                }
-                                case Stmt::CXXCatchStmtClass: {
-                                    const VarDecl *var =
-                                            cast<CXXCatchStmt>(stmt)->getExceptionDecl();
-                                    if (var)
-                                        _DeclMap[var] = P;
-                                    break;
-                                }
-                                default:
-                                    break;
-                            }
-                        }
-                    }
-                }
-            }
+            StmtHelper(const CFG *cfg);
 
             void setBlockID(unsigned i) { _currentBlock = i; }
 
@@ -105,23 +48,10 @@ namespace wfdg {
                 }
                 return true;
             }
-
-            bool skipDecl(const Decl *D) {
-                DeclMapTy::iterator I = _DeclMap.find(D);
-                if (I == _DeclMap.end()) {
-                    return false;
-                }
-                if (_currentBlock >= 0 && I->second.first == _currentBlock
-                    && I->second.second == _currStmt) {
-                    return false;
-                }
-                return true;
-            }
         };
 
         const unique_ptr <CFG> &_cfg;
         StmtHelper _stmtHelper;
-        CustomCPG &_customCPG;
         unsigned _nodeID{};
         bool _debug{false};
 
@@ -165,17 +95,17 @@ namespace wfdg {
         }
 
     public:
-        AbstractDepnHelper(const unique_ptr <CFG> &cfg, CustomCPG &customCPG)
-                : _cfg(cfg), _stmtHelper(cfg.get()), _customCPG(customCPG) {}
+        AbstractDepnHelper(const unique_ptr <CFG> &cfg)
+                : _cfg(cfg), _stmtHelper(cfg.get()) {}
 
-        AbstractDepnHelper(const unique_ptr <CFG> &cfg, CustomCPG &customCPG, bool debug)
-                : _cfg(cfg), _stmtHelper(cfg.get()), _customCPG(customCPG), _debug(debug) {}
+        AbstractDepnHelper(const unique_ptr <CFG> &cfg, bool debug)
+                : _cfg(cfg), _stmtHelper(cfg.get()), _debug(debug) {}
 
         void buildDepnInCPG() {
             for (auto it = _cfg->rbegin(); it != _cfg->rend(); ++it) {
                 CFGBlock *block = *it;
-                if (_debug)
-                    block->print(llvm::outs(), _cfg.get(), LangOptions(), false);
+//                if (_debug)
+                block->print(llvm::outs(), _cfg.get(), LangOptions(), false);
                 unsigned nodeID = block->getBlockID();
                 _stmtHelper.setBlockID(nodeID);
                 _updateNodeID(nodeID);

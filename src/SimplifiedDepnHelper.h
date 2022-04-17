@@ -6,11 +6,14 @@
 #define WFG_GENERATOR_SIMPLIFIEDDEPNHELPER_H
 
 #include "AbstractDepnHelper.h"
+#include "CustomCPG.h"
 
 namespace wfdg {
     class SimplifiedDepnHelper : public AbstractDepnHelper {
     private:
+        const CustomCPG &_customCPG;
         vector<unordered_set<VarIdPair, util::pair_hash>> _writtenVarVec;
+        set<pair<unsigned, unsigned>> &_depnEdges;
 
         bool _noneWrittenVarInNode(unsigned nodeID, const VarIdPair &ids) const {
             return _writtenVarVec.at(nodeID).count(ids) == 0;
@@ -19,6 +22,10 @@ namespace wfdg {
         bool _noneWrittenStructInNode(unsigned nodeID, const VarIdPair &varIds, const VarIdPair &memIds) const {
             return _writtenVarVec.at(nodeID).count(varIds) == 0 &&
                    _writtenVarVec.at(nodeID).count(memIds) == 0;
+        }
+
+        void _addDepnEdge(unsigned cur, unsigned pred) {
+            _depnEdges.emplace(cur, pred);
         }
 
         void _traceReadVar(unsigned searchNode, const VarIdPair &ids);
@@ -135,14 +142,15 @@ namespace wfdg {
         void _runAtNodeEnding() override {
             if (_debug)
                 llvm::outs() << "depnEdges: "
-                             << util::setToString(_customCPG.getDepnEdges(), util::numPairToString<unsigned, unsigned>)
+                             << util::setToString(_customCPG.getDataDepnEdges(), util::numPairToString<unsigned, unsigned>)
                              << '\n';
         }
 
     public:
-        SimplifiedDepnHelper(const unique_ptr <CFG> &cfg, CustomCPG &customCPG, bool debug)
-                : AbstractDepnHelper(cfg, customCPG, debug), _writtenVarVec(cfg->size()) {}
-
+        SimplifiedDepnHelper(const unique_ptr <CFG> &cfg, const CustomCPG &customCPG,
+                             set<pair<unsigned, unsigned>> &depnEdges, bool debug)
+                : AbstractDepnHelper(cfg, debug), _customCPG(customCPG),
+                  _writtenVarVec(cfg->size()), _depnEdges(depnEdges) {}
     };
 }
 

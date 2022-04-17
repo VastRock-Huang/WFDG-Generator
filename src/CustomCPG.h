@@ -42,6 +42,8 @@ namespace wfdg {
     private:
         unsigned _nodeCnt{0};
         vector<CPGNode> _nodes{};
+        vector<bool> _isloop{};
+        vector<bool> _hasCondition{};
 
         unsigned _succIdx{0};
         unsigned _succCnt{0};   // succ边的总数
@@ -54,7 +56,8 @@ namespace wfdg {
         vector<unsigned> _nodesPredVec{};
 
         map<unsigned, int> _sensitiveLines;
-        set<pair<unsigned, unsigned>> _depnEdges{};
+        vector<unsigned> _contrDepn{};
+        set<pair<unsigned, unsigned>> _dataDepnEdges{};
         DepnMapper _depnMapper;
 
     public:
@@ -74,6 +77,8 @@ namespace wfdg {
             _nodes.assign(nodeCnt, CPGNode(ASTStmtKindMap.size()));
             _nodesSuccCnt.assign(nodeCnt + 1, 0);
             _nodesPredCnt.assign(nodeCnt + 1, 0);
+            _isloop.assign(nodeCnt, false);
+            _hasCondition.assign(nodeCnt, false);
         }
 
         void addSuccEdge(unsigned cur, unsigned succ);
@@ -108,7 +113,7 @@ namespace wfdg {
         }
 
         void addDepnEdge(unsigned pred, unsigned cur) {
-            _depnEdges.emplace(pred, cur);
+            _dataDepnEdges.emplace(cur, pred);
         }
 
         unsigned pred_begin(unsigned nodeId) const {
@@ -121,6 +126,14 @@ namespace wfdg {
 
         unsigned pred_at(unsigned preVecIdx) const {
             return _nodesPredVec.at(preVecIdx);
+        }
+
+        unsigned pred_size(unsigned nodeId) const {
+            return pred_end(nodeId) - pred_begin(nodeId);
+        }
+
+        unsigned pred_front(unsigned nodeId) const {
+            return pred_at(pred_begin(nodeId));
         }
 
         void for_each_pred(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
@@ -142,6 +155,14 @@ namespace wfdg {
             return _nodesSuccVec.at(succVecIdx);
         }
 
+        unsigned succ_back(unsigned nodeID) const {
+            return succ_at(succ_end(nodeID) - 1);
+        }
+
+        unsigned succ_size(unsigned nodeId) const {
+            return succ_end(nodeId) - succ_begin(nodeId);
+        }
+
         void for_each_succ(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
             for (unsigned vecIdx = succ_begin(curNode); vecIdx != succ_end(curNode); ++vecIdx) {
                 unsigned succNode = succ_at(vecIdx);
@@ -158,31 +179,54 @@ namespace wfdg {
             return it == _sensitiveLines.end() ? -1 : it->second;
         }
 
-        const set<pair<unsigned, unsigned>> &getDepnEdges() const {
-            return _depnEdges;
+        void setContrDepn(vector<unsigned> contrDepn) {
+            _contrDepn = move(contrDepn);
+        }
+
+        set<pair<unsigned, unsigned>> &getDataDepnEdges() {
+            return _dataDepnEdges;
+        }
+
+        const set<pair<unsigned, unsigned>> &getDataDepnEdges() const {
+            return _dataDepnEdges;
         }
 
         const DepnMapper &getDepnMapper() const {
             return _depnMapper;
         }
 
+        void setIsLoop(unsigned nodeId) {
+            _isloop.at(nodeId) = true;
+        }
+
+        bool isLoop(unsigned nodeId) const {
+            return _isloop.at(nodeId);
+        }
+
+        void setHasCondition(unsigned nodeId) {
+            _hasCondition.at(nodeId) = true;
+        }
+
+        bool hasCondition(unsigned nodeId) const {
+            return _hasCondition.at(nodeId);
+        }
+
         string toString() const {
             return "{nodeCnt: " + to_string(_nodeCnt) +
                    ", nodes: " + util::vecToString(_nodes, CPGNode::toString) +
                    ", succCnt: " + to_string(_succCnt) +
-                   ", nodesSuccCnt: " + util::vecToString(_nodesSuccCnt, util::numToString<unsigned>) +
-                   ", nodesSuccVec: " + util::vecToString(_nodesSuccVec, util::numToString<unsigned>) +
+                   ", nodesSuccCnt: " + util::vecToString(_nodesSuccCnt) +
+                   ", nodesSuccVec: " + util::vecToString(_nodesSuccVec) +
                    ", predCnt: " + to_string(_predCnt) +
-                   ", nodesPredCnt: " +
-                   util::vecToString(_nodesPredCnt, util::numToString<unsigned>) +
-                   ", nodesPredVec: " +
-                   util::vecToString(_nodesPredVec, util::numToString<unsigned>) +
+                   ", nodesPredCnt: " + util::vecToString(_nodesPredCnt) +
+                   ", nodesPredVec: " + util::vecToString(_nodesPredVec) +
                    ", sensitiveLines:" +
                    util::mapToString(_sensitiveLines, util::numToString<unsigned>, util::numToString<int>) +
+                   ", contrDepnEdges: " + util::vecToString(_contrDepn) +
                    (_sensitiveLines.empty() ?
-                    ", depnEdges: " +
-                    util::setToString(_depnEdges, util::numPairToString<unsigned, unsigned>)
-                                            : ", depnMapper: " + _depnMapper.toString()) +
+                    ", dataDepnEdges: " +
+                    util::setToString(_dataDepnEdges, util::numPairToString<unsigned, unsigned>)
+                                            : ", _depnMapper: " + _depnMapper.toString()) +
                    "}";
         }
     };

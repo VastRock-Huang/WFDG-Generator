@@ -15,7 +15,7 @@ namespace wfdg {
             if (_noneWrittenVarInNode(predNode, ids)) {
                 _traceReadVar(predNode, ids);
             } else {
-                _customCPG.addDepnEdge(predNode, _nodeID);
+                _addDepnEdge(_nodeID, predNode);
                 if (_debug)
                     llvm::outs() << "find " << DepnMapper::varIdPairToString(ids) << " at " << predNode << '\n';
             }
@@ -30,7 +30,7 @@ namespace wfdg {
             if (_noneWrittenStructInNode(predNode, varIds, memIds)) {
                 _traceReadStructVar(predNode, varIds, memIds);
             } else {
-                _customCPG.addDepnEdge(predNode, _nodeID);
+                _addDepnEdge(_nodeID, predNode);
                 if (_debug)
                     llvm::outs() << "find " << DepnMapper::varIdPairToString(memIds) << " at " << predNode << '\n';
             }

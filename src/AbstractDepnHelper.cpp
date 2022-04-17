@@ -111,4 +111,63 @@ namespace wfdg {
         }
         _doDepnOfWrittenVar(writtenExpr, readExpr);
     }
+
+    AbstractDepnHelper::StmtHelper::StmtHelper(const CFG *cfg) {
+        if (!cfg) {
+            return;
+        }
+        for (CFG::const_iterator I = cfg->begin(), E = cfg->end(); I != E; ++I) {
+            unsigned j = 1;
+            for (CFGBlock::const_iterator BI = (*I)->begin(), BEnd = (*I)->end();
+                 BI != BEnd; ++BI, ++j) {
+                if (Optional < CFGStmt > SE = BI->getAs<CFGStmt>()) {
+                    const Stmt *stmt = SE->getStmt();
+                    pair<unsigned, unsigned> P((*I)->getBlockID(), j);
+                    _StmtMap[stmt] = P;
+
+                    /*
+                    switch (stmt->getStmtClass()) {
+                        case Stmt::DeclStmtClass:
+                            _DeclMap[cast<DeclStmt>(stmt)->getSingleDecl()] = P;
+                            break;
+                        case Stmt::IfStmtClass: {
+                            const VarDecl *var = cast<IfStmt>(stmt)->getConditionVariable();
+                            if (var)
+                                _DeclMap[var] = P;
+                            break;
+                        }
+                        case Stmt::ForStmtClass: {
+                            const VarDecl *var = cast<ForStmt>(stmt)->getConditionVariable();
+                            if (var)
+                                _DeclMap[var] = P;
+                            break;
+                        }
+                        case Stmt::WhileStmtClass: {
+                            const VarDecl *var =
+                                    cast<WhileStmt>(stmt)->getConditionVariable();
+                            if (var)
+                                _DeclMap[var] = P;
+                            break;
+                        }
+                        case Stmt::SwitchStmtClass: {
+                            const VarDecl *var =
+                                    cast<SwitchStmt>(stmt)->getConditionVariable();
+                            if (var)
+                                _DeclMap[var] = P;
+                            break;
+                        }
+                        case Stmt::CXXCatchStmtClass: {
+                            const VarDecl *var =
+                                    cast<CXXCatchStmt>(stmt)->getExceptionDecl();
+                            if (var)
+                                _DeclMap[var] = P;
+                            break;
+                        }
+                        default:
+                            break;
+                    }*/
+                }
+            }
+        }
+    }
 }

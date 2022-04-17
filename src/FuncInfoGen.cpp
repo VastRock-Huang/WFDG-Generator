@@ -3,6 +3,7 @@
 //
 
 
+#include "ContrDepn.h"
 #include "FuncInfo.h"
 #include "FuncInfoGen.h"
 #include "SimplifiedDepnHelper.h"
@@ -108,7 +109,14 @@ namespace wfdg {
                     _traverseCFGStmtToUpdateStmtVec(stmt, customCPG, cur);
                 }
             }
-            _catchSpecialStmt(block->getTerminatorStmt(), customCPG, cur);
+            const Stmt *terStmt = block->getTerminatorStmt();
+            _catchSpecialStmt(terStmt, customCPG, cur);
+            if (terStmt) {
+                customCPG.setHasCondition(cur);
+                if (isa<ForStmt>(terStmt) || isa<DoStmt>(terStmt) || isa<WhileStmt>(terStmt)) {
+                    customCPG.setIsLoop(cur);
+                }
+            }
             _catchSpecialStmt(block->getLoopTarget(), customCPG, cur);
             _catchSpecialStmt(block->getLabel(), customCPG, cur);
             node.mergeLineRanges();
@@ -142,28 +150,19 @@ namespace wfdg {
         unique_ptr<AbstractDepnHelper> depnHelper{};
         if (customCPG.getSensitiveLineMap().empty()) {
             depnHelper = unique_ptr<AbstractDepnHelper>(
-                    new SimplifiedDepnHelper(wholeCFG, customCPG, _config.debug()));
+                    new SimplifiedDepnHelper(wholeCFG, customCPG, customCPG.getDataDepnEdges(), _config.debug()));
         } else {
             depnHelper = unique_ptr<AbstractDepnHelper>(
-                    new DetailedDepnHelper(wholeCFG, _context, customCPG, _config.debug()));
+                    new DetailedDepnHelper(wholeCFG, _context, customCPG, customCPG.getDepnMapper(), _config.debug()));
         }
 
         depnHelper->depnOfParamDecl(funcDecl->parameters());
         depnHelper->buildDepnInCPG();
 
-//        for (auto it = wholeCFG->rbegin(); it != wholeCFG->rend(); ++it) {
-//            CFGBlock *block = *it;
-//            block->print(llvm::outs(), wholeCFG.get(), LangOptions(), false);
-//            unsigned nodeID = block->getBlockID();
-//            depnHelper->_updateNodeID(nodeID);
-//            for (const CFGElement &element: *block) {
-//                if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
-//                    const Stmt *stmt = cfgStmt->getStmt();
-//                    depnHelper->buildDepn(stmt);
-//                }
-//            }
-//
-//        }
+        ContrDepn contrDepn(customCPG, wholeCFG->size());
+        auto res = contrDepn.gen();
+        customCPG.setContrDepn(res);
+        llvm::outs() << "dom:" << util::vecToString(res) << '\n';
     }
 
     void FuncInfoGenAction::_lexToken() const {

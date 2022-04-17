@@ -6,6 +6,7 @@
 #define WFG_GENERATOR_DETAILEDDEPNHELPER_H
 
 #include "AbstractDepnHelper.h"
+#include "CustomCPG.h"
 #include <clang/AST/ASTContext.h>
 #include <memory>
 
@@ -18,13 +19,14 @@ namespace wfdg {
         using VarMap = DepnMapper::VarMap<T>;
 
         const ASTContext &_context;
-        DepnMapper &depnMapper;
+        const CustomCPG &_customCPG;
+        DepnMapper &_depnMapper;
 
         vector<VarMap<int>> _writtenVarVec;
         VarMap<int> _readVarMap{};
 
         string _getVarNameByIds(const VarIdPair &ids) const {
-            return depnMapper.getVarNameByIds(ids);
+            return _depnMapper.getVarNameByIds(ids);
         }
 
         unsigned _getLineNumber(const SourceLocation &loc) const {
@@ -32,7 +34,7 @@ namespace wfdg {
         }
 
         void _insertVarIds(const VarIdPair &ids, const string &varName) {
-            depnMapper.pushVar(ids, varName);
+            _depnMapper.pushVar(ids, varName);
         }
 
         int _getReadVarIdx(const VarIdPair &ids) const {
@@ -76,11 +78,11 @@ namespace wfdg {
             } else {
                 refFrom.emplace(predIdx, _nodeID);
             }
-            int rightIdx = depnMapper.pushRefInfo(ids, _nodeID, refFrom);
+            int rightIdx = _depnMapper.pushRefInfo(ids, _nodeID, refFrom);
             _readVarMap.emplace(ids, rightIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
-                depnMapper.pushSensitiveRVar(sensitiveIdx, ids, rightIdx, _nodeID);
+                _depnMapper.pushSensitiveRVar(sensitiveIdx, ids, rightIdx, _nodeID);
             }
         }
 
@@ -101,11 +103,11 @@ namespace wfdg {
             } else {
                 refFrom.emplace(predIdx, _nodeID);
             }
-            int rightIdx = depnMapper.pushRefInfo(memIds, _nodeID, refFrom);
+            int rightIdx = _depnMapper.pushRefInfo(memIds, _nodeID, refFrom);
             _readVarMap.emplace(memIds, rightIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
-                depnMapper.pushSensitiveRVar(sensitiveIdx, memIds, rightIdx, _nodeID);
+                _depnMapper.pushSensitiveRVar(sensitiveIdx, memIds, rightIdx, _nodeID);
             }
         }
 
@@ -130,25 +132,26 @@ namespace wfdg {
         }
 
         void _recordWrittenVar(const VarIdPair &ids, const VarMap<int> &assignFrom, unsigned lineNum) {
-            int leftIdx = depnMapper.pushAssignInfo(ids, assignFrom);
+            int leftIdx = _depnMapper.pushAssignInfo(ids, assignFrom);
             _writtenVarVec.at(_nodeID).emplace(ids, leftIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
-                depnMapper.pushSensitiveWVar(sensitiveIdx, ids, leftIdx, _nodeID);
+                _depnMapper.pushSensitiveWVar(sensitiveIdx, ids, leftIdx, _nodeID);
             }
         }
 
+        // TODO: 影响结构体变量本身
         void _recordWrittenStruct(const VarIdPair &memIds, const string &name, const VarMap<int> &assignFrom,
                                   unsigned lineNum) {
             if (memIds.first == 0) {
                 return;
             }
             _insertVarIds(memIds, name);
-            int leftIdx = depnMapper.pushAssignInfo(memIds, assignFrom);
+            int leftIdx = _depnMapper.pushAssignInfo(memIds, assignFrom);
             _writtenVarVec.at(_nodeID).emplace(memIds, leftIdx);
             int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
             if (sensitiveIdx != -1) {
-                depnMapper.pushSensitiveWVar(sensitiveIdx, memIds, leftIdx, _nodeID);
+                _depnMapper.pushSensitiveWVar(sensitiveIdx, memIds, leftIdx, _nodeID);
             }
         }
 
@@ -226,7 +229,7 @@ namespace wfdg {
                 if (_debug)
                     llvm::outs() << "RW_Mem:" << name << '\n';
             }
-            _recordWrittenVar(ids, {make_pair(ids, depnMapper.rightVecSize() - 1)}, lineNum);
+            _recordWrittenVar(ids, {make_pair(ids, _depnMapper.rightVecSize() - 1)}, lineNum);
         }
 
         void _depnOfDecl(const VarDecl *varDecl) override {
@@ -244,7 +247,7 @@ namespace wfdg {
 
         void _runAtNodeEnding() override {
             if (_debug)
-                llvm::outs() << depnMapper.toString() << '\n';
+                llvm::outs() << _depnMapper.toString() << '\n';
         }
 
         void _updateNodeID(unsigned nodeID) override {
@@ -253,9 +256,10 @@ namespace wfdg {
         }
 
     public:
-        DetailedDepnHelper(const unique_ptr<CFG> &cfg, const ASTContext &context, CustomCPG &customCPG, bool debug)
-                : AbstractDepnHelper(cfg, customCPG, debug), _context(context), depnMapper(customCPG.getDepnMapper()),
-                  _writtenVarVec(cfg->size()) {}
+        DetailedDepnHelper(const unique_ptr<CFG> &cfg, const ASTContext &context,
+                           const CustomCPG &customCPG, DepnMapper &depnMapper, bool debug)
+                : AbstractDepnHelper(cfg, debug), _context(context), _customCPG(customCPG),
+                  _depnMapper(depnMapper), _writtenVarVec(cfg->size()) {}
 
     };
 }

@@ -201,7 +201,7 @@ namespace wfdg {
         for (auto &p: w.getNodes()) {
             _customCPG.for_each_succ(p.first, insertEdges);
         }
-        w.setDepnEdges(_customCPG.getDepnEdges());
+        w.setDepnEdges(_customCPG.getDataDepnEdges());
         cout << w.toString() << '\n';
         return w;
     }
@@ -242,7 +242,7 @@ namespace wfdg {
         for (auto &nodePair: w.getNodes()) {
             _customCPG.for_each_succ(nodePair.first, insertEdges);
         }
-        w.setDepnEdges(_customCPG.getDepnEdges());
+        w.setDepnEdges(_customCPG.getDataDepnEdges());
         cout << w.toString() << '\n';
         wfdgs.push_back(move(w));
     }
