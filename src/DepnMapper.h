@@ -83,17 +83,17 @@ namespace wfdg {
     private:
         VarMap<string> _varMap{};
 
-        VarMap<unordered_set<int>> _leftMap{};
-        vector<LeftData> _leftVec{};
-
-        VarMap<unordered_set<int>> _rightMap{};
-        vector<RightData> _rightVec{};
-
-        unordered_map<unsigned, VarMap<int>> _contrVarMap{};
-
         vector<unordered_set<unsigned>> _sensitiveNodes;
         vector<vector<pair<VarIdPair, int>>> _sensitiveWVars;
         vector<vector<pair<VarIdPair, int>>> _sensitiveRVars;
+
+        unordered_map<unsigned, VarMap<int>> _contrVarMap{};
+
+        vector<LeftData> _leftVec{};
+        vector<RightData> _rightVec{};
+
+        VarMap<unordered_set<int>> _leftMap{};
+        VarMap<unordered_set<int>> _rightMap{};
 
     public:
         explicit DepnMapper(unsigned sensitiveCnt) :
@@ -196,35 +196,7 @@ namespace wfdg {
             return nullptr;
         }
 
-        string toString() const {
-            auto hashsetToStr = [](const unordered_set<int> &s) -> string {
-                return util::hashsetToString(s, util::numToString < int > );
-            };
-            auto vecToStr = [](const vector<AssignPair> &vec) -> string {
-                return util::vecToString(vec, assignPairToString);
-            };
-
-            return "{varMap: " +
-                   varMapToString(_varMap, [](const string &s) -> string {
-                       return s;
-                   }) + ",\n" +
-                   "leftVec: " + util::vecToString(_leftVec, LeftData::toString) + ",\n" +
-                   "rightVec: " + util::vecToString(_rightVec, RightData::toString) + ",\n" +
-                   "leftMap: " + varMapToString(_leftMap, hashsetToStr) + ",\n" +
-                   "rightMap: " + varMapToString(_rightMap, hashsetToStr) + ",\n" +
-                   "contrVarMap: " +
-                   util::hashmapToString(_contrVarMap, util::numToString<unsigned>,
-                                         [](const auto &hashset) -> string {
-                                             return DepnMapper::varMapToString(hashset);
-                                         }) + ",\n" +
-                   "sensitiveNodes: " +
-                   util::vecToString(_sensitiveNodes, [](const auto &hashset) -> string {
-                       return util::hashsetToString(hashset);
-                   }) + ",\n" +
-                   "sensitiveWVars: " + util::vecToString(_sensitiveWVars, vecToStr) + ",\n" +
-                   "sensitiveRVars: " + util::vecToString(_sensitiveRVars, vecToStr) +
-                   "}";
-        }
+        string toString() const;
     };
 }
 

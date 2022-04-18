@@ -15,7 +15,7 @@ namespace wfdg {
             }
             int leftIdx = -1;
             if ((leftIdx = _hasWrittenVarInNode(predNode, ids)) != -1) {
-//                _customCPG.addDepnEdge(predNode, _nodeID);
+//                _customCPG.addDataDepnEdge(predNode, _nodeID);
                 refFrom.emplace(leftIdx, predNode);
                 if (_debug)
                     llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
@@ -33,7 +33,7 @@ namespace wfdg {
             unsigned predNode = _customCPG.pred_at(vecIdx);
             int leftIdx = -1;
             if ((leftIdx = _hasWrittenStructInNode(predNode, varIds, memIds)) != -1) {
-//                _customCPG.addDepnEdge(predNode, _nodeID);
+//                _customCPG.addDataDepnEdge(predNode, _nodeID);
                 refFrom.emplace(leftIdx, predNode);
                 if (_debug)
                     llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';

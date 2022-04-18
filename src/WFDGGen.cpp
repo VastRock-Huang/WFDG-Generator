@@ -130,7 +130,7 @@ namespace wfdg {
                             depnWeightMap[refPair.second] = curWeight;
                         }
                         if (refPair.second > p.second) {
-                            _customCPG.addDepnEdge(refPair.second, p.second);
+                            _customCPG.addDataDepnEdge(refPair.second, p.second);
                         }
 //                        cout << "D: lpush: " << DepnMapper::refPairToString(refPair) <<'\n';
                         idxQueue.emplace(refPair);
@@ -188,7 +188,7 @@ namespace wfdg {
                             depnWeightMap[refPair.second] = curWeight;
                         }
                         if (refPair.second < p.second) {
-                            _customCPG.addDepnEdge(p.second, refPair.second);
+                            _customCPG.addDataDepnEdge(p.second, refPair.second);
                         }
 //                        cout << "D: r2push: " << DepnMapper::refPairToString(refPair) <<'\n';
                         idxQueue.emplace(refPair);
@@ -281,16 +281,16 @@ namespace wfdg {
 
     WFDG WFDGGenerator::_buildWFDG(unsigned int rootLine, const unordered_map<unsigned, double> &depnWeightMap,
                                    const unordered_map<unsigned, double> &nodeWeightMap) const {
-        WFDG w(_funcInfo.getFuncName(), rootLine);
+        WFDG w(_customCPG.getFuncName(), rootLine);
         for (auto p: nodeWeightMap) {
             WFDGNode node{};
             node.id = p.first;
-            node.stmtVec = _customCPG.getNodes().at(node.id).stmtVec;
+            node.stmtVec = _customCPG.getStmtVec(node.id);
 //            cout << "node:" << node.id << '\n';
-            node.lineWeight = depnWeightMap.at(node.id);
+            node.depnWeight = depnWeightMap.at(node.id);
 //            cout << "||\n";
             node.nodeWeight = p.second;
-            node.weight = _config.useWeight ? sqrt(node.lineWeight * node.nodeWeight) : 0.;
+            node.weight = _config.useWeight ? sqrt(node.depnWeight * node.nodeWeight) : 0.;
             w.addNode(p.first, move(node));
         }
 
@@ -342,14 +342,13 @@ namespace wfdg {
     }
 
     void WFDGGenerator::_genWFDGWithoutSensitiveLine(vector<WFDG> &wfdgs) {
-        int i = 0;
-        WFDG w(_funcInfo.getFuncName());
-        for (const CustomCPG::CPGNode &cfgNode: _customCPG.getNodes()) {
+        WFDG w(_customCPG.getFuncName());
+        for (unsigned i = 0; i < _customCPG.getNodeCnt(); ++i) {
             WFDGNode node{};
             node.id = i;
-            node.stmtVec = cfgNode.stmtVec;
+            node.stmtVec = _customCPG.getStmtVec(i);
             node.weight = _config.useWeight ? 1 : 0;
-            w.addNode(i++, move(node));
+            w.addNode(i, move(node));
         }
         auto insertEdges = [&w](unsigned succNode, unsigned curNode) -> void {
             w.addEdge(succNode, curNode);

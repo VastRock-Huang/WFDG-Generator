@@ -6,8 +6,9 @@
 #define WFG_GENERATOR_WFDGGEN_H
 
 #include "WFDGGen/WFDG.h"
+#include "DepnMapper.h"
+#include "CustomCPG.h"
 #include "Configuration.h"
-#include "FuncInfo.h"
 
 using namespace std;
 
@@ -24,7 +25,6 @@ namespace wfdg {
         using VarMap = DepnMapper::VarMap<T>;
 
         const Configuration &_config;
-        FuncInfo &_funcInfo;
         CustomCPG &_customCPG;
 
         int _sensitiveIdx{};
@@ -40,14 +40,14 @@ namespace wfdg {
         void _genNodeWeight(const unordered_map<unsigned, double> &depnWeightMap,
                             unordered_map<unsigned, double> &nodeWeightMap) const;
 
-        WFDG _buildWFDG(unsigned rootLine, const unordered_map<unsigned, double> & depnWeightMap,
-                        const unordered_map<unsigned, double>& nodeWeightMap) const;
+        WFDG _buildWFDG(unsigned rootLine, const unordered_map<unsigned, double> &depnWeightMap,
+                        const unordered_map<unsigned, double> &nodeWeightMap) const;
 
         void _genWFDGWithoutSensitiveLine(vector<WFDG> &wfdgs);
 
     public:
-        WFDGGenerator(const Configuration &config, FuncInfo &funcInfo) : _config(config), _funcInfo(funcInfo),
-                                                                               _customCPG(funcInfo.getCustomCPG()) {}
+        WFDGGenerator(const Configuration &config, CustomCPG &customCPG)
+                : _config(config), _customCPG(customCPG) {}
 
         vector<WFDG> genWFDGs();
     };

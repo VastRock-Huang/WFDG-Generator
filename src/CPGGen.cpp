@@ -4,8 +4,7 @@
 
 
 #include "ContrDepn.h"
-#include "FuncInfo.h"
-#include "FuncInfoGen.h"
+#include "CPGGen.h"
 #include "SimplifiedDepnHelper.h"
 #include "DetailedDepnHelper.h"
 #include <llvm/ADT/StringRef.h>
@@ -13,8 +12,8 @@
 
 namespace wfdg {
 
-    map<unsigned, int> FuncInfoGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
-                                                                const pair<unsigned, unsigned> &lineRange) const {
+    map<unsigned, int> CPGGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
+                                                           const pair<unsigned, unsigned> &lineRange) const {
         unsigned sensitiveLine = _config.getSensitiveLine();
         if (sensitiveLine != 0 && util::numInRange(sensitiveLine, lineRange) == 0) {
             return {{sensitiveLine, 0}};
@@ -47,25 +46,22 @@ namespace wfdg {
         return res;
     }
 
-    void FuncInfoGenConsumer::_traverseCFGStmtToUpdateStmtVec(const Stmt *stmt, CustomCPG &customCPG,
-                                                              unsigned nodeID) const {
-        assert(stmt);
-        customCPG.getNode(nodeID).lineRanges.push_back(_getLineRange(stmt->getBeginLoc(), stmt->getEndLoc()));
+    void CPGGenConsumer::_traverseCFGStmtToUpdateStmtVec(const Stmt *stmt, CustomCPG &customCPG,
+                                                         unsigned nodeID) const {
         customCPG.updateNodeStmtVec(nodeID, stmt->getStmtClassName());
         for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
             _traverseCFGStmtToUpdateStmtVec(*it, customCPG, nodeID);
         }
     }
 
-    void FuncInfoGenConsumer::_catchSpecialStmt(const Stmt *stmt, CustomCPG &customCPG, unsigned nodeID) const {
+    void CPGGenConsumer::_catchSpecialStmt(const Stmt *stmt, CustomCPG &customCPG, unsigned nodeID) const {
         if (stmt) {
-            customCPG.getNode(nodeID).lineRanges.push_back(_getLineRange(stmt->getBeginLoc(), stmt->getEndLoc()));
             customCPG.updateNodeStmtVec(nodeID, stmt->getStmtClassName());
         }
     }
 
     pair<unsigned, unsigned>
-    FuncInfoGenConsumer::_getLineRange(const SourceLocation &beginLoc, const SourceLocation &endLoc) const {
+    CPGGenConsumer::_getLineRange(const SourceLocation &beginLoc, const SourceLocation &endLoc) const {
         unsigned startLine = _context.getFullLoc(beginLoc).getSpellingLineNumber();
         unsigned endLine = _context.getFullLoc(endLoc).getSpellingLineNumber();
         if (startLine <= endLine) {
@@ -75,7 +71,7 @@ namespace wfdg {
     }
 
 
-    void FuncInfoGenConsumer::_buildCustomCPG(const FunctionDecl *funcDecl, CustomCPG &customCPG) const {
+    void CPGGenConsumer::_buildCustomCPG(const FunctionDecl *funcDecl, CustomCPG &customCPG) const {
         Stmt *funcBody = funcDecl->getBody();
         unique_ptr<CFG> wholeCFG = CFG::buildCFG(funcDecl, funcBody, &_context, CFG::BuildOptions());
         customCPG.initNodeCnt(wholeCFG->size());
@@ -102,7 +98,6 @@ namespace wfdg {
             customCPG.finishPredEdges();
 
             // set attributes of node
-            CustomCPG::CPGNode &node = customCPG.getNode(cur);
             for (const CFGElement &element: *block) {
                 if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                     const Stmt *stmt = cfgStmt->getStmt();
@@ -119,14 +114,13 @@ namespace wfdg {
             }
             _catchSpecialStmt(block->getLoopTarget(), customCPG, cur);
             _catchSpecialStmt(block->getLabel(), customCPG, cur);
-            node.mergeLineRanges();
         }
 
         _buildDepnInCPG(funcDecl, wholeCFG, customCPG);
     }
 
 
-    bool FuncInfoGenConsumer::VisitFunctionDecl(FunctionDecl *funcDecl) {
+    bool CPGGenConsumer::VisitFunctionDecl(FunctionDecl *funcDecl) {
         if (funcDecl->doesThisDeclarationHaveABody() &&
             _manager.getFileID(funcDecl->getLocation()) == _manager.getMainFileID()) {
             const string funcName = funcDecl->getQualifiedNameAsString();
@@ -135,18 +129,16 @@ namespace wfdg {
                     llvm::outs() << "\nFUNC: " << funcName << '\n';
                 pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc());
 
-                FuncInfo funcInfo(funcDecl->getQualifiedNameAsString(), lineRange, _config.ASTStmtKindMap,
-                                  move(_findSensitiveLines(funcDecl, lineRange)));
-
-                _buildCustomCPG(funcDecl, funcInfo.getCustomCPG());
-                _funcInfoList.push_back(funcInfo);
+                CustomCPG customCPG(funcName, _config.ASTStmtKindMap, move(_findSensitiveLines(funcDecl, lineRange)));
+                _buildCustomCPG(funcDecl, customCPG);
+                _customCPGList.push_back(customCPG);
             }
         }
         return true;
     }
 
-    void FuncInfoGenConsumer::_buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
-                                              CustomCPG &customCPG) const {
+    void CPGGenConsumer::_buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
+                                         CustomCPG &customCPG) const {
         unique_ptr<AbstractDepnHelper> depnHelper{};
         if (customCPG.getSensitiveLineMap().empty()) {
             depnHelper = unique_ptr<AbstractDepnHelper>(
@@ -163,48 +155,6 @@ namespace wfdg {
         auto res = contrDepn.gen();
         customCPG.setContrDepn(res);
 //        llvm::outs() << "dom:" << util::vecToString(res) << '\n';
-    }
-
-    void FuncInfoGenAction::_lexToken() const {
-        Preprocessor &preprocessor = getCompilerInstance().getPreprocessor();
-        Token token;
-        preprocessor.EnterMainSourceFile();
-        size_t funcCnt = _funcInfoList.size();
-        size_t i = 0;
-        string preId{};
-        unsigned preLine{0};
-        do {
-            preprocessor.Lex(token);
-            if ((token.is(tok::arrow) || token.is(tok::period)) && preLine != 0) {
-                preId.append(preprocessor.getSpelling(token));
-            } else if (token.isAnyIdentifier()) {
-                string idName = preprocessor.getSpelling(token);
-                if (preId.empty() && _varDeclSet.count(idName) == 0) {
-                    continue;
-                }
-                preId.append(idName);
-                unsigned lineNo = getCompilerInstance().getASTContext()
-                        .getFullLoc(token.getLocation()).getSpellingLineNumber();
-                while (i < funcCnt) {
-                    int ret = util::numInRange(lineNo, _funcInfoList[i].getLineRange());
-                    if (ret == 0) {
-                        preLine = lineNo;
-                        break;
-                    } else if (ret < 0) {
-                        preLine = 0;
-                        break;
-                    }
-                    ++i;
-                }
-            } else if (preLine != 0) {
-                _funcInfoList[i].insertIdentifier(preId, preLine);
-                preId.clear();
-                preLine = 0;
-            } else {
-                preId.clear();
-                preLine = 0;
-            }
-        } while (token.isNot(tok::eof));
     }
 
 }

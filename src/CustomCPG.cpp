@@ -21,4 +21,27 @@ namespace wfdg {
         _nodesPredVec.push_back(pred);
     }
 
+    string CustomCPG::toString() const {
+        return "{funcName: " + _funcName + ",\n" +
+               "nodeCnt: " + to_string(_nodeCnt) + ",\n" +
+               "isLoop: " + util::vecToString(_isloop) + ",\n" +
+               "hasCondition: " + util::vecToString(_hasCondition) + ",\n" +
+               "succCnt: " + to_string(_succCnt) + ",\n" +
+               "nodesSuccCnt: " + util::vecToString(_nodesSuccCnt) + ",\n" +
+               "nodesSuccVec: " + util::vecToString(_nodesSuccVec) + ",\n" +
+               "predCnt: " + to_string(_predCnt) + ",\n" +
+               "nodesPredCnt: " + util::vecToString(_nodesPredCnt) + ",\n" +
+               "nodesPredVec: " + util::vecToString(_nodesPredVec) + ",\n" +
+               "stmtVec: ...,\n" +
+               "sensitiveLines:" +
+               util::mapToString(_sensitiveLines, util::numToString<unsigned>,
+                                 util::numToString<int>) + ",\n" +
+               "contrDepnEdges: " + util::vecToString(_contrDepn) + ",\n" +
+               (_sensitiveLines.empty() ?
+                "dataDepnEdges: " +
+                util::setToString(_dataDepnEdges, util::numPairToString<unsigned, unsigned>)
+                                        : "depnMapper:\n" + _depnMapper.toString()) +
+               "}";
+    }
+
 }

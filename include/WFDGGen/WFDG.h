@@ -18,10 +18,9 @@ namespace wfdg {
     public:
         struct WFDGNode {
             unsigned id{0};
-            double lineWeight{0.};
+            double depnWeight{0.};
             double nodeWeight{0.};
             double weight{0.};
-            set<unsigned> markedLines{};
             vector<unsigned> stmtVec{};
 
             static string toString(const WFDGNode &node);
@@ -32,16 +31,13 @@ namespace wfdg {
         const unsigned _rootLine;
         map<unsigned, WFDGNode> _nodes{};
         set<pair<unsigned, unsigned>> _edges{};
-        set<pair<unsigned, unsigned>> _depnEdges{};
+        set<pair<unsigned, unsigned>> _dataDepnEdges{};
+
     public:
         explicit WFDG(string funcName, unsigned rootLine = 0) : _funcName(move(funcName)), _rootLine(rootLine) {}
 
         void addNode(unsigned nodeID, WFDGNode &&node) {
             _nodes.emplace(nodeID, move(node));
-        }
-
-        void setNodes(map<unsigned, WFDGNode> &&nodes) {
-            _nodes = nodes;
         }
 
         const map<unsigned, WFDGNode> &getNodes() const {
@@ -53,15 +49,11 @@ namespace wfdg {
         }
 
         void setDepnEdges(const set<pair<unsigned, unsigned>> &depnEdges) {
-            _depnEdges = depnEdges;
+            _dataDepnEdges = depnEdges;
         }
 
         void addDepnEdge(pair<unsigned, unsigned> depnEdge) {
-            _depnEdges.emplace(move(depnEdge));
-        }
-
-        string getFuncName() const {
-            return _funcName;
+            _dataDepnEdges.emplace(move(depnEdge));
         }
 
         string toString() const;

@@ -21,27 +21,10 @@ using namespace std;
 
 namespace wfdg {
     class CustomCPG {
-    public:
-        struct CPGNode {
-            // 升序且合并后的区间
-            vector<pair<unsigned, unsigned>> lineRanges{};  // FIXME: need to remove
-            vector<unsigned> stmtVec;
-
-            explicit CPGNode(unsigned size) : stmtVec(size) {}
-
-            void mergeLineRanges() {
-                util::mergeLineRanges(lineRanges);
-            }
-
-            static string toString(const CPGNode &node) {
-                return "{lineRanges: " + util::vecToString(node.lineRanges, util::numPairToString<unsigned, unsigned>) +
-                       ", stmtVec: " + util::vecToString(node.stmtVec, util::numToString<unsigned>) + "}";
-            }
-        };
-
     private:
+        const string _funcName;
+
         unsigned _nodeCnt{0};
-        vector<CPGNode> _nodes{};
         vector<bool> _isloop{};
         vector<bool> _hasCondition{};
 
@@ -55,6 +38,8 @@ namespace wfdg {
         vector<unsigned> _nodesPredCnt{};
         vector<unsigned> _nodesPredVec{};
 
+        vector<vector<unsigned>> _stmtVec{};
+
         map<unsigned, int> _sensitiveLines;
         vector<unsigned> _contrDepn{};
         set<pair<unsigned, unsigned>> _dataDepnEdges{};
@@ -63,22 +48,43 @@ namespace wfdg {
     public:
         const unordered_map<string, unsigned> &ASTStmtKindMap;
 
-        CustomCPG(const unordered_map<string, unsigned> &ASTStmtKindMap,
+        CustomCPG(string funcName, const unordered_map<string, unsigned> &ASTStmtKindMap,
                   map<unsigned, int> &&sensitiveLines)
-                : _sensitiveLines(sensitiveLines), _depnMapper(_sensitiveLines.size()),
+                : _funcName(move(funcName)), _sensitiveLines(sensitiveLines),
+                  _depnMapper(_sensitiveLines.size()),
                   ASTStmtKindMap(ASTStmtKindMap) {}
 
-        DepnMapper &getDepnMapper() {
-            return _depnMapper;
+        const string &getFuncName() const {
+            return _funcName;
         }
 
         void initNodeCnt(unsigned nodeCnt) {
             _nodeCnt = nodeCnt;
-            _nodes.assign(nodeCnt, CPGNode(ASTStmtKindMap.size()));
+            _stmtVec.assign(nodeCnt, vector<unsigned>(ASTStmtKindMap.size()));
             _nodesSuccCnt.assign(nodeCnt + 1, 0);
             _nodesPredCnt.assign(nodeCnt + 1, 0);
             _isloop.assign(nodeCnt, false);
             _hasCondition.assign(nodeCnt, false);
+        }
+
+        unsigned getNodeCnt() const {
+            return _nodeCnt;
+        }
+
+        void setIsLoop(unsigned nodeId) {
+            _isloop.at(nodeId) = true;
+        }
+
+        bool isLoop(unsigned nodeId) const {
+            return _isloop.at(nodeId);
+        }
+
+        void setHasCondition(unsigned nodeId) {
+            _hasCondition.at(nodeId) = true;
+        }
+
+        bool hasCondition(unsigned nodeId) const {
+            return _hasCondition.at(nodeId);
         }
 
         void addSuccEdge(unsigned cur, unsigned succ);
@@ -86,60 +92,6 @@ namespace wfdg {
         void finishSuccEdges() {
             while (_succIdx < _nodeCnt) {
                 _nodesSuccCnt[++_succIdx] = _succCnt;
-            }
-        }
-
-        void finishPredEdges() {
-            while (_predIdx < _nodeCnt) {
-                _nodesPredCnt[++_predIdx] = _predCnt;
-            }
-        }
-
-        void addPredEdge(unsigned cur, unsigned pred);
-
-        CPGNode &getNode(unsigned nodeID) {
-            return _nodes.at(nodeID);
-        }
-
-        const vector<CPGNode> &getNodes() const {
-            return _nodes;
-        }
-
-        void updateNodeStmtVec(unsigned nodeID, const string &stmtName) {
-            auto it = ASTStmtKindMap.find(stmtName);
-            if (it != ASTStmtKindMap.end()) {
-                ++(_nodes.at(nodeID).stmtVec.at(it->second));
-            }
-        }
-
-        void addDepnEdge(unsigned pred, unsigned cur) {
-            _dataDepnEdges.emplace(cur, pred);
-        }
-
-        unsigned pred_begin(unsigned nodeId) const {
-            return _nodesPredCnt.at(nodeId);
-        }
-
-        unsigned pred_end(unsigned nodeId) const {
-            return _nodesPredCnt.at(nodeId + 1);
-        }
-
-        unsigned pred_at(unsigned preVecIdx) const {
-            return _nodesPredVec.at(preVecIdx);
-        }
-
-        unsigned pred_size(unsigned nodeId) const {
-            return pred_end(nodeId) - pred_begin(nodeId);
-        }
-
-        unsigned pred_front(unsigned nodeId) const {
-            return pred_at(pred_begin(nodeId));
-        }
-
-        void for_each_pred(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
-            for (unsigned vecIdx = pred_begin(curNode); vecIdx != pred_end(curNode); ++vecIdx) {
-                unsigned predNode = pred_at(vecIdx);
-                execution(predNode, curNode);
             }
         }
 
@@ -159,10 +111,6 @@ namespace wfdg {
             return succ_at(succ_end(nodeID) - 1);
         }
 
-        unsigned succ_size(unsigned nodeId) const {
-            return succ_end(nodeId) - succ_begin(nodeId);
-        }
-
         void for_each_succ(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
             for (unsigned vecIdx = succ_begin(curNode); vecIdx != succ_end(curNode); ++vecIdx) {
                 unsigned succNode = succ_at(vecIdx);
@@ -170,8 +118,46 @@ namespace wfdg {
             }
         }
 
-        const map<unsigned, int> &getSensitiveLineMap() const {
-            return _sensitiveLines;
+        void addPredEdge(unsigned cur, unsigned pred);
+
+        void finishPredEdges() {
+            while (_predIdx < _nodeCnt) {
+                _nodesPredCnt[++_predIdx] = _predCnt;
+            }
+        }
+
+        unsigned pred_begin(unsigned nodeId) const {
+            return _nodesPredCnt.at(nodeId);
+        }
+
+        unsigned pred_end(unsigned nodeId) const {
+            return _nodesPredCnt.at(nodeId + 1);
+        }
+
+        unsigned pred_at(unsigned preVecIdx) const {
+            return _nodesPredVec.at(preVecIdx);
+        }
+
+        unsigned pred_front(unsigned nodeId) const {
+            return pred_at(pred_begin(nodeId));
+        }
+
+        void for_each_pred(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
+            for (unsigned vecIdx = pred_begin(curNode); vecIdx != pred_end(curNode); ++vecIdx) {
+                unsigned predNode = pred_at(vecIdx);
+                execution(predNode, curNode);
+            }
+        }
+
+        void updateNodeStmtVec(unsigned nodeID, const string &stmtName) {
+            auto it = ASTStmtKindMap.find(stmtName);
+            if (it != ASTStmtKindMap.end()) {
+                ++_stmtVec.at(nodeID).at(it->second);
+            }
+        }
+
+        vector<unsigned> getStmtVec(unsigned nodeId) const {
+            return _stmtVec.at(nodeId);
         }
 
         int inSensitiveLine(unsigned lineNum) const {
@@ -179,32 +165,8 @@ namespace wfdg {
             return it == _sensitiveLines.end() ? -1 : it->second;
         }
 
-        set<pair<unsigned, unsigned>> &getDataDepnEdges() {
-            return _dataDepnEdges;
-        }
-
-        const set<pair<unsigned, unsigned>> &getDataDepnEdges() const {
-            return _dataDepnEdges;
-        }
-
-        const DepnMapper &getDepnMapper() const {
-            return _depnMapper;
-        }
-
-        void setIsLoop(unsigned nodeId) {
-            _isloop.at(nodeId) = true;
-        }
-
-        bool isLoop(unsigned nodeId) const {
-            return _isloop.at(nodeId);
-        }
-
-        void setHasCondition(unsigned nodeId) {
-            _hasCondition.at(nodeId) = true;
-        }
-
-        bool hasCondition(unsigned nodeId) const {
-            return _hasCondition.at(nodeId);
+        const map<unsigned, int> &getSensitiveLineMap() const {
+            return _sensitiveLines;
         }
 
         void setContrDepn(vector<unsigned> contrDepn) {
@@ -215,24 +177,27 @@ namespace wfdg {
             return _contrDepn.at(nodeId);
         }
 
-        string toString() const {
-            return "{nodeCnt: " + to_string(_nodeCnt) +
-                   ", nodes: " + util::vecToString(_nodes, CPGNode::toString) +
-                   ", succCnt: " + to_string(_succCnt) +
-                   ", nodesSuccCnt: " + util::vecToString(_nodesSuccCnt) +
-                   ", nodesSuccVec: " + util::vecToString(_nodesSuccVec) +
-                   ", predCnt: " + to_string(_predCnt) +
-                   ", nodesPredCnt: " + util::vecToString(_nodesPredCnt) +
-                   ", nodesPredVec: " + util::vecToString(_nodesPredVec) +
-                   ", sensitiveLines:" +
-                   util::mapToString(_sensitiveLines, util::numToString<unsigned>, util::numToString<int>) +
-                   ", contrDepnEdges: " + util::vecToString(_contrDepn) +
-                   (_sensitiveLines.empty() ?
-                    ", dataDepnEdges: " +
-                    util::setToString(_dataDepnEdges, util::numPairToString<unsigned, unsigned>)
-                                            : ", _depnMapper: " + _depnMapper.toString()) +
-                   "}";
+        void addDataDepnEdge(unsigned pred, unsigned cur) {
+            _dataDepnEdges.emplace(cur, pred);
         }
+
+        set<pair<unsigned, unsigned>> &getDataDepnEdges() {
+            return _dataDepnEdges;
+        }
+
+        const set<pair<unsigned, unsigned>> &getDataDepnEdges() const {
+            return _dataDepnEdges;
+        }
+
+        DepnMapper &getDepnMapper() {
+            return _depnMapper;
+        }
+
+        const DepnMapper &getDepnMapper() const {
+            return _depnMapper;
+        }
+
+        string toString() const;
     };
 
 }
