@@ -93,8 +93,8 @@ namespace wfdg {
 
 
         template<typename T>
-        string
-        setToString(const set<T> &s, const function<string(decltype(*s.begin()))> &toStrFunc = numToString<T>) {
+        string setToString(const set<T> &s,
+                           const function<string(decltype(*s.begin()))> &toStrFunc = numToString<T>) {
             string str = "[";
             size_t i = 0, sz = s.size();
             for (auto &item: s) {

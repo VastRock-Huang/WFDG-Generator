@@ -20,17 +20,27 @@ namespace wfdg {
         using RightData = DepnMapper::RightData;
         using RefPair = DepnMapper::RefPair;
         using AssignPair = DepnMapper::AssignPair;
+        template<typename T>
+        using VarMap = DepnMapper::VarMap<T>;
 
         const Configuration &_config;
         FuncInfo &_funcInfo;
         CustomCPG &_customCPG;
 
-        void _genLineWeight(int sensitiveIdx, unordered_map<unsigned, double> &lineWeightMap);
+        int _sensitiveIdx{};
 
-        void _genNodeWeight(int sensitiveIdx, const unordered_map<unsigned, double> &lineWeightMap,
+        void _setSensitiveIdx(int idx) {
+            _sensitiveIdx = idx;
+        }
+
+        void _genContrDepnWeight(unordered_map<unsigned, double> &depnWeightMap);
+
+        void _genDataDepnWeight(unordered_map<unsigned, double> &depnWeightMap);
+
+        void _genNodeWeight(const unordered_map<unsigned, double> &depnWeightMap,
                             unordered_map<unsigned, double> &nodeWeightMap) const;
 
-        WFDG _buildWFDG(unsigned rootLine, const unordered_map<unsigned, double> & lineWeightMap,
+        WFDG _buildWFDG(unsigned rootLine, const unordered_map<unsigned, double> & depnWeightMap,
                         const unordered_map<unsigned, double>& nodeWeightMap) const;
 
         void _genWFDGWithoutSensitiveLine(vector<WFDG> &wfdgs);

@@ -48,12 +48,16 @@ namespace wfdg {
             return _nodes;
         }
 
-        void addEdge(unsigned src, unsigned dest) {
-            _edges.emplace(src, dest);
+        void addEdge(unsigned dest, unsigned src) {
+            _edges.emplace(dest, src);
         }
 
         void setDepnEdges(const set<pair<unsigned, unsigned>> &depnEdges) {
             _depnEdges = depnEdges;
+        }
+
+        void addDepnEdge(pair<unsigned, unsigned> depnEdge) {
+            _depnEdges.emplace(move(depnEdge));
         }
 
         string getFuncName() const {

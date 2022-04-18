@@ -10,6 +10,7 @@
 #include <clang/AST/ASTContext.h>
 #include <memory>
 #include <queue>
+#include <stack>
 
 namespace wfdg {
     class DetailedDepnHelper : public AbstractDepnHelper {
@@ -118,13 +119,21 @@ namespace wfdg {
                 if (isa<VarDecl>(refExpr->getDecl())) {
                     VarIdPair ids = _getRefVarIds(refExpr);
 //                    llvm::outs() << "push" << DepnMapper::varIdPairToString(ids) <<'\n';
-                    assignFrom.emplace(ids, _getReadVarIdx(ids));
+                    int rightIdx = _getReadVarIdx(ids);
+                    if(rightIdx == -1) {
+                        rightIdx = _depnMapper.getVarLastRightIdx(ids);
+                    }
+                    assignFrom.emplace(ids, rightIdx);
                 }
             } else if (isa<MemberExpr>(stmt)) {
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
                 VarIdPair memIds = _getStructIds(memberExpr);
 //                llvm::outs() << "push" << DepnMapper::varIdPairToString(memIds) <<'\n';
-                assignFrom.emplace(memIds, _getReadVarIdx(memIds));
+                int rightIdx = _getReadVarIdx(memIds);
+                if(rightIdx == -1) {
+                    rightIdx = _depnMapper.getVarLastRightIdx(memIds);
+                }
+                assignFrom.emplace(memIds, rightIdx);
             } else {
                 for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
                     _collectRVarsOfWVar(*it, assignFrom);
@@ -158,24 +167,32 @@ namespace wfdg {
         }
 
         static string _getStructIdsAndName(const MemberExpr *memberExpr, VarIdPair &ids) {
-            const Stmt *childStmt = *(memberExpr->child_begin());
-            while (!isa<DeclRefExpr>(childStmt) && !isa<MemberExpr>(childStmt)) {
-                if (childStmt->child_begin() == childStmt->child_end()) {
-                    return {};
-                }
-                childStmt = *(childStmt->child_begin());
-            }
+            stack<const MemberExpr*> memStk;
+            memStk.push(memberExpr);
+            const Stmt* stmt = memberExpr;
             string name{};
-            if (isa<DeclRefExpr>(childStmt)) {
-                const DeclRefExpr *refExpr = cast<DeclRefExpr>(childStmt);
-                name.append(refExpr->getNameInfo().getAsString());
-                ids = make_pair(refExpr->getDecl()->getID(), memberExpr->getMemberDecl()->getID());
-            } else if (isa<MemberExpr>(childStmt)) {
-                const MemberExpr *childMem = cast<MemberExpr>(childStmt);
-                name.append(_getStructIdsAndName(childMem, ids));
+            while (stmt->child_begin() != stmt->child_end()) {
+                stmt = *(stmt->child_begin());
+                if (!isa<DeclRefExpr>(stmt) && !isa<MemberExpr>(stmt)) {
+                    continue;
+                }
+                if (const DeclRefExpr *refExpr = dyn_cast<DeclRefExpr>(stmt)) {
+                    name.append(refExpr->getNameInfo().getAsString());
+                    ids = make_pair(refExpr->getDecl()->getID(), memberExpr->getMemberDecl()->getID());
+                    break;
+                } else if (isa<MemberExpr>(stmt)) {
+                    const MemberExpr *memExpr = cast<MemberExpr>(stmt);
+                    memStk.push(memExpr);
+                }
             }
-            name.append(memberExpr->isArrow() ? "->" : ".");
-            name.append(memberExpr->getMemberDecl()->getNameAsString());
+
+            while (!memStk.empty()) {
+                const MemberExpr* memExpr = memStk.top();
+                memStk.pop();
+                name.append(memExpr->isArrow() ? "->" : ".");
+                name.append(memExpr->getMemberDecl()->getNameAsString());
+            }
+
             return name;
         }
 
@@ -260,17 +277,25 @@ namespace wfdg {
                     const DeclRefExpr *refExpr = cast<DeclRefExpr>(s);
                     if (isa<VarDecl>(refExpr->getDecl())) {
                         VarIdPair ids = _getRefVarIds(refExpr);
-                        _depnMapper.pushContrVar(_nodeID, _getReadVarIdx(ids));
+                        int rightIdx = _getReadVarIdx(ids);
+                        if(rightIdx == -1) {
+                            rightIdx = _depnMapper.getVarLastRightIdx(ids);
+                        }
+                        _depnMapper.pushContrVar(_nodeID, ids, rightIdx);
                     }
                     continue;
                 } else if (isa<MemberExpr>(s)) {
                     const MemberExpr *memberExpr = cast<MemberExpr>(s);
                     VarIdPair memIds = _getStructIds(memberExpr);
-                    _depnMapper.pushContrVar(_nodeID, _getReadVarIdx(memIds));
+                    int rightIdx = _getReadVarIdx(memIds);
+                    if(rightIdx == -1) {
+                        rightIdx = _depnMapper.getVarLastRightIdx(memIds);
+                    }
+                    _depnMapper.pushContrVar(_nodeID, memIds, rightIdx);
                     continue;
                 } else if (const BinaryOperator *binOp = dyn_cast<BinaryOperator>(s)) {
                     if (binOp->isAssignmentOp()) {
-                        q.push(binOp->getLHS());
+                        q.push(binOp->getRHS());
                         continue;
                     }
                 }

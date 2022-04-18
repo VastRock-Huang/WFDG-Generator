@@ -162,7 +162,7 @@ namespace wfdg {
         ContrDepn contrDepn(customCPG, wholeCFG->size());
         auto res = contrDepn.gen();
         customCPG.setContrDepn(res);
-        llvm::outs() << "dom:" << util::vecToString(res) << '\n';
+//        llvm::outs() << "dom:" << util::vecToString(res) << '\n';
     }
 
     void FuncInfoGenAction::_lexToken() const {

@@ -65,7 +65,7 @@ namespace wfdg {
 
         virtual void _depnOfDecl(const VarDecl *varDecl) = 0;
 
-        virtual void _doTerminatorCondition(const Stmt* stmt) {}
+        virtual void _doTerminatorCondition(const Stmt *stmt) {}
 
         virtual void _doAtNodeEnding() {};
 
@@ -82,22 +82,21 @@ namespace wfdg {
         }
 
         static VarIdPair _getStructIds(const MemberExpr *memberExpr) {
-            const Stmt *childStmt = *(memberExpr->child_begin());
-            while (!isa<DeclRefExpr>(childStmt)) {
-                if (childStmt->child_begin() == childStmt->child_end()) {
-                    return {};
+            const Stmt *stmt = memberExpr;
+            while (stmt->child_begin() != stmt->child_end()) {
+                stmt = *(stmt->child_begin());
+                if (!isa<DeclRefExpr>(stmt)) {
+                    continue;
                 }
-                childStmt = *(childStmt->child_begin());
-            }
-            if (isa<DeclRefExpr>(childStmt)) {
-                const DeclRefExpr *refExpr = cast<DeclRefExpr>(childStmt);
-                return make_pair(refExpr->getDecl()->getID(), memberExpr->getMemberDecl()->getID());
+                if (const DeclRefExpr *refExpr = dyn_cast<DeclRefExpr>(stmt)) {
+                    return make_pair(refExpr->getDecl()->getID(), memberExpr->getMemberDecl()->getID());
+                }
             }
             return {};
         }
 
     public:
-        AbstractDepnHelper(const unique_ptr <CFG> &cfg)
+        explicit AbstractDepnHelper(const unique_ptr <CFG> &cfg)
                 : _cfg(cfg), _stmtHelper(cfg.get()) {}
 
         AbstractDepnHelper(const unique_ptr <CFG> &cfg, bool debug)
@@ -106,8 +105,8 @@ namespace wfdg {
         void buildDepnInCPG() {
             for (auto it = _cfg->rbegin(); it != _cfg->rend(); ++it) {
                 CFGBlock *block = *it;
-//                if (_debug)
-                block->print(llvm::outs(), _cfg.get(), LangOptions(), false);
+                if (_debug)
+                    block->print(llvm::outs(), _cfg.get(), LangOptions(), false);
                 unsigned nodeID = block->getBlockID();
                 _stmtHelper.setBlockID(nodeID);
                 _doNodeIdUpdate(nodeID);

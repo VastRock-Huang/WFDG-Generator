@@ -14,17 +14,16 @@ namespace wfdg {
             case Stmt::MemberExprClass: {
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
                 _doDepnOfReadMember(memberExpr);
-            }
                 return;
-
+            }
 
             case Stmt::DeclRefExprClass: {
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
                 if (isa<VarDecl>(refExpr->getDecl())) {
                     _doDepnOfReadRef(refExpr);
                 }
-            }
                 return;
+            }
 
             case Stmt::CallExprClass: {
                 // 跳过函数类型转换
@@ -45,8 +44,8 @@ namespace wfdg {
                         _buildDepn(*it);
                     }
                 }
-            }
                 return;
+            }
 
             case Stmt::UnaryOperatorClass: {
                 const UnaryOperator *op = cast<UnaryOperator>(stmt);
@@ -61,8 +60,8 @@ namespace wfdg {
                     _doDepnOfRWVar(childExpr);
                     return;
                 }
-            }
                 break;
+            }
 
             case Stmt::BinaryOperatorClass: {
                 const BinaryOperator *binOp = cast<BinaryOperator>(stmt);
@@ -71,8 +70,8 @@ namespace wfdg {
                     _depnOfWrittenVar(binOp->getLHS(), binOp->getRHS());
                     return;
                 }
-            }
                 break;
+            }
 
             case Stmt::CompoundAssignOperatorClass: {
                 const CompoundAssignOperator *binOp = cast<CompoundAssignOperator>(stmt);
@@ -82,8 +81,8 @@ namespace wfdg {
                     _depnOfWrittenVar(binOp->getLHS(), stmt);
                     return;
                 }
-            }
                 break;
+            }
 
             case Stmt::DeclStmtClass: {
                 const DeclStmt *declStmt = cast<DeclStmt>(stmt);
@@ -93,8 +92,9 @@ namespace wfdg {
                         _depnOfDecl(varDecl);
                     }
                 }
-            }
                 return;
+            }
+
             default:;
         }
         for (; it != stmt->child_end(); ++it) {

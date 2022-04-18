@@ -44,14 +44,15 @@ namespace wfdg {
         }
 
         template<typename T>
-        static string
-        varMapToString(const VarMap<T> &vMap, const function<string(decltype(vMap.begin()->second))> &vFunc) {
+        static string varMapToString(const VarMap<T> &vMap,
+                                     const function<string(decltype(vMap.begin()->second))> &vFunc
+                                     = util::numToString<T>) {
             return util::hashmapToString(vMap, util::numPairToString<VarIdType, VarIdType>, vFunc);
         }
 
         struct LeftData {
-            vector<AssignPair> assignFrom;  //! 所依赖的赋值变量(变量id,变量rightIdx)
-            vector<RefPair> refTo{};  //! 值被引用的位置(变量rightIdx,所在结点id)
+            vector<AssignPair> assignFrom;  //!< 所依赖的赋值变量(变量id,变量rightIdx)
+            vector<RefPair> refTo{};  //!< 值被引用的位置(变量rightIdx,所在结点id)
 
             explicit LeftData(vector<AssignPair> &&from) : assignFrom(from) {}
 
@@ -64,8 +65,8 @@ namespace wfdg {
         };
 
         struct RightData {
-            vector<RefPair> refFrom;    //! 所引用的值的位置(变量leftIdx,所在结点id)
-            AssignPair assignTo{};    //! 赋值的变量(变量id, 变量leftIdx)
+            vector<RefPair> refFrom;    //!< 所引用的值的位置(变量leftIdx,所在结点id)
+            AssignPair assignTo{};    //!< 赋值的变量(变量id, 变量leftIdx)
 
             explicit RightData(vector<RefPair> &&from) : refFrom(from) {}
 
@@ -88,7 +89,7 @@ namespace wfdg {
         VarMap<unordered_set<int>> _rightMap{};
         vector<RightData> _rightVec{};
 
-        unordered_map<unsigned, unordered_set<int>> _contrVarMap{};
+        unordered_map<unsigned, VarMap<int>> _contrVarMap{};
 
         vector<unordered_set<unsigned>> _sensitiveNodes;
         vector<vector<pair<VarIdPair, int>>> _sensitiveWVars;
@@ -163,6 +164,14 @@ namespace wfdg {
             return _sensitiveNodes.at(sensitiveIdx);
         }
 
+        int getVarLastRightIdx(const VarIdPair& ids) const {
+            int resIdx = -1;
+            for(int rightIdx: _rightMap.at(ids)) {
+                resIdx = max(rightIdx, resIdx);
+            }
+            return resIdx;
+        }
+
         const LeftData &getLeftData(int leftIdx) const {
             return _leftVec.at(leftIdx);
         }
@@ -171,12 +180,20 @@ namespace wfdg {
             return _rightVec.at(rightIdx);
         }
 
-        void pushContrVar(unsigned nodeId, int rightIdx) {
+        void pushContrVar(unsigned nodeId, VarIdPair ids, int rightIdx) {
             auto it = _contrVarMap.find(nodeId);
             if (it == _contrVarMap.end()) {
-                std::tie(it, std::ignore) = _contrVarMap.emplace(nodeId, unordered_set<int>());
+                std::tie(it, std::ignore) = _contrVarMap.emplace(nodeId, VarMap<int>());
             }
-            it->second.emplace(rightIdx);
+            it->second.emplace(move(ids), rightIdx);
+        }
+
+        const VarMap<int> *getContrVars(unsigned nodeId) const {
+            auto it = _contrVarMap.find(nodeId);
+            if (it != _contrVarMap.end()) {
+                return &(it->second);
+            }
+            return nullptr;
         }
 
         string toString() const {
@@ -198,7 +215,7 @@ namespace wfdg {
                    "contrVarMap: " +
                    util::hashmapToString(_contrVarMap, util::numToString<unsigned>,
                                          [](const auto &hashset) -> string {
-                                             return util::hashsetToString(hashset);
+                                             return DepnMapper::varMapToString(hashset);
                                          }) + ",\n" +
                    "sensitiveNodes: " +
                    util::vecToString(_sensitiveNodes, [](const auto &hashset) -> string {

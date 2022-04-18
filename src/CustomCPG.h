@@ -179,10 +179,6 @@ namespace wfdg {
             return it == _sensitiveLines.end() ? -1 : it->second;
         }
 
-        void setContrDepn(vector<unsigned> contrDepn) {
-            _contrDepn = move(contrDepn);
-        }
-
         set<pair<unsigned, unsigned>> &getDataDepnEdges() {
             return _dataDepnEdges;
         }
@@ -209,6 +205,14 @@ namespace wfdg {
 
         bool hasCondition(unsigned nodeId) const {
             return _hasCondition.at(nodeId);
+        }
+
+        void setContrDepn(vector<unsigned> contrDepn) {
+            _contrDepn = move(contrDepn);
+        }
+
+        unsigned getContrNode(unsigned nodeId) const {
+            return _contrDepn.at(nodeId);
         }
 
         string toString() const {

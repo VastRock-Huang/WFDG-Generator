@@ -128,7 +128,7 @@ namespace wfdg {
             vector<bool> visited(_size);
             visited.front() = visited.back() = true;
             _idom.front() = 0;
-            cout << "ori:" << util::vecToString(_idom) << '\n';
+//            cout << "ori:" << util::vecToString(_idom) << '\n';
             for (unsigned i = 1; i < _size - 1; ++i) {
                 genDepn(i, visited);
             }
