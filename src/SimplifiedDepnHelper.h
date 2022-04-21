@@ -44,9 +44,7 @@ namespace wfdg {
                 return;
             }
             VarIdPair varIds = make_pair(0, memIds.first);
-            llvm::outs() <<"deb2\n";
             if (_noneWrittenStructInNode(_nodeID, varIds, memIds)) {
-                llvm::outs() <<"deb3\n";
                 _traceReadStructVar(_nodeID, varIds, memIds);
             }
         }
