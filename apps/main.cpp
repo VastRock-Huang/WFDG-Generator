@@ -47,9 +47,9 @@ int main(int argc, const char **argv) {
         WFDGGenerator wfgGenerator(config, cpg);
         vector<WFDG> wfdgs;
         wfgGenerator.genWFDGs(wfdgs);
-//        for (const WFDG &w: wfdgs) {
-//            cout << w.toString() << endl << endl;
-//        }
+        for (const WFDG &w: wfdgs) {
+            cout << w.toString() << endl << endl;
+        }
     }
     return ret;
 }
