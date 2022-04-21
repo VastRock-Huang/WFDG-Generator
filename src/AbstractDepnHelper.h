@@ -51,6 +51,7 @@ namespace wfdg {
         };
 
         const unique_ptr <CFG> &_cfg;
+        const unsigned _nodeCnt;
         StmtHelper _stmtHelper;
         unsigned _nodeID{};
         bool _debug{false};
@@ -94,10 +95,10 @@ namespace wfdg {
 
     public:
         explicit AbstractDepnHelper(const unique_ptr <CFG> &cfg)
-                : _cfg(cfg), _stmtHelper(cfg.get()) {}
+                : _cfg(cfg), _nodeCnt(cfg->size()), _stmtHelper(cfg.get()) {}
 
         AbstractDepnHelper(const unique_ptr <CFG> &cfg, bool debug)
-                : _cfg(cfg), _stmtHelper(cfg.get()), _debug(debug) {}
+                : _cfg(cfg), _nodeCnt(cfg->size()), _stmtHelper(cfg.get()), _debug(debug) {}
 
         void buildDepnInCPG() {
             for (auto it = _cfg->rbegin(); it != _cfg->rend(); ++it) {
@@ -125,7 +126,7 @@ namespace wfdg {
         }
 
         void depnOfParamDecl(llvm::ArrayRef<ParmVarDecl *> params) {
-            _doNodeIdUpdate(_cfg->size() - 1);
+            _doNodeIdUpdate(_nodeCnt - 1);
             for (const ParmVarDecl *paramVarDecl: params) {
                 _depnOfDecl(paramVarDecl);
             }

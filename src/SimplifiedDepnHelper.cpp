@@ -5,37 +5,64 @@
 #include "SimplifiedDepnHelper.h"
 
 namespace wfdg {
-    void SimplifiedDepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids) {
-        for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
-             vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
-            unsigned predNode = _customCPG.pred_at(vecIdx);
-            if (predNode <= searchNode) {
+
+    void SimplifiedDepnHelper::_traceReadVar(const AbstractDepnHelper::VarIdPair &ids) {
+        vector<bool> visited(_nodeCnt - _nodeID, false);
+        stack<unsigned> nodeStk{};
+        nodeStk.push(_nodeID);
+        while (!nodeStk.empty()) {
+            unsigned curNode = nodeStk.top();
+            if (visited[curNode - _nodeID]) {
+                nodeStk.pop();
                 continue;
             }
-            if (_noneWrittenVarInNode(predNode, ids)) {
-                _traceReadVar(predNode, ids);
-            } else {
-                _addDepnEdge(_nodeID, predNode);
+            visited[curNode - _nodeID] = true;
+            if (_noneWrittenVarInNode(curNode, ids)) {
+                for (unsigned vecIdx = _customCPG.pred_begin(curNode);
+                     vecIdx != _customCPG.pred_end(curNode); ++vecIdx) {
+                    unsigned predNode = _customCPG.pred_at(vecIdx);
+                    if (predNode <= curNode || visited[predNode - _nodeID]) {
+                        continue;
+                    }
+                    nodeStk.push(predNode);
+                }
+            } else if (curNode != _nodeID) {
+                _addDepnEdge(_nodeID, curNode);
                 if (_debug)
-                    llvm::outs() << "find " << DepnMapper::varIdPairToString(ids) << " at " << predNode << '\n';
+                    llvm::outs() << "find " << DepnMapper::varIdPairToString(ids) << " at " << curNode << '\n';
             }
         }
     }
 
-    void SimplifiedDepnHelper::_traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                                   const VarIdPair &memIds) {
-        for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
-             vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
-            unsigned predNode = _customCPG.pred_at(vecIdx);
-            if(predNode <= searchNode){
+    void SimplifiedDepnHelper::_traceReadStructVar(const AbstractDepnHelper::VarIdPair &memIds)  {
+        if (memIds.first == 0) {
+            return;
+        }
+        VarIdPair varIds = make_pair(0, memIds.first);
+
+        vector<bool> visited(_nodeCnt - _nodeID, false);
+        stack<unsigned> nodeStk{};
+        nodeStk.push(_nodeID);
+        while (!nodeStk.empty()) {
+            unsigned curNode = nodeStk.top();
+            if (visited[curNode - _nodeID]) {
+                nodeStk.pop();
                 continue;
             }
-            if (_noneWrittenStructInNode(predNode, varIds, memIds)) {
-                _traceReadStructVar(predNode, varIds, memIds);
-            } else {
-                _addDepnEdge(_nodeID, predNode);
+            visited[curNode - _nodeID] = true;
+            if (_noneWrittenStructInNode(curNode, varIds, memIds)) {
+                for (unsigned vecIdx = _customCPG.pred_begin(curNode);
+                     vecIdx != _customCPG.pred_end(curNode); ++vecIdx) {
+                    unsigned predNode = _customCPG.pred_at(vecIdx);
+                    if (predNode <= curNode || visited[predNode - _nodeID]) {
+                        continue;
+                    }
+                    nodeStk.push(predNode);
+                }
+            } else if (curNode != _nodeID) {
+                _addDepnEdge(_nodeID, curNode);
                 if (_debug)
-                    llvm::outs() << "find " << DepnMapper::varIdPairToString(memIds) << " at " << predNode << '\n';
+                    llvm::outs() << "find " << DepnMapper::varIdPairToString(memIds) << " at " << curNode << '\n';
             }
         }
     }

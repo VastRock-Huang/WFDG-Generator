@@ -69,48 +69,9 @@ namespace wfdg {
             return -1;
         }
 
-        void _traceReadVar(unsigned searchNode, const VarIdPair &ids, unordered_set<RefPair, util::pair_hash> &refFrom);
+        void _traceReadVar(const VarIdPair &ids, unsigned lineNum);
 
-        void _traceReadVar(const VarIdPair &ids, unsigned lineNum) {
-            unordered_set<RefPair, util::pair_hash> refFrom{};
-            int predIdx = -1;
-            if ((predIdx = _hasWrittenVarInNode(_nodeID, ids)) == -1) {
-                _traceReadVar(_nodeID, ids, refFrom);
-            } else {
-                refFrom.emplace(predIdx, _nodeID);
-            }
-            int rightIdx = _depnMapper.pushRefInfo(ids, _nodeID, refFrom);
-            _readVarMap.emplace(ids, rightIdx);
-            int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
-            if (sensitiveIdx != -1) {
-                _depnMapper.pushSensitiveRVar(sensitiveIdx, ids, rightIdx, _nodeID);
-            }
-        }
-
-        void _traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                 const VarIdPair &memIds, unordered_set<RefPair, util::pair_hash> &refFrom);
-
-
-        void _traceReadStructVar(const VarIdPair &memIds, const string &name, unsigned lineNum) {
-            if (memIds.first == 0) {
-                return;
-            }
-            _insertVarIds(memIds, name);
-            VarIdPair varIds = make_pair(0, memIds.first);
-            unordered_set<RefPair, util::pair_hash> refFrom{};
-            int predIdx = -1;
-            if ((predIdx = _hasWrittenStructInNode(_nodeID, varIds, memIds)) == -1) {
-                _traceReadStructVar(_nodeID, varIds, memIds, refFrom);
-            } else {
-                refFrom.emplace(predIdx, _nodeID);
-            }
-            int rightIdx = _depnMapper.pushRefInfo(memIds, _nodeID, refFrom);
-            _readVarMap.emplace(memIds, rightIdx);
-            int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
-            if (sensitiveIdx != -1) {
-                _depnMapper.pushSensitiveRVar(sensitiveIdx, memIds, rightIdx, _nodeID);
-            }
-        }
+        void _traceReadStructVar(const VarIdPair &memIds, const string &name, unsigned lineNum);
 
         void _collectRVarsOfWVar(const Stmt *stmt, VarMap<int> &assignFrom) const {
             if (isa<DeclRefExpr>(stmt)) {
@@ -119,7 +80,7 @@ namespace wfdg {
                     VarIdPair ids = _getRefVarIds(refExpr);
 //                    llvm::outs() << "push" << DepnMapper::varIdPairToString(ids) <<'\n';
                     int rightIdx = _getReadVarIdx(ids);
-                    if(rightIdx == -1) {
+                    if (rightIdx == -1) {
                         rightIdx = _depnMapper.getVarLastRightIdx(ids);
                     }
                     assignFrom.emplace(ids, rightIdx);
@@ -129,7 +90,7 @@ namespace wfdg {
                 VarIdPair memIds = _getStructIds(memberExpr);
 //                llvm::outs() << "push" << DepnMapper::varIdPairToString(memIds) <<'\n';
                 int rightIdx = _getReadVarIdx(memIds);
-                if(rightIdx == -1) {
+                if (rightIdx == -1) {
                     rightIdx = _depnMapper.getVarLastRightIdx(memIds);
                 }
                 assignFrom.emplace(memIds, rightIdx);
@@ -166,9 +127,9 @@ namespace wfdg {
         }
 
         static string _getStructIdsAndName(const MemberExpr *memberExpr, VarIdPair &ids) {
-            stack<const MemberExpr*> memStk;
+            stack<const MemberExpr *> memStk;
             memStk.push(memberExpr);
-            const Stmt* stmt = memberExpr;
+            const Stmt *stmt = memberExpr;
             string name{};
             while (stmt->child_begin() != stmt->child_end()) {
                 stmt = *(stmt->child_begin());
@@ -186,7 +147,7 @@ namespace wfdg {
             }
 
             while (!memStk.empty()) {
-                const MemberExpr* memExpr = memStk.top();
+                const MemberExpr *memExpr = memStk.top();
                 memStk.pop();
                 name.append(memExpr->isArrow() ? "->" : ".");
                 name.append(memExpr->getMemberDecl()->getNameAsString());
@@ -195,13 +156,15 @@ namespace wfdg {
             return name;
         }
 
-        void _doDepnOfReadRef(const DeclRefExpr *refExpr) override {
+        void _doDepnOfReadRef(const DeclRefExpr *refExpr)
+        override {
             _traceReadVar(_getRefVarIds(refExpr), _getLineNumber(refExpr->getLocation()));
             if (_debug)
                 llvm::outs() << "R_Decl:" << refExpr->getNameInfo().getAsString() << '\n';
         }
 
-        void _doDepnOfReadMember(const MemberExpr *memberExpr) override {
+        void _doDepnOfReadMember(const MemberExpr *memberExpr)
+        override {
             VarIdPair ids{};
             string name = _getStructIdsAndName(memberExpr, ids);
             _traceReadStructVar(ids, name, _getLineNumber(memberExpr->getMemberLoc()));
@@ -209,7 +172,8 @@ namespace wfdg {
                 llvm::outs() << "R_Mem:" << name << '\n';
         }
 
-        void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) override {
+        void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr)
+        override {
             VarMap<int> assignFrom{};
             // 必须在record之前,防止同一变量被覆盖
             _collectRVarsOfWVar(readExpr, assignFrom);
@@ -229,7 +193,8 @@ namespace wfdg {
             }
         }
 
-        void _doDepnOfRWVar(const Stmt *stmt) override {
+        void _doDepnOfRWVar(const Stmt *stmt)
+        override {
             VarIdPair ids{};
             unsigned lineNum{};
             if (isa<DeclRefExpr>(stmt)) {
@@ -250,7 +215,8 @@ namespace wfdg {
             _recordWrittenVar(ids, {make_pair(ids, _depnMapper.rightVecSize() - 1)}, lineNum);
         }
 
-        void _depnOfDecl(const VarDecl *varDecl) override {
+        void _depnOfDecl(const VarDecl *varDecl)
+        override {
             VarIdPair ids = make_pair(0, varDecl->getID());
             _insertVarIds(ids, varDecl->getNameAsString());
             VarMap<int> assignFrom{};
@@ -263,7 +229,8 @@ namespace wfdg {
                 llvm::outs() << "W_DefDecl: " << varDecl->getNameAsString() << '\n';
         }
 
-        void _doTerminatorCondition(const Stmt *stmt) override {
+        void _doTerminatorCondition(const Stmt *stmt)
+        override {
             if (!stmt) {
                 return;
             }
@@ -277,7 +244,7 @@ namespace wfdg {
                     if (isa<VarDecl>(refExpr->getDecl())) {
                         VarIdPair ids = _getRefVarIds(refExpr);
                         int rightIdx = _getReadVarIdx(ids);
-                        if(rightIdx == -1) {
+                        if (rightIdx == -1) {
                             rightIdx = _depnMapper.getVarLastRightIdx(ids);
                         }
                         _depnMapper.pushContrVar(_nodeID, ids, rightIdx);
@@ -287,7 +254,7 @@ namespace wfdg {
                     const MemberExpr *memberExpr = cast<MemberExpr>(s);
                     VarIdPair memIds = _getStructIds(memberExpr);
                     int rightIdx = _getReadVarIdx(memIds);
-                    if(rightIdx == -1) {
+                    if (rightIdx == -1) {
                         rightIdx = _depnMapper.getVarLastRightIdx(memIds);
                     }
                     _depnMapper.pushContrVar(_nodeID, memIds, rightIdx);
@@ -305,19 +272,25 @@ namespace wfdg {
 
         }
 
-        void _doAtNodeEnding() override {
+        void _doAtNodeEnding()
+        override {
             if (_debug)
                 llvm::outs() << _depnMapper.toString() << '\n';
         }
 
-        void _doNodeIdUpdate(unsigned nodeID) override {
+        void _doNodeIdUpdate(unsigned nodeID)
+        override {
             _nodeID = nodeID;
             _readVarMap.clear();
         }
 
     public:
-        DetailedDepnHelper(const unique_ptr<CFG> &cfg, const ASTContext &context,
-                           const CustomCPG &customCPG, DepnMapper &depnMapper, bool debug)
+        DetailedDepnHelper(
+                const unique_ptr<CFG> &cfg,
+                const ASTContext &context,
+                const CustomCPG &customCPG, DepnMapper
+                &depnMapper, bool
+                debug)
                 : AbstractDepnHelper(cfg, debug), _context(context), _customCPG(customCPG),
                   _depnMapper(depnMapper), _writtenVarVec(cfg->size()) {}
 

@@ -7,6 +7,7 @@
 
 #include "AbstractDepnHelper.h"
 #include "CustomCPG.h"
+#include <stack>
 
 namespace wfdg {
     class SimplifiedDepnHelper : public AbstractDepnHelper {
@@ -28,36 +29,15 @@ namespace wfdg {
             _depnEdges.emplace(cur, pred);
         }
 
-        void _traceReadVar(unsigned searchNode, const VarIdPair &ids);
 
-        void _traceReadVar(const VarIdPair &ids) {
-            if (_noneWrittenVarInNode(_nodeID, ids)) {
-                _traceReadVar(_nodeID, ids);
-            }
-        }
+        void _traceReadVar(const VarIdPair &ids);
 
-        void _traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                 const VarIdPair &memIds);
-
-        void _traceReadStructVar(const VarIdPair &memIds) {
-            if (memIds.first == 0) {
-                return;
-            }
-            VarIdPair varIds = make_pair(0, memIds.first);
-            if (_noneWrittenStructInNode(_nodeID, varIds, memIds)) {
-                _traceReadStructVar(_nodeID, varIds, memIds);
-            }
-        }
+        void _traceReadStructVar(const VarIdPair &memIds);
 
         void _recordWrittenVar(const VarIdPair &ids) {
             _writtenVarVec.at(_nodeID).emplace(ids);
         }
 
-        void _recordWrittenStruct(const VarIdPair &memIds, const string &name) {
-            if (memIds.first != 0) {
-                _writtenVarVec.at(_nodeID).emplace(memIds);
-            }
-        }
 
         static string _getStructName(const MemberExpr *memberExpr) {
             const Stmt *childStmt = *(memberExpr->child_begin());
@@ -142,7 +122,8 @@ namespace wfdg {
         void _doAtNodeEnding() override {
             if (_debug)
                 llvm::outs() << "depnEdges: "
-                             << util::setToString(_customCPG.getDataDepnEdges(), util::numPairToString<unsigned, unsigned>)
+                             << util::setToString(_customCPG.getDataDepnEdges(),
+                                                  util::numPairToString<unsigned, unsigned>)
                              << '\n';
         }
 

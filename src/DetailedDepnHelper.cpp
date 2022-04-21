@@ -5,44 +5,85 @@
 #include "DetailedDepnHelper.h"
 
 namespace wfdg {
-    void DetailedDepnHelper::_traceReadVar(unsigned searchNode, const VarIdPair &ids,
-                                           unordered_set<RefPair, util::pair_hash> &refFrom) {
-        for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
-             vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
-            unsigned predNode = _customCPG.pred_at(vecIdx);
-            if (predNode <= searchNode) {
+    void DetailedDepnHelper::_traceReadVar(const AbstractDepnHelper::VarIdPair &ids, unsigned int lineNum)  {
+        unordered_set<RefPair, util::pair_hash> refFrom{};
+        vector<bool> visited(_nodeCnt - _nodeID, false);
+        stack<unsigned> nodeStk{};
+        nodeStk.push(_nodeID);
+        while (!nodeStk.empty()) {
+            unsigned curNode = nodeStk.top();
+            if (visited[curNode - _nodeID]) {
+                nodeStk.pop();
                 continue;
             }
+            visited[curNode - _nodeID] = true;
             int leftIdx = -1;
-            if ((leftIdx = _hasWrittenVarInNode(predNode, ids)) != -1) {
+            if ((leftIdx = _hasWrittenVarInNode(curNode, ids)) != -1) {
 //                _customCPG.addDataDepnEdge(predNode, _nodeID);
-                refFrom.emplace(leftIdx, predNode);
+                refFrom.emplace(leftIdx, curNode);
                 if (_debug)
-                    llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << predNode << '\n';
+                    llvm::outs() << "find " << _getVarNameByIds(ids) << " at " << curNode << '\n';
             } else {
-                _traceReadVar(predNode, ids, refFrom);
+                for (unsigned vecIdx = _customCPG.pred_begin(curNode);
+                     vecIdx != _customCPG.pred_end(curNode); ++vecIdx) {
+                    unsigned predNode = _customCPG.pred_at(vecIdx);
+                    if (predNode <= curNode|| visited[predNode - _nodeID]) {
+                        continue;
+                    }
+                    nodeStk.push(predNode);
+                }
             }
+        }
+
+        int rightIdx = _depnMapper.pushRefInfo(ids, _nodeID, refFrom);
+        _readVarMap.emplace(ids, rightIdx);
+        int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
+        if (sensitiveIdx != -1) {
+            _depnMapper.pushSensitiveRVar(sensitiveIdx, ids, rightIdx, _nodeID);
         }
     }
 
-    void DetailedDepnHelper::_traceReadStructVar(unsigned searchNode, const VarIdPair &varIds,
-                                                 const VarIdPair &memIds,
-                                                 unordered_set<RefPair, util::pair_hash> &refFrom) {
-        for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
-             vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
-            unsigned predNode = _customCPG.pred_at(vecIdx);
-            if(predNode <= searchNode){
+    void DetailedDepnHelper::_traceReadStructVar(const AbstractDepnHelper::VarIdPair &memIds, const string &name,
+                                                 unsigned int lineNum) {
+        if (memIds.first == 0) {
+            return;
+        }
+        _insertVarIds(memIds, name);
+        VarIdPair varIds = make_pair(0, memIds.first);
+        unordered_set<RefPair, util::pair_hash> refFrom{};
+        vector<bool> visited(_nodeCnt - _nodeID, false);
+        stack<unsigned> nodeStk{};
+        nodeStk.push(_nodeID);
+        while (!nodeStk.empty()) {
+            unsigned curNode = nodeStk.top();
+            if (visited[curNode - _nodeID]) {
+                nodeStk.pop();
                 continue;
             }
+            visited[curNode - _nodeID] = true;
             int leftIdx = -1;
-            if ((leftIdx = _hasWrittenStructInNode(predNode, varIds, memIds)) != -1) {
+            if ((leftIdx = _hasWrittenStructInNode(curNode, varIds, memIds)) != -1) {
 //                _customCPG.addDataDepnEdge(predNode, _nodeID);
-                refFrom.emplace(leftIdx, predNode);
+                refFrom.emplace(leftIdx, curNode);
                 if (_debug)
-                    llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << predNode << '\n';
+                    llvm::outs() << "find " << _getVarNameByIds(memIds) << " at " << curNode << '\n';
             } else {
-                _traceReadStructVar(predNode, varIds, memIds, refFrom);
+                for (unsigned vecIdx = _customCPG.pred_begin(curNode);
+                     vecIdx != _customCPG.pred_end(curNode); ++vecIdx) {
+                    unsigned predNode = _customCPG.pred_at(vecIdx);
+                    if (predNode <= curNode|| visited[predNode - _nodeID]) {
+                        continue;
+                    }
+                    nodeStk.push(predNode);
+                }
             }
+        }
+
+        int rightIdx = _depnMapper.pushRefInfo(memIds, _nodeID, refFrom);
+        _readVarMap.emplace(memIds, rightIdx);
+        int sensitiveIdx = _customCPG.inSensitiveLine(lineNum);
+        if (sensitiveIdx != -1) {
+            _depnMapper.pushSensitiveRVar(sensitiveIdx, memIds, rightIdx, _nodeID);
         }
     }
 }
