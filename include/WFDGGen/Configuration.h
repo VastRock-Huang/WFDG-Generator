@@ -15,12 +15,6 @@ using namespace std;
 namespace wfdg {
     class Configuration {
     private:
-        string _destFunc{};
-
-        unsigned _sensitiveLine{0};
-
-        bool _debug{false};
-
         static vector<string> _initKeywords() {
             return DEFAULT_KEYWORDS;
         }
@@ -39,30 +33,36 @@ namespace wfdg {
         }
 
     public:
+        string destFunc{};
+
+        unsigned sensitiveLine{0};
+
+        bool debug{false};
+
         static const vector<string> DEFAULT_KEYWORDS;
 
         static const vector<string> DEFAULT_AST_STMT_KINDS;
 
-        const vector<string> keyWords;
+        vector<string> keyWords;
 
-        const vector<string> ASTStmtKinds;
+        vector<string> ASTStmtKinds;
 
-        const unordered_map<string, unsigned> ASTStmtKindMap;
+        unordered_map<string, unsigned> ASTStmtKindMap;
 
-        const bool useWeight{true};
+        bool useWeight{true};
 
-        const double weightPredRatio{0.85};
+        double weightPredRatio{0.85};
 
-        const double weightSuccRatio{0.85};
+        double weightSuccRatio{0.85};
 
-        const unsigned graphPredDepth{5};
+        unsigned graphPredDepth{5};
 
-        const unsigned graphSuccDepth{5};
+        unsigned graphSuccDepth{5};
 
         Configuration() : keyWords(_initKeywords()), ASTStmtKinds(_initASTStmtKinds()),
                           ASTStmtKindMap(_initASTStmtKindMap()) {}
 
-        void init(string destFunc, unsigned sensitiveLine, bool debug) {
+        void init(string destFuncName, unsigned sensitiveLineNo, bool doDebug) {
             static bool initialized{false};
             if(initialized) {
                 return;
@@ -70,21 +70,13 @@ namespace wfdg {
             initialized = true;
             // 只有给定函数名给定敏感行才有意义
             if(!destFunc.empty()) {
-                _sensitiveLine = sensitiveLine;
+                sensitiveLine = sensitiveLineNo;
             }
-            _debug = debug;
-            _destFunc = move(destFunc);
-        }
-
-        bool debug() const {
-            return _debug;
+            debug = doDebug;
+            destFunc = move(destFuncName);
         }
 
         bool matchDestFunc(const string& funcName) const;
-
-        unsigned getSensitiveLine() const {
-            return _sensitiveLine;
-        }
     };
 }
 

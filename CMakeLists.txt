@@ -38,11 +38,13 @@ add_definitions(${CLANG_DEFINITIONS})
 llvm_map_components_to_libnames(LLVM_LIBS support core irreader)
 
 include_directories(include)
+include_directories(src)
 
 if (PY_MOD)
-    add_subdirectory(pybind11)
+    add_subdirectory(3rdparty/pybind11)
 endif ()
 add_subdirectory(src)
+add_subdirectory(apps)
 
 # 关于构建LLVM和Clang的CMake项目,参考一下链接:
 # https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project

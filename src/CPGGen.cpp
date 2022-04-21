@@ -14,7 +14,7 @@ namespace wfdg {
 
     map<unsigned, int> CPGGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
                                                            const pair<unsigned, unsigned> &lineRange) const {
-        unsigned sensitiveLine = _config.getSensitiveLine();
+        unsigned sensitiveLine = _config.sensitiveLine;
         if (sensitiveLine != 0 && util::numInRange(sensitiveLine, lineRange) == 0) {
             return {{sensitiveLine, 0}};
         }
@@ -125,7 +125,7 @@ namespace wfdg {
             _manager.getFileID(funcDecl->getLocation()) == _manager.getMainFileID()) {
             const string funcName = funcDecl->getQualifiedNameAsString();
             if (_config.matchDestFunc(funcName)) {
-                if (_config.debug())
+                if (_config.debug)
                     llvm::outs() << "\nFUNC: " << funcName << '\n';
                 pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc());
 
@@ -142,10 +142,10 @@ namespace wfdg {
         unique_ptr<AbstractDepnHelper> depnHelper{};
         if (customCPG.getSensitiveLineMap().empty()) {
             depnHelper = unique_ptr<AbstractDepnHelper>(
-                    new SimplifiedDepnHelper(wholeCFG, customCPG, customCPG.getDataDepnEdges(), _config.debug()));
+                    new SimplifiedDepnHelper(wholeCFG, customCPG, customCPG.getDataDepnEdges(), _config.debug));
         } else {
             depnHelper = unique_ptr<AbstractDepnHelper>(
-                    new DetailedDepnHelper(wholeCFG, _context, customCPG, customCPG.getDepnMapper(), _config.debug()));
+                    new DetailedDepnHelper(wholeCFG, _context, customCPG, customCPG.getDepnMapper(), _config.debug));
         }
 
         depnHelper->depnOfParamDecl(funcDecl->parameters());

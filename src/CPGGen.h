@@ -6,7 +6,7 @@
 #define WFG_GENERATOR_CPGGEN_H
 
 #include "CustomCPG.h"
-#include "Configuration.h"
+#include "WFDGGen/Configuration.h"
 #include <clang/Analysis/CFG.h>
 #include <clang/AST/AST.h>
 #include <clang/AST/RecursiveASTVisitor.h>

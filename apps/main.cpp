@@ -21,7 +21,7 @@ int main(int argc, const char **argv) {
                                     cl::value_desc("sensitiveLine"),
                                     cl::cat(opCategory));
     cl::opt<bool> showFuncInfo("i", cl::desc("show all FuncInfo"), cl::cat(opCategory));
-    cl::opt<bool> debug("d", cl::desc("show _debug messages"), cl::cat(opCategory));
+    cl::opt<bool> debug("d", cl::desc("show debug messages"), cl::cat(opCategory));
     CommonOptionsParser op(argc, argv, opCategory);
 
     vector<CustomCPG> customCPGList{};
@@ -45,8 +45,9 @@ int main(int argc, const char **argv) {
                  << "****************************************************\n";
         }
         WFDGGenerator wfgGenerator(config, cpg);
-        vector<WFDG> wfgs = wfgGenerator.genWFDGs();
-//        for (const WFDG &w: wfgs) {
+        vector<WFDG> wfdgs;
+        wfgGenerator.genWFDGs(wfdgs);
+//        for (const WFDG &w: wfdgs) {
 //            cout << w.toString() << endl << endl;
 //        }
     }

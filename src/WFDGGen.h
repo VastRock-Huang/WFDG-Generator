@@ -8,7 +8,7 @@
 #include "WFDGGen/WFDG.h"
 #include "DepnMapper.h"
 #include "CustomCPG.h"
-#include "Configuration.h"
+#include "WFDGGen/Configuration.h"
 
 using namespace std;
 
@@ -49,7 +49,7 @@ namespace wfdg {
         WFDGGenerator(const Configuration &config, CustomCPG &customCPG)
                 : _config(config), _customCPG(customCPG) {}
 
-        vector<WFDG> genWFDGs();
+        void genWFDGs(vector<WFDG> &wfdgs);
     };
 }
 

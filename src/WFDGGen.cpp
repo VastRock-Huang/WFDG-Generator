@@ -311,11 +311,10 @@ namespace wfdg {
         return w;
     }
 
-    vector<WFDG> WFDGGenerator::genWFDGs() {
-        vector<WFDG> wfdgs{};
+    void WFDGGenerator::genWFDGs(vector<WFDG> &wfdgs) {
         if (_customCPG.getSensitiveLineMap().empty()) {
             _genWFDGWithoutSensitiveLine(wfdgs);
-            return wfdgs;
+            return;
         }
         const map<unsigned, int> &sensitiveLineMap = _customCPG.getSensitiveLineMap();
         for (const auto &p: sensitiveLineMap) {
@@ -338,11 +337,10 @@ namespace wfdg {
 //                 << '\n';
             wfdgs.emplace_back(_buildWFDG(p.first, depnWeightMap, nodeWeightMap));
         }
-        return wfdgs;
     }
 
     void WFDGGenerator::_genWFDGWithoutSensitiveLine(vector<WFDG> &wfdgs) {
-        WFDG w(_customCPG.getFuncName());
+        WFDG w(_customCPG.getFuncName(), 0U);
         for (unsigned i = 0; i < _customCPG.getNodeCnt(); ++i) {
             WFDGNode node{};
             node.id = i;

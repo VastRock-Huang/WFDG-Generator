@@ -2,7 +2,7 @@
 // Created by Unravel on 2022/3/14.
 //
 
-#include "Configuration.h"
+#include "WFDGGen/Configuration.h"
 
 namespace wfdg {
     const vector<string> Configuration::DEFAULT_KEYWORDS{"USER_SET","memcpy", "strcpy", "read", "free", "buf"};
@@ -20,7 +20,7 @@ namespace wfdg {
     };
 
     bool Configuration::matchDestFunc(const string &funcName) const {
-        return _destFunc.empty() || funcName == _destFunc;
+        return destFunc.empty() || funcName == destFunc;
     }
 
 }
