@@ -16,7 +16,6 @@ namespace wfdg {
     class DetailedDepnHelper : public AbstractDepnHelper {
     private:
         using RefPair = DepnMapper::RefPair;
-        using AssignPair = DepnMapper::AssignPair;
         template<typename T>
         using VarMap = DepnMapper::VarMap<T>;
 
@@ -48,7 +47,7 @@ namespace wfdg {
         }
 
         int _hasWrittenVarInNode(unsigned nodeID, const VarIdPair &ids) const {
-            auto it = _writtenVarVec.at(nodeID).find(ids);
+            auto it = _writtenVarVec[nodeID].find(ids);
             if (it != _writtenVarVec.at(nodeID).end()) {
                 return it->second;
             }
@@ -56,9 +55,9 @@ namespace wfdg {
         }
 
         int _hasWrittenStructInNode(unsigned nodeID, const VarIdPair &varIds, const VarIdPair &memIds) const {
-            auto it1 = _writtenVarVec.at(nodeID).find(varIds);
-            auto it2 = _writtenVarVec.at(nodeID).find(memIds);
-            auto end = _writtenVarVec.at(nodeID).end();
+            auto it1 = _writtenVarVec[nodeID].find(varIds);
+            auto it2 = _writtenVarVec[nodeID].find(memIds);
+            auto end = _writtenVarVec[nodeID].end();
             if (it1 != end && it2 != end) {
                 // 结点序号越小越靠近出口越靠后
                 return min(it1->second, it2->second);

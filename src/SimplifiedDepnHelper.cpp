@@ -27,6 +27,9 @@ namespace wfdg {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
+            if(predNode <= searchNode){
+                continue;
+            }
             if (_noneWrittenStructInNode(predNode, varIds, memIds)) {
                 _traceReadStructVar(predNode, varIds, memIds);
             } else {

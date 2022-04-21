@@ -42,7 +42,7 @@ namespace wfdg {
         tool.setDiagnosticConsumer(&diagConsumer);
         vector<CustomCPG> customCPGList{};
         tool.run(unique_ptr<CPGGenFactory>(new CPGGenFactory(config, customCPGList)).get());
-        vector<WFDG> res{};
+
         vector<WFDG> wfdgs;
         for (auto &cpg: customCPGList) {
             WFDGGenerator wfgGenerator(config, cpg);

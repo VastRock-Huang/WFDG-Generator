@@ -20,8 +20,8 @@ namespace wfdg {
         }
 
         bool _noneWrittenStructInNode(unsigned nodeID, const VarIdPair &varIds, const VarIdPair &memIds) const {
-            return _writtenVarVec.at(nodeID).count(varIds) == 0 &&
-                   _writtenVarVec.at(nodeID).count(memIds) == 0;
+            return _writtenVarVec[nodeID].count(varIds) == 0 &&
+                   _writtenVarVec[nodeID].count(memIds) == 0;
         }
 
         void _addDepnEdge(unsigned cur, unsigned pred) {
@@ -44,7 +44,9 @@ namespace wfdg {
                 return;
             }
             VarIdPair varIds = make_pair(0, memIds.first);
+            llvm::outs() <<"deb2\n";
             if (_noneWrittenStructInNode(_nodeID, varIds, memIds)) {
+                llvm::outs() <<"deb3\n";
                 _traceReadStructVar(_nodeID, varIds, memIds);
             }
         }

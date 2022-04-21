@@ -307,7 +307,6 @@ namespace wfdg {
                 w.addDepnEdge(edge);
             }
         }
-        cout << w.toString() << '\n';
         return w;
     }
 
@@ -355,7 +354,6 @@ namespace wfdg {
             _customCPG.for_each_succ(nodePair.first, insertEdges);
         }
         w.setDepnEdges(_customCPG.getDataDepnEdges());
-        cout << w.toString() << '\n';
         wfdgs.push_back(move(w));
     }
 

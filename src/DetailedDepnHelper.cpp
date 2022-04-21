@@ -31,6 +31,9 @@ namespace wfdg {
         for (unsigned vecIdx = _customCPG.pred_begin(searchNode);
              vecIdx != _customCPG.pred_end(searchNode); ++vecIdx) {
             unsigned predNode = _customCPG.pred_at(vecIdx);
+            if(predNode <= searchNode){
+                continue;
+            }
             int leftIdx = -1;
             if ((leftIdx = _hasWrittenStructInNode(predNode, varIds, memIds)) != -1) {
 //                _customCPG.addDataDepnEdge(predNode, _nodeID);

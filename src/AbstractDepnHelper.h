@@ -85,9 +85,6 @@ namespace wfdg {
             const Stmt *stmt = memberExpr;
             while (stmt->child_begin() != stmt->child_end()) {
                 stmt = *(stmt->child_begin());
-                if (!isa<DeclRefExpr>(stmt)) {
-                    continue;
-                }
                 if (const DeclRefExpr *refExpr = dyn_cast<DeclRefExpr>(stmt)) {
                     return make_pair(refExpr->getDecl()->getID(), memberExpr->getMemberDecl()->getID());
                 }
@@ -115,6 +112,9 @@ namespace wfdg {
                     _stmtHelper.setStmtID(j);
                     if (Optional < CFGStmt > cfgStmt = element.getAs<CFGStmt>()) {
                         const Stmt *stmt = cfgStmt->getStmt();
+                        if(_debug){
+                            llvm::outs() << "[" << nodeID << "."<< j <<"]\n";
+                        }
                         _buildDepn(stmt);
                     }
                     ++j;
