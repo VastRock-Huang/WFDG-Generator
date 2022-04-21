@@ -6,8 +6,7 @@
 
 namespace wfdg {
     void AbstractDepnHelper::_buildDepn(const Stmt *stmt) {
-        auto it = stmt->child_begin();
-        if(_stmtHelper.skipStmt(stmt)) {
+        if (_stmtHelper.skipStmt(stmt)) {
             return;
         }
         switch (stmt->getStmtClass()) {
@@ -26,10 +25,16 @@ namespace wfdg {
             }
 
             case Stmt::CallExprClass: {
-                // 跳过函数类型转换
-                for (++it; it != stmt->child_end(); ++it) {
-                    if (isa<ImplicitCastExpr>(*it)) {
-                        const ImplicitCastExpr *castExpr = cast<ImplicitCastExpr>(*it);
+                const CallExpr *callExpr = cast<CallExpr>(stmt);
+                if (const ImplicitCastExpr *castExpr = dyn_cast<ImplicitCastExpr>(callExpr->getCallee())) {
+                    _buildDepn(castExpr->getSubExpr());
+                } else {
+                    _buildDepn(callExpr->getCallee());
+                }
+
+                for (unsigned i = 0; i < callExpr->getNumArgs(); ++i) {
+                    const Expr *argExpr = callExpr->getArg(i);
+                    if (const ImplicitCastExpr *castExpr = dyn_cast<ImplicitCastExpr>(argExpr)) {
                         const Expr *expr = castExpr->getSubExpr();
                         _buildDepn(expr);
                         // 对于非const指针的处理
@@ -41,7 +46,7 @@ namespace wfdg {
                             }
                         }
                     } else {
-                        _buildDepn(*it);
+                        _buildDepn(argExpr);
                     }
                 }
                 return;
@@ -97,7 +102,7 @@ namespace wfdg {
 
             default:;
         }
-        for (; it != stmt->child_end(); ++it) {
+        for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
             _buildDepn(*it);
         }
     }
