@@ -74,29 +74,33 @@ namespace wfdg {
         void _traceReadStructVar(const VarIdPair &memIds, const string &name, unsigned lineNum);
 
         void _collectRVarsOfWVar(const Stmt *stmt, VarMap<int> &assignFrom) const {
-            if (isa<DeclRefExpr>(stmt)) {
-                const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
-                if (isa<VarDecl>(refExpr->getDecl())) {
-                    VarIdPair ids = _getRefVarIds(refExpr);
+            queue<const Stmt*> stmtQue{};
+            stmtQue.push(stmt);
+            while (!stmtQue.empty()) {
+                const Stmt* s = stmtQue.front();
+                stmtQue.pop();
+                if (const DeclRefExpr *refExpr = dyn_cast<DeclRefExpr>(s)) {
+                    if (isa<VarDecl>(refExpr->getDecl())) {
+                        VarIdPair ids = _getRefVarIds(refExpr);
 //                    llvm::outs() << "push" << DepnMapper::varIdPairToString(ids) <<'\n';
-                    int rightIdx = _getReadVarIdx(ids);
-                    if (rightIdx == -1) {
-                        rightIdx = _depnMapper.getVarLastRightIdx(ids);
+                        int rightIdx = _getReadVarIdx(ids);
+                        if (rightIdx == -1) {
+                            rightIdx = _depnMapper.getVarLastRightIdx(ids);
+                        }
+                        assignFrom.emplace(ids, rightIdx);
                     }
-                    assignFrom.emplace(ids, rightIdx);
-                }
-            } else if (isa<MemberExpr>(stmt)) {
-                const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
-                VarIdPair memIds = _getStructIds(memberExpr);
+                } else if (const MemberExpr *memberExpr = dyn_cast<MemberExpr>(s)) {
+                    VarIdPair memIds = _getStructIds(memberExpr);
 //                llvm::outs() << "push" << DepnMapper::varIdPairToString(memIds) <<'\n';
-                int rightIdx = _getReadVarIdx(memIds);
-                if (rightIdx == -1) {
-                    rightIdx = _depnMapper.getVarLastRightIdx(memIds);
-                }
-                assignFrom.emplace(memIds, rightIdx);
-            } else {
-                for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
-                    _collectRVarsOfWVar(*it, assignFrom);
+                    int rightIdx = _getReadVarIdx(memIds);
+                    if (rightIdx == -1) {
+                        rightIdx = _depnMapper.getVarLastRightIdx(memIds);
+                    }
+                    assignFrom.emplace(memIds, rightIdx);
+                } else {
+                    for (auto it = s->child_begin(); it != s->child_end(); ++it) {
+                        stmtQue.push(*it);
+                    }
                 }
             }
         }
