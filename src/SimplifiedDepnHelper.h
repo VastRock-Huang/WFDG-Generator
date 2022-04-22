@@ -7,7 +7,7 @@
 
 #include "AbstractDepnHelper.h"
 #include "CustomCPG.h"
-#include <stack>
+#include <queue>
 
 namespace wfdg {
     class SimplifiedDepnHelper : public AbstractDepnHelper {

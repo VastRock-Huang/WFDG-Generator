@@ -8,14 +8,11 @@ namespace wfdg {
 
     void SimplifiedDepnHelper::_traceReadVar(const AbstractDepnHelper::VarIdPair &ids) {
         vector<bool> visited(_nodeCnt - _nodeID, false);
-        stack<unsigned> nodeStk{};
-        nodeStk.push(_nodeID);
-        while (!nodeStk.empty()) {
-            unsigned curNode = nodeStk.top();
-            if (visited[curNode - _nodeID]) {
-                nodeStk.pop();
-                continue;
-            }
+        queue<unsigned> nodeQue{};
+        nodeQue.push(_nodeID);
+        while (!nodeQue.empty()) {
+            unsigned curNode = nodeQue.front();
+            nodeQue.pop();
             visited[curNode - _nodeID] = true;
             if (_noneWrittenVarInNode(curNode, ids)) {
                 for (unsigned vecIdx = _customCPG.pred_begin(curNode);
@@ -24,7 +21,7 @@ namespace wfdg {
                     if (predNode <= curNode || visited[predNode - _nodeID]) {
                         continue;
                     }
-                    nodeStk.push(predNode);
+                    nodeQue.push(predNode);
                 }
             } else if (curNode != _nodeID) {
                 _addDepnEdge(_nodeID, curNode);
@@ -41,14 +38,11 @@ namespace wfdg {
         VarIdPair varIds = make_pair(0, memIds.first);
 
         vector<bool> visited(_nodeCnt - _nodeID, false);
-        stack<unsigned> nodeStk{};
-        nodeStk.push(_nodeID);
-        while (!nodeStk.empty()) {
-            unsigned curNode = nodeStk.top();
-            if (visited[curNode - _nodeID]) {
-                nodeStk.pop();
-                continue;
-            }
+        queue<unsigned > nodeQue{};
+        nodeQue.push(_nodeID);
+        while (!nodeQue.empty()) {
+            unsigned curNode = nodeQue.front();
+            nodeQue.pop();
             visited[curNode - _nodeID] = true;
             if (_noneWrittenStructInNode(curNode, varIds, memIds)) {
                 for (unsigned vecIdx = _customCPG.pred_begin(curNode);
@@ -57,7 +51,7 @@ namespace wfdg {
                     if (predNode <= curNode || visited[predNode - _nodeID]) {
                         continue;
                     }
-                    nodeStk.push(predNode);
+                    nodeQue.push(predNode);
                 }
             } else if (curNode != _nodeID) {
                 _addDepnEdge(_nodeID, curNode);

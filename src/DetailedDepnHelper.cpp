@@ -8,14 +8,11 @@ namespace wfdg {
     void DetailedDepnHelper::_traceReadVar(const AbstractDepnHelper::VarIdPair &ids, unsigned int lineNum)  {
         unordered_set<RefPair, util::pair_hash> refFrom{};
         vector<bool> visited(_nodeCnt - _nodeID, false);
-        stack<unsigned> nodeStk{};
-        nodeStk.push(_nodeID);
-        while (!nodeStk.empty()) {
-            unsigned curNode = nodeStk.top();
-            if (visited[curNode - _nodeID]) {
-                nodeStk.pop();
-                continue;
-            }
+        queue<unsigned> nodeQue{};
+        nodeQue.push(_nodeID);
+        while (!nodeQue.empty()) {
+            unsigned curNode = nodeQue.front();
+            nodeQue.pop();
             visited[curNode - _nodeID] = true;
             int leftIdx = -1;
             if ((leftIdx = _hasWrittenVarInNode(curNode, ids)) != -1) {
@@ -30,7 +27,7 @@ namespace wfdg {
                     if (predNode <= curNode|| visited[predNode - _nodeID]) {
                         continue;
                     }
-                    nodeStk.push(predNode);
+                    nodeQue.push(predNode);
                 }
             }
         }
@@ -52,14 +49,11 @@ namespace wfdg {
         VarIdPair varIds = make_pair(0, memIds.first);
         unordered_set<RefPair, util::pair_hash> refFrom{};
         vector<bool> visited(_nodeCnt - _nodeID, false);
-        stack<unsigned> nodeStk{};
-        nodeStk.push(_nodeID);
-        while (!nodeStk.empty()) {
-            unsigned curNode = nodeStk.top();
-            if (visited[curNode - _nodeID]) {
-                nodeStk.pop();
-                continue;
-            }
+        queue<unsigned> nodeQue{};
+        nodeQue.push(_nodeID);
+        while (!nodeQue.empty()) {
+            unsigned curNode = nodeQue.front();
+            nodeQue.pop();
             visited[curNode - _nodeID] = true;
             int leftIdx = -1;
             if ((leftIdx = _hasWrittenStructInNode(curNode, varIds, memIds)) != -1) {
@@ -74,7 +68,7 @@ namespace wfdg {
                     if (predNode <= curNode|| visited[predNode - _nodeID]) {
                         continue;
                     }
-                    nodeStk.push(predNode);
+                    nodeQue.push(predNode);
                 }
             }
         }
