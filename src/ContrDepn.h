@@ -96,13 +96,13 @@ namespace wfdg {
             if (!_customCPG.hasCondition(_idom[nodeID])) {
                 _idom[nodeID] = genDepn(_idom[nodeID], visited);
             }
-            unsigned predNode = _customCPG.pred_front(nodeID);
-            if (_customCPG.isLoop(predNode) && _customCPG.succ_back(predNode) == nodeID) {
-                _idom[nodeID] = genDepn(predNode, visited);
+            unsigned vecIdx = _customCPG.pred_begin(nodeID);
+            if(vecIdx < _customCPG.pred_size()) {
+                unsigned predNode = _customCPG.pred_at(vecIdx);
+                if (_customCPG.isLoop(predNode) && _customCPG.succ_back(predNode) == nodeID) {
+                    _idom[nodeID] = genDepn(predNode, visited);
+                }
             }
-//                else if(_customCPG.isLoop(nodeID)) {
-//                    _idom[nodeID] = genDepn(_idom[nodeID], visited);
-//                }
             return _idom[nodeID];
         }
 
@@ -128,7 +128,6 @@ namespace wfdg {
             vector<bool> visited(_size);
             visited.front() = visited.back() = true;
             _idom.front() = 0;
-//            cout << "ori:" << util::vecToString(_idom) << '\n';
             for (unsigned i = 1; i < _size - 1; ++i) {
                 genDepn(i, visited);
             }

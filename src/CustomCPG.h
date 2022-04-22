@@ -95,6 +95,10 @@ namespace wfdg {
             }
         }
 
+        unsigned succ_size() const {
+            return _succCnt;
+        }
+
         unsigned succ_begin(unsigned nodeId) const {
             return _nodesSuccCnt.at(nodeId);
         }
@@ -126,6 +130,10 @@ namespace wfdg {
             }
         }
 
+        unsigned pred_size() const {
+            return _predCnt;
+        }
+
         unsigned pred_begin(unsigned nodeId) const {
             return _nodesPredCnt.at(nodeId);
         }
@@ -136,10 +144,6 @@ namespace wfdg {
 
         unsigned pred_at(unsigned preVecIdx) const {
             return _nodesPredVec.at(preVecIdx);
-        }
-
-        unsigned pred_front(unsigned nodeId) const {
-            return pred_at(pred_begin(nodeId));
         }
 
         void for_each_pred(unsigned curNode, const function<void(unsigned, unsigned)> &execution) const {
