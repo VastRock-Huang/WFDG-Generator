@@ -10,10 +10,10 @@ namespace wfdg {
         vector<bool> visited(_nodeCnt - _nodeID, false);
         queue<unsigned> nodeQue{};
         nodeQue.push(_nodeID);
+        visited[_nodeID - _nodeID] = true;
         while (!nodeQue.empty()) {
             unsigned curNode = nodeQue.front();
             nodeQue.pop();
-            visited[curNode - _nodeID] = true;
             int leftIdx = -1;
             if ((leftIdx = _hasWrittenVarInNode(curNode, ids)) != -1) {
 //                _customCPG.addDataDepnEdge(predNode, _nodeID);
@@ -28,6 +28,7 @@ namespace wfdg {
                         continue;
                     }
                     nodeQue.push(predNode);
+                    visited[predNode - _nodeID] = true;
                 }
             }
         }
@@ -51,10 +52,10 @@ namespace wfdg {
         vector<bool> visited(_nodeCnt - _nodeID, false);
         queue<unsigned> nodeQue{};
         nodeQue.push(_nodeID);
+        visited[_nodeID - _nodeID] = true;
         while (!nodeQue.empty()) {
             unsigned curNode = nodeQue.front();
             nodeQue.pop();
-            visited[curNode - _nodeID] = true;
             int leftIdx = -1;
             if ((leftIdx = _hasWrittenStructInNode(curNode, varIds, memIds)) != -1) {
 //                _customCPG.addDataDepnEdge(predNode, _nodeID);
@@ -69,6 +70,7 @@ namespace wfdg {
                         continue;
                     }
                     nodeQue.push(predNode);
+                    visited[predNode - _nodeID] = true;
                 }
             }
         }

@@ -10,6 +10,7 @@ namespace wfdg {
         vector<bool> visited(_nodeCnt - _nodeID, false);
         queue<unsigned> nodeQue{};
         nodeQue.push(_nodeID);
+        visited[_nodeID - _nodeID] = true;
         while (!nodeQue.empty()) {
             unsigned curNode = nodeQue.front();
             nodeQue.pop();
@@ -22,6 +23,7 @@ namespace wfdg {
                         continue;
                     }
                     nodeQue.push(predNode);
+                    visited[predNode - _nodeID] = true;
                 }
             } else if (curNode != _nodeID) {
                 _addDepnEdge(_nodeID, curNode);
@@ -40,6 +42,7 @@ namespace wfdg {
         vector<bool> visited(_nodeCnt - _nodeID, false);
         queue<unsigned > nodeQue{};
         nodeQue.push(_nodeID);
+        visited[_nodeID - _nodeID] = true;
         while (!nodeQue.empty()) {
             unsigned curNode = nodeQue.front();
             nodeQue.pop();
@@ -52,6 +55,7 @@ namespace wfdg {
                         continue;
                     }
                     nodeQue.push(predNode);
+                    visited[predNode - _nodeID] = true;
                 }
             } else if (curNode != _nodeID) {
                 _addDepnEdge(_nodeID, curNode);
