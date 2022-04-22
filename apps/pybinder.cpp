@@ -4,7 +4,6 @@
 #include "CPGGen.h"
 #include "WFDGGen.h"
 #include "WFDGGen/WFDG.h"
-
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
@@ -24,7 +23,7 @@ namespace wfdg {
                 .def_readwrite("weight_succ_ratio", &Configuration::weightSuccRatio)
                 .def_readwrite("graph_pred_depth", &Configuration::graphPredDepth)
                 .def_readwrite("graph_succ_depth", &Configuration::graphSuccDepth)
-                .def("init", &Configuration::init);
+                .def("specify_func", &Configuration::specifyFunc);
 
         py::class_<WFDG> w(m, "WFDG");
         w.def(py::init<std::string, unsigned>())

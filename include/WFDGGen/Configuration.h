@@ -51,6 +51,8 @@ namespace wfdg {
 
         bool useWeight{true};
 
+        bool useOptimization{true};
+
         double weightPredRatio{0.85};
 
         double weightSuccRatio{0.85};
@@ -62,17 +64,11 @@ namespace wfdg {
         Configuration() : keyWords(_initKeywords()), ASTStmtKinds(_initASTStmtKinds()),
                           ASTStmtKindMap(_initASTStmtKindMap()) {}
 
-        void init(string destFuncName, unsigned sensitiveLineNo, bool doDebug) {
-            static bool initialized{false};
-            if(initialized) {
-                return;
-            }
-            initialized = true;
+        void specifyFunc(string destFuncName, unsigned sensitiveLineNo) {
             // 只有给定函数名给定敏感行才有意义
-            if(!destFunc.empty()) {
+            if(!destFuncName.empty()) {
                 sensitiveLine = sensitiveLineNo;
             }
-            debug = doDebug;
             destFunc = move(destFuncName);
         }
 

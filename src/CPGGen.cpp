@@ -71,9 +71,8 @@ namespace wfdg {
     }
 
 
-    void CPGGenConsumer::_buildCustomCPG(const FunctionDecl *funcDecl, CustomCPG &customCPG) const {
-        Stmt *funcBody = funcDecl->getBody();
-        unique_ptr<CFG> wholeCFG = CFG::buildCFG(funcDecl, funcBody, &_context, CFG::BuildOptions());
+    void CPGGenConsumer::_buildContrFlowInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG,
+                                              CustomCPG &customCPG) const {
         customCPG.initNodeCnt(wholeCFG->size());
 
         for (auto &block: *wholeCFG) {
@@ -115,8 +114,6 @@ namespace wfdg {
             _catchSpecialStmt(block->getLoopTarget(), customCPG, cur);
             _catchSpecialStmt(block->getLabel(), customCPG, cur);
         }
-
-        _buildDepnInCPG(funcDecl, wholeCFG, customCPG);
     }
 
 
@@ -127,10 +124,19 @@ namespace wfdg {
             if (_config.matchDestFunc(funcName)) {
                 if (_config.debug)
                     llvm::outs() << "\nFUNC: " << funcName << '\n';
+
                 pair<unsigned, unsigned> lineRange = _getLineRange(funcDecl->getLocation(), funcDecl->getEndLoc());
+                if(_config.useOptimization && lineRange.second - lineRange.first <= 10) {
+                    return true;
+                }
+                unique_ptr<CFG> wholeCFG = CFG::buildCFG(funcDecl, funcDecl->getBody(), &_context, CFG::BuildOptions());
+                if(_config.useOptimization && wholeCFG->size() <= 5) {
+                    return true;
+                }
 
                 CustomCPG customCPG(funcName, _config.ASTStmtKindMap, move(_findSensitiveLines(funcDecl, lineRange)));
-                _buildCustomCPG(funcDecl, customCPG);
+                _buildContrFlowInCPG(funcDecl, wholeCFG, customCPG);
+                _buildDepnInCPG(funcDecl, wholeCFG, customCPG);
                 _customCPGList.push_back(customCPG);
             }
         }

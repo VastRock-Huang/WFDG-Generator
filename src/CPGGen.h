@@ -41,7 +41,7 @@ namespace wfdg {
         map<unsigned, int> _findSensitiveLines(const FunctionDecl *functionDecl,
                                                const pair<unsigned, unsigned> &lineRange) const;
 
-        void _buildCustomCPG(const FunctionDecl *funcDecl, CustomCPG &customCPG) const;
+        void _buildContrFlowInCPG(const FunctionDecl *funcDecl, const unique_ptr<CFG> &wholeCFG, CustomCPG &customCPG) const;
 
         void _buildDepnInCPG(const FunctionDecl *funcDecl, const unique_ptr <CFG> &wholeCFG,
                              CustomCPG &customCPG) const;
