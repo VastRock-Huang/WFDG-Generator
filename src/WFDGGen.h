@@ -33,7 +33,7 @@ namespace wfdg {
             _sensitiveIdx = idx;
         }
 
-        void _genContrDepnWeight(unordered_map<unsigned, double> &depnWeightMap);
+        void _genContrDepnWeight(unordered_map<unsigned, double> &depnWeightMap) const;
 
         void _genDataDepnWeight(unordered_map<unsigned, double> &depnWeightMap);
 
@@ -43,7 +43,7 @@ namespace wfdg {
         WFDG _buildWFDG(unsigned rootLine, const unordered_map<unsigned, double> &depnWeightMap,
                         const unordered_map<unsigned, double> &nodeWeightMap) const;
 
-        void _genWFDGWithoutSensitiveLine(vector<WFDG> &wfdgs);
+        WFDG _genWFDGWithoutSensitiveLine() const;
 
     public:
         WFDGGenerator(const Configuration &config, CustomCPG &customCPG)

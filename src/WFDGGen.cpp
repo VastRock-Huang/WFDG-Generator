@@ -10,7 +10,7 @@
 #include <iostream>
 
 namespace wfdg {
-    void WFDGGenerator::_genContrDepnWeight(unordered_map<unsigned, double> &depnWeightMap) {
+    void WFDGGenerator::_genContrDepnWeight(unordered_map<unsigned, double> &depnWeightMap) const {
         const DepnMapper &depnMapper = _customCPG.getDepnMapper();
         double initWeight = 1.;
         auto isSensitiveVar = [this, &depnMapper](const VarIdPair &ids) -> bool {
@@ -182,7 +182,7 @@ namespace wfdg {
                     idxQueue.pop();
                     const LeftData &leftData = depnMapper.getLeftData(p.first);
                     for (const RefPair &refPair: leftData.refTo) {
-                        if(rightIdxSet.count(refPair.first) != 0) {
+                        if (rightIdxSet.count(refPair.first) != 0) {
                             continue;
                         }
                         rightIdxSet.emplace(refPair.first);
@@ -315,11 +315,8 @@ namespace wfdg {
     }
 
     void WFDGGenerator::genWFDGs(vector<WFDG> &wfdgs) {
-        if (_customCPG.getSensitiveLineMap().empty()) {
-            _genWFDGWithoutSensitiveLine(wfdgs);
-            return;
-        }
         const map<unsigned, int> &sensitiveLineMap = _customCPG.getSensitiveLineMap();
+        unsigned cnt = 0;
         for (const auto &p: sensitiveLineMap) {
 //            cout << "sensitiveLine:" << p.first << '\n';
 //            cout << "sensitiveNode:" << util::hashsetToString(_customCPG.getDepnMapper().getSensitiveNodes(p.second))
@@ -340,10 +337,14 @@ namespace wfdg {
 //            cout << util::hashmapToString(nodeWeightMap, util::numToString<unsigned>, util::numToString<double>)
 //                 << '\n';
             wfdgs.emplace_back(_buildWFDG(p.first, depnWeightMap, nodeWeightMap));
+            ++cnt;
+        }
+        if (cnt == 0) {
+            wfdgs.emplace_back(_genWFDGWithoutSensitiveLine());
         }
     }
 
-    void WFDGGenerator::_genWFDGWithoutSensitiveLine(vector<WFDG> &wfdgs) {
+    WFDG WFDGGenerator::_genWFDGWithoutSensitiveLine() const {
         WFDG w(_customCPG.getFuncName(), 0U);
         for (unsigned i = 0; i < _customCPG.getNodeCnt(); ++i) {
             WFDGNode node{};
@@ -359,8 +360,6 @@ namespace wfdg {
             _customCPG.for_each_succ(nodePair.first, insertEdges);
         }
         w.setDepnEdges(_customCPG.getDataDepnEdges());
-        wfdgs.push_back(move(w));
+        return w;
     }
-
-
 }
