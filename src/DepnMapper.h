@@ -83,9 +83,9 @@ namespace wfdg {
     private:
         VarMap<string> _varMap{};
 
-        vector<unordered_set<unsigned>> _sensitiveNodes;
-        vector<vector<pair<VarIdPair, int>>> _sensitiveWVars;
-        vector<vector<pair<VarIdPair, int>>> _sensitiveRVars;
+        // pair中记录变量的idx和所在结点id
+        vector<VarMap<pair<int, unsigned>>> _sensitiveWVars;
+        vector<VarMap<pair<int, unsigned>>> _sensitiveRVars;
 
         unordered_map<unsigned, VarMap<int>> _contrVarMap{};
 
@@ -96,8 +96,8 @@ namespace wfdg {
         VarMap<unordered_set<int>> _rightMap{};
 
     public:
-        explicit DepnMapper(unsigned sensitiveCnt) :
-                _sensitiveNodes(sensitiveCnt), _sensitiveWVars(sensitiveCnt), _sensitiveRVars(sensitiveCnt) {}
+        explicit DepnMapper(unsigned sensitiveCnt)
+                : _sensitiveWVars(sensitiveCnt), _sensitiveRVars(sensitiveCnt) {}
 
         unsigned rightVecSize() const {
             return _rightVec.size();
@@ -143,30 +143,47 @@ namespace wfdg {
         }
 
         void pushSensitiveWVar(int sensitiveIdx, const VarIdPair &ids, int leftIdx, unsigned nodeID) {
-            _sensitiveNodes.at(sensitiveIdx).emplace(nodeID);
-            _sensitiveWVars.at(sensitiveIdx).emplace_back(ids, leftIdx);
+            VarMap<pair<int, unsigned>> &wVars = _sensitiveWVars.at(sensitiveIdx);
+            auto it = wVars.find(ids);
+            if (it == wVars.end()) {
+                wVars.emplace(ids, make_pair(leftIdx, nodeID));
+            } else if (leftIdx > it->second.first) {
+                it->second = make_pair(leftIdx, nodeID);
+            }
         }
 
         void pushSensitiveRVar(int sensitiveIdx, const VarIdPair &ids, int rightIdx, unsigned nodeID) {
-            _sensitiveNodes.at(sensitiveIdx).emplace(nodeID);
-            _sensitiveRVars.at(sensitiveIdx).emplace_back(ids, rightIdx);
+            VarMap<pair<int, unsigned >> &rVars = _sensitiveRVars.at(sensitiveIdx);
+            auto it = rVars.find(ids);
+            if (it == rVars.end()) {
+                rVars.emplace(ids, make_pair(rightIdx, nodeID));
+            } else if (rightIdx > it->second.first) {
+                it->second = make_pair(rightIdx, nodeID);
+            }
         }
 
-        const vector<pair<VarIdPair, int>> &getSensitiveRVars(int sensitiveIdx) const {
+        const VarMap<pair<int, unsigned>> &getSensitiveRVars(int sensitiveIdx) const {
             return _sensitiveRVars.at(sensitiveIdx);
         }
 
-        const vector<pair<VarIdPair, int>> &getSensitiveWVars(int sensitiveIdx) const {
+        const VarMap<pair<int, unsigned>> &getSensitiveWVars(int sensitiveIdx) const {
             return _sensitiveWVars.at(sensitiveIdx);
         }
 
-        const unordered_set<unsigned> &getSensitiveNodes(int sensitiveIdx) const {
-            return _sensitiveNodes.at(sensitiveIdx);
+        unordered_set<unsigned> getSensitiveNodes(int sensitiveIdx) const {
+            unordered_set<unsigned> nodes{};
+            for(auto &p: _sensitiveRVars.at(sensitiveIdx)) {
+                nodes.emplace(p.second.second);
+            }
+            for(auto &p: _sensitiveWVars.at(sensitiveIdx)){
+                nodes.emplace(p.second.second);
+            }
+            return nodes;
         }
 
-        int getVarLastRightIdx(const VarIdPair& ids) const {
+        int getVarLastRightIdx(const VarIdPair &ids) const {
             int resIdx = -1;
-            for(int rightIdx: _rightMap.at(ids)) {
+            for (int rightIdx: _rightMap.at(ids)) {
                 resIdx = max(rightIdx, resIdx);
             }
             return resIdx;

@@ -9,20 +9,16 @@ namespace wfdg {
         auto hashsetToStr = [](const unordered_set<int> &s) -> string {
             return util::hashsetToString(s, util::numToString < int > );
         };
-        auto vecToStr = [](const vector<AssignPair> &vec) -> string {
-            return util::vecToString(vec, assignPairToString);
+        auto varMapToStr = [](const VarMap<pair<int, unsigned>> &vMap) -> string {
+            return DepnMapper::varMapToString(vMap, util::numPairToString<int, unsigned>);
         };
 
         return "{varMap: " +
                varMapToString(_varMap, [](const string &s) -> string {
                    return s;
                }) + ",\n" +
-               "sensitiveNodes: " +
-               util::vecToString(_sensitiveNodes, [](const auto &hashset) -> string {
-                   return util::hashsetToString(hashset);
-               }) + ",\n" +
-               "sensitiveWVars: " + util::vecToString(_sensitiveWVars, vecToStr) + ",\n" +
-               "sensitiveRVars: " + util::vecToString(_sensitiveRVars, vecToStr) + ",\n" +
+               "sensitiveWVars: " + util::vecToString(_sensitiveWVars, varMapToStr) + ",\n" +
+               "sensitiveRVars: " + util::vecToString(_sensitiveRVars, varMapToStr) + ",\n" +
                "contrVarMap: " +
                util::hashmapToString(_contrVarMap, util::numToString<unsigned>,
                                      [](const auto &hashset) -> string {

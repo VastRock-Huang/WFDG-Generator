@@ -14,12 +14,8 @@ namespace wfdg {
         const DepnMapper &depnMapper = _customCPG.getDepnMapper();
         double initWeight = 1.;
         auto isSensitiveVar = [this, &depnMapper](const VarIdPair &ids) -> bool {
-            return any_of(depnMapper.getSensitiveRVars(_sensitiveIdx).begin(),
-                          depnMapper.getSensitiveRVars(_sensitiveIdx).end(),
-                          [&ids](const auto &p) { return p.first == ids; })
-                   || any_of(depnMapper.getSensitiveWVars(_sensitiveIdx).begin(),
-                             depnMapper.getSensitiveWVars(_sensitiveIdx).end(),
-                             [&ids](const auto &p) { return p.first == ids; });
+            return depnMapper.getSensitiveRVars(_sensitiveIdx).count(ids) != 0
+                   || depnMapper.getSensitiveWVars(_sensitiveIdx).count(ids) != 0;
         };
 
         // 记录变量是否涉及过
@@ -97,24 +93,17 @@ namespace wfdg {
 
     void WFDGGenerator::_genDataDepnWeight(unordered_map<unsigned, double> &depnWeightMap) {
         const DepnMapper &depnMapper = _customCPG.getDepnMapper();
-        const unordered_set<unsigned> &sensitiveNodes = depnMapper.getSensitiveNodes(_sensitiveIdx);
-        if (sensitiveNodes.empty()) {
-            return;
-        }
 
         queue<pair<int, unsigned>> idxQueue{};
+        // 用于去重, 避免依赖信息重复入队
+        unordered_set<int> rightIdxSet{}, leftIdxSet{};
+
         bool isRight = true;
         double initWeight = 1., curWeight = initWeight;
-
-//        unsigned rootNode = *min_element(sensitiveNodes.begin(), sensitiveNodes.end());
-        const vector<pair<VarIdPair, int>> &rVars = depnMapper.getSensitiveRVars(_sensitiveIdx);
-        if (!rVars.empty()) {
-            for (unsigned nodeID: depnMapper.getSensitiveNodes(_sensitiveIdx)) {
-                depnWeightMap.emplace(nodeID, initWeight);
-                for (const auto &p: rVars) {
-                    idxQueue.emplace(p.second, nodeID);
-                }
-            }
+        for (auto &p: depnMapper.getSensitiveRVars(_sensitiveIdx)) {
+            depnWeightMap.emplace(p.second.second, initWeight);
+            rightIdxSet.emplace(p.second.first);
+            idxQueue.emplace(p.second);
         }
         while (!idxQueue.empty()) {
             if (isRight) {
@@ -125,6 +114,11 @@ namespace wfdg {
                     idxQueue.pop();
                     const RightData &rightData = depnMapper.getRightData(p.first);
                     for (const RefPair &refPair: rightData.refFrom) {
+                        if (leftIdxSet.count(refPair.first) != 0) {
+                            continue;
+                        }
+                        leftIdxSet.emplace(refPair.first);
+
                         auto it = depnWeightMap.find(refPair.second);
                         if (it == depnWeightMap.end() || curWeight > it->second) {
                             depnWeightMap[refPair.second] = curWeight;
@@ -132,7 +126,7 @@ namespace wfdg {
                         if (refPair.second > p.second) {
                             _customCPG.addDataDepnEdge(refPair.second, p.second);
                         }
-//                        cout << "D: lpush: " << DepnMapper::refPairToString(refPair) <<'\n';
+//                        cout << "D: lpush: " << DepnMapper::refPairToString(refPair) << '\n';
                         idxQueue.emplace(refPair);
                     }
                 }
@@ -143,7 +137,12 @@ namespace wfdg {
                     idxQueue.pop();
                     const LeftData &leftData = depnMapper.getLeftData(p.first);
                     for (const AssignPair &assignPair: leftData.assignFrom) {
-//                        cout << "D: rpush: " << util::numPairToString(make_pair(assignPair.second, p.second)) <<'\n';
+                        if (leftIdxSet.count(assignPair.second) != 0) {
+                            continue;
+                        }
+                        leftIdxSet.emplace(assignPair.second);
+
+//                        cout << "D: rpush: " << util::numPairToString(make_pair(assignPair.second, p.second)) << '\n';
                         idxQueue.emplace(assignPair.second, p.second);
                     }
                 }
@@ -153,16 +152,13 @@ namespace wfdg {
 
         isRight = false;
         curWeight = initWeight;
-        const vector<pair<VarIdPair, int>> &wVars = depnMapper.getSensitiveWVars(_sensitiveIdx);
-        if (!wVars.empty()) {
-            for (unsigned nodeID: depnMapper.getSensitiveNodes(_sensitiveIdx)) {
-                depnWeightMap.emplace(nodeID, initWeight);
-                for (const auto &p: wVars) {
-                    idxQueue.emplace(p.second, nodeID);
-                }
-            }
+        rightIdxSet.clear();
+        leftIdxSet.clear();
+        for (auto &p: depnMapper.getSensitiveWVars(_sensitiveIdx)) {
+            depnWeightMap.emplace(p.second.second, initWeight);
+            leftIdxSet.emplace(p.second.first);
+            idxQueue.emplace(p.second);
         }
-
         while (!idxQueue.empty()) {
             if (isRight) {
                 for (auto size = idxQueue.size(); size != 0; --size) {
@@ -170,8 +166,11 @@ namespace wfdg {
 //                    cout << "D: r2pop: " << util::numPairToString(p) << '\n';
                     idxQueue.pop();
                     const RightData &rightData = depnMapper.getRightData(p.first);
-//                    cout << "D: l2push: " << util::numPairToString(make_pair(rightData.assignTo.second, p.second)) <<'\n';
-                    if (DepnMapper::isVar(rightData.assignTo.first)) {
+                    if (DepnMapper::isVar(rightData.assignTo.first)
+                        && leftIdxSet.count(rightData.assignTo.second) == 0) {
+                        leftIdxSet.emplace(rightData.assignTo.second);
+//                        cout << "D: l2push: " << util::numPairToString(make_pair(rightData.assignTo.second, p.second))
+//                             << '\n';
                         idxQueue.emplace(rightData.assignTo.second, p.second);
                     }
                 }
@@ -183,6 +182,11 @@ namespace wfdg {
                     idxQueue.pop();
                     const LeftData &leftData = depnMapper.getLeftData(p.first);
                     for (const RefPair &refPair: leftData.refTo) {
+                        if(rightIdxSet.count(refPair.first) != 0) {
+                            continue;
+                        }
+                        rightIdxSet.emplace(refPair.first);
+
                         auto it = depnWeightMap.find(refPair.second);
                         if (it == depnWeightMap.end() || curWeight > it->second) {
                             depnWeightMap[refPair.second] = curWeight;
@@ -190,7 +194,7 @@ namespace wfdg {
                         if (refPair.second < p.second) {
                             _customCPG.addDataDepnEdge(p.second, refPair.second);
                         }
-//                        cout << "D: r2push: " << DepnMapper::refPairToString(refPair) <<'\n';
+//                        cout << "D: r2push: " << DepnMapper::refPairToString(refPair) << '\n';
                         idxQueue.emplace(refPair);
                     }
                 }
@@ -294,7 +298,7 @@ namespace wfdg {
             w.addNode(p.first, move(node));
         }
 
-        auto insertEdges = [&w,&nodeWeightMap](unsigned succNode, unsigned curNode) -> void {
+        auto insertEdges = [&w, &nodeWeightMap](unsigned succNode, unsigned curNode) -> void {
             if (nodeWeightMap.count(succNode) != 0) {
                 w.addEdge(succNode, curNode);
             }
@@ -302,8 +306,8 @@ namespace wfdg {
         for (auto &p: w.getNodes()) {
             _customCPG.for_each_succ(p.first, insertEdges);
         }
-        for(const pair<unsigned, unsigned> &edge: _customCPG.getDataDepnEdges()) {
-            if(nodeWeightMap.count(edge.first) != 0 && nodeWeightMap.count(edge.second) != 0) {
+        for (const pair<unsigned, unsigned> &edge: _customCPG.getDataDepnEdges()) {
+            if (nodeWeightMap.count(edge.first) != 0 && nodeWeightMap.count(edge.second) != 0) {
                 w.addDepnEdge(edge);
             }
         }
@@ -317,7 +321,7 @@ namespace wfdg {
         }
         const map<unsigned, int> &sensitiveLineMap = _customCPG.getSensitiveLineMap();
         for (const auto &p: sensitiveLineMap) {
-//            cout << "sensitiveLine:" << p.first << '\n';
+            cout << "sensitiveLine:" << p.first << '\n';
 //            cout << "sensitiveNode:" << util::hashsetToString(_customCPG.getDepnMapper().getSensitiveNodes(p.second))
 //                 << '\n';
             _setSensitiveIdx(p.second);
@@ -325,8 +329,9 @@ namespace wfdg {
             unordered_map<unsigned, double> depnWeightMap{};
             _genContrDepnWeight(depnWeightMap);
             _genDataDepnWeight(depnWeightMap);
-//            cout << util::hashmapToString(depnWeightMap, util::numToString<unsigned>, util::numToString<double>)
-//                 << '\n';
+            cout << "depnWeight: "
+                 << util::hashmapToString(depnWeightMap, util::numToString<unsigned>, util::numToString<double>)
+                 << '\n';
             if (depnWeightMap.empty()) {
                 continue;
             }
