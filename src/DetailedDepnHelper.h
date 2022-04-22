@@ -74,10 +74,10 @@ namespace wfdg {
         void _traceReadStructVar(const VarIdPair &memIds, const string &name, unsigned lineNum);
 
         void _collectRVarsOfWVar(const Stmt *stmt, VarMap<int> &assignFrom) const {
-            queue<const Stmt*> stmtQue{};
+            queue<const Stmt *> stmtQue{};
             stmtQue.push(stmt);
             while (!stmtQue.empty()) {
-                const Stmt* s = stmtQue.front();
+                const Stmt *s = stmtQue.front();
                 stmtQue.pop();
                 if (const DeclRefExpr *refExpr = dyn_cast<DeclRefExpr>(s)) {
                     if (isa<VarDecl>(refExpr->getDecl())) {
@@ -89,7 +89,9 @@ namespace wfdg {
                         }
                         assignFrom.emplace(ids, rightIdx);
                     }
-                } else if (const MemberExpr *memberExpr = dyn_cast<MemberExpr>(s)) {
+                    continue;
+                }
+                if (const MemberExpr *memberExpr = dyn_cast<MemberExpr>(s)) {
                     VarIdPair memIds = _getStructIds(memberExpr);
 //                llvm::outs() << "push" << DepnMapper::varIdPairToString(memIds) <<'\n';
                     int rightIdx = _getReadVarIdx(memIds);
@@ -97,10 +99,17 @@ namespace wfdg {
                         rightIdx = _depnMapper.getVarLastRightIdx(memIds);
                     }
                     assignFrom.emplace(memIds, rightIdx);
-                } else {
-                    for (auto it = s->child_begin(); it != s->child_end(); ++it) {
-                        stmtQue.push(*it);
+                    continue;
+                }
+                if (const BinaryOperator *binOp = dyn_cast<BinaryOperator>(s)) {
+                    if (binOp->getOpcode() == BinaryOperatorKind::BO_Assign) {
+                        stmtQue.push(binOp->getRHS());
+                        continue;
                     }
+                }
+
+                for (auto it = s->child_begin(); it != s->child_end(); ++it) {
+                    stmtQue.push(*it);
                 }
             }
         }
@@ -176,8 +185,7 @@ namespace wfdg {
                 llvm::outs() << "R_Mem:" << name << '\n';
         }
 
-        void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr)
-        override {
+        void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) override {
             VarMap<int> assignFrom{};
             // 必须在record之前,防止同一变量被覆盖
             _collectRVarsOfWVar(readExpr, assignFrom);

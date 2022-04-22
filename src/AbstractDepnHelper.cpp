@@ -70,7 +70,7 @@ namespace wfdg {
 
             case Stmt::BinaryOperatorClass: {
                 const BinaryOperator *binOp = cast<BinaryOperator>(stmt);
-                if (binOp->isAssignmentOp()) {
+                if (binOp->getOpcode() == BinaryOperatorKind::BO_Assign) {
                     _buildDepn(binOp->getRHS());
                     _depnOfWrittenVar(binOp->getLHS(), binOp->getRHS());
                     return;
@@ -129,48 +129,6 @@ namespace wfdg {
                     const Stmt *stmt = SE->getStmt();
                     pair<unsigned, unsigned> P((*I)->getBlockID(), j);
                     _StmtMap[stmt] = P;
-
-                    /*
-                    switch (stmt->getStmtClass()) {
-                        case Stmt::DeclStmtClass:
-                            _DeclMap[cast<DeclStmt>(stmt)->getSingleDecl()] = P;
-                            break;
-                        case Stmt::IfStmtClass: {
-                            const VarDecl *var = cast<IfStmt>(stmt)->getConditionVariable();
-                            if (var)
-                                _DeclMap[var] = P;
-                            break;
-                        }
-                        case Stmt::ForStmtClass: {
-                            const VarDecl *var = cast<ForStmt>(stmt)->getConditionVariable();
-                            if (var)
-                                _DeclMap[var] = P;
-                            break;
-                        }
-                        case Stmt::WhileStmtClass: {
-                            const VarDecl *var =
-                                    cast<WhileStmt>(stmt)->getConditionVariable();
-                            if (var)
-                                _DeclMap[var] = P;
-                            break;
-                        }
-                        case Stmt::SwitchStmtClass: {
-                            const VarDecl *var =
-                                    cast<SwitchStmt>(stmt)->getConditionVariable();
-                            if (var)
-                                _DeclMap[var] = P;
-                            break;
-                        }
-                        case Stmt::CXXCatchStmtClass: {
-                            const VarDecl *var =
-                                    cast<CXXCatchStmt>(stmt)->getExceptionDecl();
-                            if (var)
-                                _DeclMap[var] = P;
-                            break;
-                        }
-                        default:
-                            break;
-                    }*/
                 }
             }
         }
