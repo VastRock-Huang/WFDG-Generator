@@ -321,7 +321,7 @@ namespace wfdg {
         }
         const map<unsigned, int> &sensitiveLineMap = _customCPG.getSensitiveLineMap();
         for (const auto &p: sensitiveLineMap) {
-            cout << "sensitiveLine:" << p.first << '\n';
+//            cout << "sensitiveLine:" << p.first << '\n';
 //            cout << "sensitiveNode:" << util::hashsetToString(_customCPG.getDepnMapper().getSensitiveNodes(p.second))
 //                 << '\n';
             _setSensitiveIdx(p.second);
@@ -329,9 +329,9 @@ namespace wfdg {
             unordered_map<unsigned, double> depnWeightMap{};
             _genContrDepnWeight(depnWeightMap);
             _genDataDepnWeight(depnWeightMap);
-            cout << "depnWeight: "
-                 << util::hashmapToString(depnWeightMap, util::numToString<unsigned>, util::numToString<double>)
-                 << '\n';
+//            cout << "depnWeight: "
+//                 << util::hashmapToString(depnWeightMap, util::numToString<unsigned>, util::numToString<double>)
+//                 << '\n';
             if (depnWeightMap.empty()) {
                 continue;
             }
