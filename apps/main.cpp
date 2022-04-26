@@ -31,7 +31,7 @@ int main(int argc, const char **argv) {
     Configuration config{};
     config.debug = debug;
     config.useOptimization = useOptimization;
-    config.specifyFunc(destFunc, sensitiveLine);
+    config.specifyFunc(destFunc, sensitiveLine, false);
 
     ClangTool tool(op.getCompilations(), op.getSourcePathList());
     // 取消错误输出

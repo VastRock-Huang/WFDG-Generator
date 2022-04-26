@@ -14,6 +14,7 @@ namespace wfdg {
         py::class_<Configuration>(m, "Configuration")
                 .def(py::init<>())
                 .def_readwrite("dest_func", &Configuration::destFunc)
+                .def_readwrite("no_sensitive", &Configuration::noSensitive)
                 .def_readwrite("sensitive_line", &Configuration::sensitiveLine)
                 .def_readwrite("debug", &Configuration::debug)
                 .def_readwrite("key_words", &Configuration::keyWords)

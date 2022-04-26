@@ -35,6 +35,9 @@ namespace wfdg {
     public:
         string destFunc{};
 
+        // 为true时则直接生成整个函数的WFDG图
+        bool noSensitive{false};
+
         unsigned sensitiveLine{0};
 
         bool debug{false};
@@ -64,12 +67,13 @@ namespace wfdg {
         Configuration() : keyWords(_initKeywords()), ASTStmtKinds(_initASTStmtKinds()),
                           ASTStmtKindMap(_initASTStmtKindMap()) {}
 
-        void specifyFunc(string destFuncName, unsigned sensitiveLineNo) {
+        void specifyFunc(string destFuncName, unsigned sensitiveLineNo, bool notUseSensitive) {
             // 只有给定函数名给定敏感行才有意义
-            if(!destFuncName.empty()) {
+            if(!destFuncName.empty() && !notUseSensitive) {
                 sensitiveLine = sensitiveLineNo;
             }
             destFunc = move(destFuncName);
+            noSensitive = notUseSensitive;
         }
 
         bool matchDestFunc(const string& funcName) const;

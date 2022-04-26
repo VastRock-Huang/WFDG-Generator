@@ -14,6 +14,9 @@ namespace wfdg {
 
     map<unsigned, int> CPGGenConsumer::_findSensitiveLines(const FunctionDecl *functionDecl,
                                                            const pair<unsigned, unsigned> &lineRange) const {
+        if(_config.noSensitive) {
+            return {};
+        }
         unsigned sensitiveLine = _config.sensitiveLine;
         if (sensitiveLine != 0 && util::numInRange(sensitiveLine, lineRange) == 0) {
             return {{sensitiveLine, 0}};
