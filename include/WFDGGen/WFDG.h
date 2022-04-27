@@ -25,6 +25,7 @@ namespace wfdg {
             vector<unsigned> stmtVec{};
 
             static string toString(const WFDGNode &node);
+            static string toJson(const WFDGNode &node);
         };
 
     private:
@@ -36,7 +37,7 @@ namespace wfdg {
         set<pair<unsigned, unsigned>> _allEdges{};
 
     public:
-        explicit WFDG(string funcName, unsigned rootLine) : _funcName(move(funcName)), _rootLine(rootLine) {}
+        WFDG(string funcName, unsigned rootLine) : _funcName(move(funcName)), _rootLine(rootLine) {}
 
         string getFuncName() const {
             return _funcName;
@@ -94,6 +95,8 @@ namespace wfdg {
         }
 
         string toString() const;
+
+        string toJson() const;
     };
 
     vector<WFDG>

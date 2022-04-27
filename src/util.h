@@ -18,9 +18,18 @@ using namespace std;
 
 namespace wfdg {
     namespace util {
+        inline string strToJson(const string& str) {
+            return "\"" + str + "\"";
+        }
+
         template<typename T>
         string numToString(T num) {
             return to_string(num);
+        }
+
+        template<typename T>
+        string numToJson(T num) {
+            return "\""  + to_string(num) + "\"";
         }
 
         template<typename T>
@@ -40,6 +49,11 @@ namespace wfdg {
         template<typename T, typename U>
         string numPairToString(const pair<T, U> &p) {
             return "(" + to_string(p.first) + ", " + to_string(p.second) + ")";
+        }
+
+        template<typename T, typename U>
+        string numPairToJson(const pair<T, U> &p) {
+            return "[" + to_string(p.first) + ", " + to_string(p.second) + "]";
         }
 
         template<typename T, typename U>
@@ -77,6 +91,20 @@ namespace wfdg {
             return str += "]";
         }
 
+        template<typename T, typename U>
+        string mapToJson(const map<T, U> &m, const function<string(decltype(m.begin()->first))> &tFunc,
+                           const function<string(decltype(m.begin()->second))> &uFunc) {
+            string str = "{";
+            size_t i = 0, sz = m.size();
+            for (auto &item: m) {
+                str += tFunc(item.first) + ": " + uFunc(item.second);
+                if (++i != sz) {
+                    str += ", ";
+                }
+            }
+            return str += "}";
+        }
+
         template<typename T, typename H>
         string hashsetToString(const unordered_set<T, H> &s,
                                const function<string(decltype(*s.begin()))> &toStrFunc = numToString<T>) {
@@ -94,6 +122,20 @@ namespace wfdg {
 
         template<typename T>
         string setToString(const set<T> &s,
+                           const function<string(decltype(*s.begin()))> &toStrFunc = numToString<T>) {
+            string str = "[";
+            size_t i = 0, sz = s.size();
+            for (auto &item: s) {
+                str += toStrFunc(item);
+                if (++i != sz) {
+                    str += ", ";
+                }
+            }
+            return str += "]";
+        }
+
+        template<typename T>
+        string setToJson(const set<T> &s,
                            const function<string(decltype(*s.begin()))> &toStrFunc = numToString<T>) {
             string str = "[";
             size_t i = 0, sz = s.size();

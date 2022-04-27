@@ -17,6 +17,15 @@ namespace wfdg {
                "}\n";
     }
 
+    string WFDG::WFDGNode::toJson(const WFDGNode &node) {
+        return "{"
+               "\"id\": " + util::numToString(node.id) +
+               ", \"depnWeight\": " + util::numToString(node.depnWeight) +
+               ", \"nodeWeight\": " + util::numToString(node.nodeWeight) +
+               ", \"weight\": " + util::numToString(node.weight) +
+               ", \"stmtVec\": " + util::vecToString(node.stmtVec) +
+               "}";
+    }
 
     string WFDG::toString() const {
         return "{funcName: " + _funcName + ", " +
@@ -26,6 +35,18 @@ namespace wfdg {
                "edges: " + util::setToString(_edges, util::numPairToString<unsigned, unsigned>) + ",\n" +
                "dataDepnEdges: " +
                util::setToString(_depnEdges, util::numPairToString<unsigned, unsigned>) +
+               "allEdges: " +
+               util::setToString(_allEdges, util::numPairToString<unsigned,unsigned>) +
+               "}";
+    }
+
+    string WFDG::toJson() const {
+        return "{\"funcName\": " + util::strToJson(_funcName) + ", " +
+               "\"rootLine\": " + util::numToString(_rootLine) + ", " +
+               "\"nodes\": " + util::mapToJson(_nodes, util::numToJson<unsigned>,
+                                              WFDGNode::toJson) + ", " +
+               "\"allEdges\": " +
+               util::setToJson(_allEdges, util::numPairToJson<unsigned,unsigned>) +
                "}";
     }
 

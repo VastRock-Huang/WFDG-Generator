@@ -41,7 +41,8 @@ namespace wfdg {
             .def_property_readonly("__all_edges", &WFDG::getAllEdges)
             .def("get_all_edges", &WFDG::getAllEdges)
             .def("get_all_edge_cnt", &WFDG::getAllEdgeCnt)
-            .def("to_string", &WFDG::toString);
+            .def("to_string", &WFDG::toString)
+            .def("to_json", &WFDG::toJson);
 
         py::class_<WFDG::WFDGNode>(w, "WFDGNode")
                 .def(py::init<>())
@@ -49,7 +50,8 @@ namespace wfdg {
                 .def_readwrite("depn_weight", &WFDG::WFDGNode::depnWeight)
                 .def_readwrite("node_weight", &WFDG::WFDGNode::nodeWeight)
                 .def_readwrite("stmt_vec", &WFDG::WFDGNode::stmtVec)
-                .def("to_string", &WFDG::WFDGNode::toString);
+                .def("to_string", &WFDG::WFDGNode::toString)
+                .def("to_json", &WFDG::WFDGNode::toJson);
 
         m.def("gen_WFDGs", &genWFDGs);
     }
