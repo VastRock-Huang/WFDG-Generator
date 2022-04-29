@@ -9,13 +9,14 @@
 #include <string>
 #include <utility>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace std;
 
 namespace wfdg {
     class Configuration {
     private:
-        static vector<string> _initKeywords() {
+        static unordered_set<string> _initKeywords() {
             return DEFAULT_KEYWORDS;
         }
 
@@ -42,11 +43,11 @@ namespace wfdg {
 
         bool debug{false};
 
-        static const vector<string> DEFAULT_KEYWORDS;
+        static const unordered_set<string> DEFAULT_KEYWORDS;
 
         static const vector<string> DEFAULT_AST_STMT_KINDS;
 
-        vector<string> keyWords;
+        unordered_set<string> keyWords;
 
         vector<string> ASTStmtKinds;
 
@@ -74,6 +75,12 @@ namespace wfdg {
             }
             destFunc = move(destFuncName);
             noSensitive = notUseSensitive;
+        }
+
+        void addKeyWords(const unordered_set<string>& keys) {
+            for(string key: keys) {
+                keyWords.emplace(move(key));
+            }
         }
 
         bool matchDestFunc(const string& funcName) const;

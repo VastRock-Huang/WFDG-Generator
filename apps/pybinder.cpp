@@ -24,7 +24,8 @@ namespace wfdg {
                 .def_readwrite("weight_succ_ratio", &Configuration::weightSuccRatio)
                 .def_readwrite("graph_pred_depth", &Configuration::graphPredDepth)
                 .def_readwrite("graph_succ_depth", &Configuration::graphSuccDepth)
-                .def("specify_func", &Configuration::specifyFunc);
+                .def("specify_func", &Configuration::specifyFunc)
+                .def("add_keywords", &Configuration::addKeyWords);
 
         py::class_<WFDG> w(m, "WFDG");
         w.def(py::init<std::string, unsigned>())

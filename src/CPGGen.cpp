@@ -30,8 +30,8 @@ namespace wfdg {
         unsigned fileOffset = _manager.getFileOffset(beginLoc);
         map<unsigned, int> res{};
         int idx = 0;
-        for (size_t i = 1; i < _config.keyWords.size(); ++i) {
-            StringRef keyword{_config.keyWords[i]};
+        for (const string& key: _config.keyWords) {
+            StringRef keyword{key};
             size_t pos = 0;
             pos = funcContent.find(keyword, pos);
             while (pos != StringRef::npos) {

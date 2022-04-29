@@ -5,7 +5,7 @@
 #include "WFDGGen/Configuration.h"
 
 namespace wfdg {
-    const vector<string> Configuration::DEFAULT_KEYWORDS{"USER_SET","memcpy", "strcpy", "read", "free", "buf"};
+    const unordered_set<string> Configuration::DEFAULT_KEYWORDS{"USER_SET","memcpy", "strcpy", "read", "free", "buf"};
 
     const vector<string> Configuration::DEFAULT_AST_STMT_KINDS{
             "VarDecl", "FunctionDecl", "FieldDecl", "DeclRefExpr",
