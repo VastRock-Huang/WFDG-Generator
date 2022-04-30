@@ -47,8 +47,8 @@ namespace wfdg {
             return _rootLine;
         }
 
-        void addNode(unsigned nodeID, WFDGNode &&node) {
-            _nodes.emplace(nodeID, move(node));
+        void addNode(unsigned nodeID, const WFDGNode& node) {
+            _nodes.emplace(nodeID, node);
         }
 
         const WFDGNode& getNode(unsigned nodeId) const {
@@ -84,6 +84,12 @@ namespace wfdg {
         void addDepnEdge(pair<unsigned, unsigned> depnEdge) {
             _depnEdges.emplace(depnEdge);
             _allEdges.emplace(move(depnEdge));
+        }
+
+        void setAllEdges(const vector<vector<unsigned>>& edges) {
+            for(const vector<unsigned>& edge: edges) {
+                _allEdges.emplace(make_pair(edge[0], edge[1]));
+            }
         }
 
         const set<pair<unsigned,unsigned>>& getAllEdges() const {
