@@ -262,8 +262,8 @@ namespace wfdg {
                     if (isa<VarDecl>(refExpr->getDecl())) {
                         VarIdPair ids = _getRefVarIds(refExpr);
                         int rightIdx = _getReadVarIdx(ids);
-                        if (rightIdx == -1) {
-                            rightIdx = _depnMapper.getVarLastRightIdx(ids);
+                        if (rightIdx == -1 && (rightIdx = _depnMapper.getVarLastRightIdx(ids)) == -1) {
+                            continue;
                         }
                         _depnMapper.pushContrVar(_nodeID, ids, rightIdx);
                     }
@@ -275,8 +275,8 @@ namespace wfdg {
                         continue;
                     }
                     int rightIdx = _getReadVarIdx(memIds);
-                    if (rightIdx == -1) {
-                        rightIdx = _depnMapper.getVarLastRightIdx(memIds);
+                    if (rightIdx == -1 && (rightIdx = _depnMapper.getVarLastRightIdx(memIds)) == -1) {
+                        continue;
                     }
                     _depnMapper.pushContrVar(_nodeID, memIds, rightIdx);
                     continue;
