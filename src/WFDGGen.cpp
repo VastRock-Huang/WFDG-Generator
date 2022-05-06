@@ -32,7 +32,11 @@ namespace wfdg {
                 const VarMap<int> *vars = depnMapper.getContrVars(contrNode);
                 if (!vars) {
                     depnWeightMap.emplace(contrNode, 0.);
+                    unsigned pre = contrNode;
                     contrNode = _customCPG.getContrNode(contrNode);
+                    if(contrNode == pre) {
+                        break;
+                    }
                     continue;
                 }
                 double maxWeight = 0.;
@@ -51,7 +55,11 @@ namespace wfdg {
 //                    cout << "iniRPush:" << p.second << '\n';
                 }
                 depnWeightMap.emplace(contrNode, maxWeight);
+                unsigned pre = contrNode;
                 contrNode = _customCPG.getContrNode(contrNode);
+                if(pre == contrNode){
+                    break;
+                }
             }
         }
         bool isRight = true;
@@ -325,6 +333,7 @@ namespace wfdg {
 
             unordered_map<unsigned, double> depnWeightMap{};
             _genContrDepnWeight(depnWeightMap);
+//            cout << "finish contr Weight\n";
             _genDataDepnWeight(depnWeightMap);
 //            cout << "depnWeight: "
 //                 << util::hashmapToString(depnWeightMap, util::numToString<unsigned>, util::numToString<double>)
@@ -351,7 +360,7 @@ namespace wfdg {
             node.id = i;
             node.stmtVec = _customCPG.getStmtVec(i);
             node.weight = _config.useWeight ? 1 : 0;
-            w.addNode(i, move(node));
+            w.addNode(i, node);
         }
         auto insertEdges = [&w](unsigned succNode, unsigned curNode) -> void {
             w.addEdge(succNode, curNode);
