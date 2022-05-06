@@ -5,10 +5,12 @@
 #include "AbstractDepnHelper.h"
 
 namespace wfdg {
+    // FIXME: 结构体处理不完善:未考虑结构体变量中数组的情况,如:structVar[i].mem,会忽略变量i;以及返回结构体的函数memFunc(structVar).mem
     void AbstractDepnHelper::_buildDepn(const Stmt *stmt) {
         if (_stmtHelper.skipStmt(stmt)) {
             return;
         }
+//        llvm::outs() << stmt->getStmtClassName() << '\n';
         switch (stmt->getStmtClass()) {
             case Stmt::MemberExprClass: {
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
@@ -31,7 +33,6 @@ namespace wfdg {
                 } else {
                     _buildDepn(callExpr->getCallee());
                 }
-
                 for (unsigned i = 0; i < callExpr->getNumArgs(); ++i) {
                     const Expr *argExpr = callExpr->getArg(i);
                     if (const ImplicitCastExpr *castExpr = dyn_cast<ImplicitCastExpr>(argExpr)) {

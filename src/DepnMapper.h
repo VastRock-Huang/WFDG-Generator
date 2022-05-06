@@ -83,6 +83,7 @@ namespace wfdg {
     private:
         VarMap<string> _varMap{};
 
+        // TODO:合并不同敏感行但在同一结点的情况
         // pair中记录变量的idx和所在结点id
         vector<VarMap<pair<int, unsigned>>> _sensitiveWVars;
         vector<VarMap<pair<int, unsigned>>> _sensitiveRVars;
@@ -139,7 +140,8 @@ namespace wfdg {
         }
 
         string getVarNameByIds(const VarIdPair &ids) const {
-            return _varMap.at(ids);
+            auto it = _varMap.find(ids);
+            return it == _varMap.end() ? "null" : it->second;
         }
 
         void pushSensitiveWVar(int sensitiveIdx, const VarIdPair &ids, int leftIdx, unsigned nodeID) {

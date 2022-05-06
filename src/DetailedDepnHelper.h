@@ -47,7 +47,7 @@ namespace wfdg {
         }
 
         int _hasWrittenVarInNode(unsigned nodeID, const VarIdPair &ids) const {
-            auto it = _writtenVarVec[nodeID].find(ids);
+            auto it = _writtenVarVec.at(nodeID).find(ids);
             if (it != _writtenVarVec.at(nodeID).end()) {
                 return it->second;
             }
@@ -93,6 +93,9 @@ namespace wfdg {
                 }
                 if (const MemberExpr *memberExpr = dyn_cast<MemberExpr>(s)) {
                     VarIdPair memIds = _getStructIds(memberExpr);
+                    if(memIds.first == 0) {
+                        continue;
+                    }
 //                llvm::outs() << "push" << DepnMapper::varIdPairToString(memIds) <<'\n';
                     int rightIdx = _getReadVarIdx(memIds);
                     if (rightIdx == -1) {
@@ -180,6 +183,9 @@ namespace wfdg {
         override {
             VarIdPair ids{};
             string name = _getStructIdsAndName(memberExpr, ids);
+            if(ids.first == 0) {
+                return;
+            }
             _traceReadStructVar(ids, name, _getLineNumber(memberExpr->getMemberLoc()));
             if (_debug)
                 llvm::outs() << "R_Mem:" << name << '\n';
