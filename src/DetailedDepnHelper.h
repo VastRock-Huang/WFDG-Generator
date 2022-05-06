@@ -93,7 +93,7 @@ namespace wfdg {
                 }
                 if (const MemberExpr *memberExpr = dyn_cast<MemberExpr>(s)) {
                     VarIdPair memIds = _getStructIds(memberExpr);
-                    if(memIds.first == 0) {
+                    if (memIds.first == 0) {
                         continue;
                     }
 //                llvm::outs() << "push" << DepnMapper::varIdPairToString(memIds) <<'\n';
@@ -183,7 +183,7 @@ namespace wfdg {
         override {
             VarIdPair ids{};
             string name = _getStructIdsAndName(memberExpr, ids);
-            if(ids.first == 0) {
+            if (ids.first == 0) {
                 return;
             }
             _traceReadStructVar(ids, name, _getLineNumber(memberExpr->getMemberLoc()));
@@ -271,6 +271,9 @@ namespace wfdg {
                 } else if (isa<MemberExpr>(s)) {
                     const MemberExpr *memberExpr = cast<MemberExpr>(s);
                     VarIdPair memIds = _getStructIds(memberExpr);
+                    if (memIds.first == 0) {
+                        continue;
+                    }
                     int rightIdx = _getReadVarIdx(memIds);
                     if (rightIdx == -1) {
                         rightIdx = _depnMapper.getVarLastRightIdx(memIds);
