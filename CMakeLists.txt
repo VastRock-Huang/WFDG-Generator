@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
-project(WFG-Generator LANGUAGES CXX)
+project(WFDG-Generator LANGUAGES CXX)
 
 # 是否编译出python模块,默认打开ON,关闭请使用-DPY_MOD=OFF
-option(PY_MOD "build python module" OFF)
+option(PY_MOD "build python module" ON)
 
 # 查找LLVM和Clang库
 # 使用CONFIG配置模式
