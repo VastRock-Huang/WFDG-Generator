@@ -34,7 +34,7 @@ namespace wfdg {
         const Configuration &_config;
         ASTContext &_context;
         const SourceManager &_manager;
-        vector<CustomCPG> &_customCPGList;
+        vector<CustomCPG> &_customCPGList;  //!< 定制CPG的列表
 
         pair<unsigned, unsigned> _getLineRange(const SourceLocation &beginLoc, const SourceLocation &endLoc) const;
 

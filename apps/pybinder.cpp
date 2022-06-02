@@ -10,6 +10,7 @@
 namespace wfdg {
     namespace py = pybind11;
 
+    // 绑定生成Python模块
     PYBIND11_MODULE(wfdg_generator, m) {
         py::class_<Configuration>(m, "Configuration")
                 .def(py::init<>())

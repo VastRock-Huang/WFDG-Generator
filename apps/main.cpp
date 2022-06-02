@@ -28,6 +28,7 @@ int main(int argc, const char **argv) {
     CommonOptionsParser op(argc, argv, opCategory);
 
     vector<CustomCPG> customCPGList{};
+    // 配置设置
     Configuration config{};
     config.debug = debug;
     config.useOptimization = useOptimization;
@@ -35,7 +36,7 @@ int main(int argc, const char **argv) {
 
     ClangTool tool(op.getCompilations(), op.getSourcePathList());
     if (!warnInDiag) {
-        // 取消错误输出
+        // 取消编译器的错误输出
         class : public DiagnosticConsumer {
         public:
             virtual bool IncludeInDiagnosticCounts() const {
@@ -44,7 +45,11 @@ int main(int argc, const char **argv) {
         } diagConsumer;
         tool.setDiagnosticConsumer(&diagConsumer);
     }
+
+    // 生成并运行
     int ret = tool.run(unique_ptr<CPGGenFactory>(new CPGGenFactory(config, customCPGList)).get());
+
+    // 遍历所有定值CPG图生成WFDG图
     for (auto &cpg: customCPGList) {
         if (showFuncInfo) {
             cout << "********************* FuncInfo *********************\n"

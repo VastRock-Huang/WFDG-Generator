@@ -17,26 +17,29 @@ using namespace clang;
 namespace wfdg {
     class AbstractDepnHelper {
     public:
+        //! 变量ID对
         using VarIdPair = DepnMapper::VarIdPair;
 
     protected:
+        //! 语句映射表,用于跳过已经遍历过的语句
         class StmtHelper {
         private:
             using StmtMapTy = llvm::DenseMap<const Stmt *, pair<unsigned, unsigned>>;
-//            using DeclMapTy = llvm::DenseMap<const Decl *, pair<unsigned, unsigned>>;
 
             StmtMapTy _StmtMap;
-//            DeclMapTy _DeclMap;
             unsigned _currentBlock = 0;
             unsigned _currStmt = 0;
 
         public:
             StmtHelper(const CFG *cfg);
 
+            //! 设置结点ID
             void setBlockID(unsigned i) { _currentBlock = i; }
 
+            //! 设置语法序号
             void setStmtID(unsigned i) { _currStmt = i; }
 
+            //! 判断当前语句是否跳过
             bool skipStmt(const Stmt *S) {
                 StmtMapTy::iterator I = _StmtMap.find(S);
                 if (I == _StmtMap.end()) {
@@ -58,18 +61,25 @@ namespace wfdg {
 
         virtual void _doDepnOfReadRef(const DeclRefExpr *refExpr) = 0;
 
+        //! 处理成员表达式
         virtual void _doDepnOfReadMember(const MemberExpr *memberExpr) = 0;
 
+        //! 处理写入变量
         virtual void _doDepnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) = 0;
 
+        //! 处理读写变量
         virtual void _doDepnOfRWVar(const Stmt *stmt) = 0;
 
+        //! 处理变量声明
         virtual void _depnOfDecl(const VarDecl *varDecl) = 0;
 
+        //! 处理Terminator条件语句
         virtual void _doTerminatorCondition(const Stmt *stmt) {}
 
+        //! 在处理完结点依赖关系后调用
         virtual void _doAtNodeEnding() {};
 
+        //! 更新结点ID
         virtual void _doNodeIdUpdate(unsigned nodeID) {
             _nodeID = nodeID;
         }
@@ -82,6 +92,7 @@ namespace wfdg {
             return make_pair(0, refExpr->getDecl()->getID());
         }
 
+        //! 获取成员表达式的变量ID对
         static VarIdPair _getStructIds(const MemberExpr *memberExpr) {
             const Stmt *stmt = memberExpr;
             while (stmt->child_begin() != stmt->child_end()) {
@@ -100,7 +111,9 @@ namespace wfdg {
         AbstractDepnHelper(const unique_ptr <CFG> &cfg, bool debug)
                 : _cfg(cfg), _nodeCnt(cfg->size()), _stmtHelper(cfg.get()), _debug(debug) {}
 
+        //! 构建变量依赖关系到CPG中
         void buildDepnInCPG() {
+            // 变量CFG所有结点
             for (auto it = _cfg->rbegin(); it != _cfg->rend(); ++it) {
                 CFGBlock *block = *it;
                 if (_debug)
@@ -125,6 +138,7 @@ namespace wfdg {
             }
         }
 
+        //! 处理参数声明的依赖关系
         void depnOfParamDecl(llvm::ArrayRef<ParmVarDecl *> params) {
             _doNodeIdUpdate(_nodeCnt - 1);
             for (const ParmVarDecl *paramVarDecl: params) {

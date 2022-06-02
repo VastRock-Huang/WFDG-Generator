@@ -152,8 +152,6 @@ namespace wfdg {
             return num < range.first ? -1 : (num > range.second ? 1 : 0);
         }
 
-        void mergeLineRanges(vector<pair<unsigned, unsigned>> &ranges);
-
         template<typename T>
         inline void hash_combine(std::size_t &seed, T const &v) {
             seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);

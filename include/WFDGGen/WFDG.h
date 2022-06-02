@@ -15,26 +15,28 @@
 using namespace std;
 
 namespace wfdg {
+    //! 加权特征依赖图
     class WFDG {
     public:
+        //! 加权特征依赖图结点
         struct WFDGNode {
-            unsigned id{0};
-            double depnWeight{0.};
-            double nodeWeight{0.};
-            double weight{0.};
-            vector<unsigned> stmtVec{};
+            unsigned id{0};     //!< 结点ID
+            double depnWeight{0.};  //!< 依赖权重
+            double nodeWeight{0.};  //!< 结点权重
+            double weight{0.};      //!< 结点的总权重
+            vector<unsigned> stmtVec{}; //!< 语法特征向量
 
             static string toString(const WFDGNode &node);
             static string toJson(const WFDGNode &node);
         };
 
     private:
-        const string _funcName;
-        const unsigned _rootLine;
-        map<unsigned, WFDGNode> _nodes{};
-        set<pair<unsigned, unsigned>> _edges{};
-        set<pair<unsigned, unsigned>> _depnEdges{};
-        set<pair<unsigned, unsigned>> _allEdges{};
+        const string _funcName; //!< 函数名
+        const unsigned _rootLine;   //!< 敏感行号
+        map<unsigned, WFDGNode> _nodes{};   //!< 结点映射表(结点ID->结点对象)
+        set<pair<unsigned, unsigned>> _edges{};     //!< 边集合
+        set<pair<unsigned, unsigned>> _depnEdges{}; //!< 数据依赖边集合
+        set<pair<unsigned, unsigned>> _allEdges{};  //!< 所有边的总集合
 
     public:
         WFDG(string funcName, unsigned rootLine) : _funcName(move(funcName)), _rootLine(rootLine) {}

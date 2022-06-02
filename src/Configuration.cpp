@@ -19,6 +19,7 @@ namespace wfdg {
                   "WhileStmt", "SwitchStmt", "ContinueStmt", "ImplicitCastExpr"
     };
 
+    //! 判断是否满足配置中给定的目标函数
     bool Configuration::matchDestFunc(const string &funcName) const {
         return destFunc.empty() || funcName == destFunc;
     }

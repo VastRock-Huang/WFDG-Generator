@@ -10,6 +10,7 @@
 #include <iostream>
 
 namespace wfdg {
+    //! 生成控制依赖权重
     void WFDGGenerator::_genContrDepnWeight(unordered_map<unsigned, double> &depnWeightMap) const {
         const DepnMapper &depnMapper = _customCPG.getDepnMapper();
         double initWeight = 1.;
@@ -99,6 +100,7 @@ namespace wfdg {
         }
     }
 
+    //! 生成数据依赖权重
     void WFDGGenerator::_genDataDepnWeight(unordered_map<unsigned, double> &depnWeightMap) {
         const DepnMapper &depnMapper = _customCPG.getDepnMapper();
 
@@ -211,6 +213,7 @@ namespace wfdg {
         }
     }
 
+    //! 生成结点权重
     void
     WFDGGenerator::_genNodeWeight(const unordered_map<unsigned, double> &depnWeightMap,
                                   unordered_map<unsigned, double> &nodeWeightMap) const {
@@ -291,6 +294,7 @@ namespace wfdg {
         }
     }
 
+    //! 构建WFDG
     WFDG WFDGGenerator::_buildWFDG(unsigned int rootLine, const unordered_map<unsigned, double> &depnWeightMap,
                                    const unordered_map<unsigned, double> &nodeWeightMap) const {
         WFDG w(_customCPG.getFuncName(), rootLine);
@@ -322,9 +326,11 @@ namespace wfdg {
         return w;
     }
 
+    //! 生成WFDG
     void WFDGGenerator::genWFDGs(vector<WFDG> &wfdgs) {
         const map<unsigned, int> &sensitiveLineMap = _customCPG.getSensitiveLineMap();
         unsigned cnt = 0;
+        //! 遍历每个敏感行
         for (const auto &p: sensitiveLineMap) {
 //            cout << "sensitiveLine:" << p.first << '\n';
 //            cout << "sensitiveNode:" << util::hashsetToString(_customCPG.getDepnMapper().getSensitiveNodes(p.second))
@@ -348,11 +354,13 @@ namespace wfdg {
             wfdgs.emplace_back(_buildWFDG(p.first, depnWeightMap, nodeWeightMap));
             ++cnt;
         }
+        // 若没有敏感行则生成无敏感行的WFDG
         if (cnt == 0) {
             wfdgs.emplace_back(_genWFDGWithoutSensitiveLine());
         }
     }
 
+    //! 生成无敏感行的WFDG
     WFDG WFDGGenerator::_genWFDGWithoutSensitiveLine() const {
         WFDG w(_customCPG.getFuncName(), 0U);
         for (unsigned i = 0; i < _customCPG.getNodeCnt(); ++i) {

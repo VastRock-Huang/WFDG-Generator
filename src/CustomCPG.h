@@ -20,30 +20,31 @@
 using namespace std;
 
 namespace wfdg {
+    //! 定制CPG
     class CustomCPG {
     private:
-        const string _funcName;
+        const string _funcName;     //!< 函数名
 
-        unsigned _nodeCnt{0};
-        vector<bool> _isloop{};
-        vector<bool> _hasCondition{};
+        unsigned _nodeCnt{0};   //!< 结点数
+        vector<bool> _isloop{}; //!< 记录每个结点是否有循环语句的vector
+        vector<bool> _hasCondition{};   //!< 记录每个结点是否有条件语句的vector
 
-        unsigned _succIdx{0};
-        unsigned _succCnt{0};   // succ边的总数
-        vector<unsigned> _nodesSuccCnt{};
-        vector<unsigned> _nodesSuccVec{};
+        unsigned _succIdx{0};   //!< 出度边索引
+        unsigned _succCnt{0};   //!< 出度边的总数
+        vector<unsigned> _nodesSuccCnt{};   //!< CSR存图的结点出度边数目
+        vector<unsigned> _nodesSuccVec{};   //!< CSR存图的结点出度边向量
 
-        unsigned _predIdx{0};
-        unsigned _predCnt{0};
-        vector<unsigned> _nodesPredCnt{};
-        vector<unsigned> _nodesPredVec{};
+        unsigned _predIdx{0};   //!< 入度边索引
+        unsigned _predCnt{0};   //!< 入度边的总数
+        vector<unsigned> _nodesPredCnt{};   //!< CSR存图的结点入度边数目
+        vector<unsigned> _nodesPredVec{};   //!< CSR存图的结点入度边向量
 
-        vector<vector<unsigned>> _stmtVec{};
+        vector<vector<unsigned>> _stmtVec{};    //!< 每个结点的AST语法向量
 
-        map<unsigned, int> _sensitiveLines;
-        vector<unsigned> _contrDepn{};
-        set<pair<unsigned, unsigned>> _dataDepnEdges{};
-        DepnMapper _depnMapper;
+        map<unsigned, int> _sensitiveLines;     //!< 敏感行及序号
+        vector<unsigned> _contrDepn{};      //!< 每个结点的控制依赖结点
+        set<pair<unsigned, unsigned>> _dataDepnEdges{};     //!< 数据依赖边的集合
+        DepnMapper _depnMapper;     //!< 依赖关系映射器
 
     public:
         const unordered_map<string, unsigned> &ASTStmtKindMap;
@@ -58,6 +59,7 @@ namespace wfdg {
             return _funcName;
         }
 
+        //! 初始化图结点数目
         void initNodeCnt(unsigned nodeCnt) {
             _nodeCnt = nodeCnt;
             _stmtVec.assign(nodeCnt, vector<unsigned>(ASTStmtKindMap.size()));
@@ -71,14 +73,17 @@ namespace wfdg {
             return _nodeCnt;
         }
 
+        //! 设置结点有循环语句
         void setIsLoop(unsigned nodeId) {
             _isloop.at(nodeId) = true;
         }
+
 
         bool isLoop(unsigned nodeId) const {
             return _isloop.at(nodeId);
         }
 
+        //! 设置结点有条件语句
         void setHasCondition(unsigned nodeId) {
             _hasCondition.at(nodeId) = true;
         }
@@ -89,7 +94,9 @@ namespace wfdg {
 
         void addSuccEdge(unsigned cur, unsigned succ);
 
+        //! 完成出度边的添加
         void finishSuccEdges() {
+            // 填充CSR格式中为设定的结点数
             while (_succIdx < _nodeCnt) {
                 _nodesSuccCnt[++_succIdx] = _succCnt;
             }
@@ -124,6 +131,7 @@ namespace wfdg {
 
         void addPredEdge(unsigned cur, unsigned pred);
 
+        //! 完成入度边的添加
         void finishPredEdges() {
             while (_predIdx < _nodeCnt) {
                 _nodesPredCnt[++_predIdx] = _predCnt;
@@ -153,6 +161,9 @@ namespace wfdg {
             }
         }
 
+        //! 更新结点的语法特征向量
+        //! \param[in] nodeID 结点ID
+        //! \param[in] stmtName 语句类名
         void updateNodeStmtVec(unsigned nodeID, const string &stmtName) {
             auto it = ASTStmtKindMap.find(stmtName);
             if (it != ASTStmtKindMap.end()) {
@@ -169,10 +180,12 @@ namespace wfdg {
             return it == _sensitiveLines.end() ? -1 : it->second;
         }
 
+        //! 获取敏感行映射
         const map<unsigned, int> &getSensitiveLineMap() const {
             return _sensitiveLines;
         }
 
+        //! 设置结点的控制依赖vector
         void setContrDepn(vector<unsigned> contrDepn) {
             _contrDepn = move(contrDepn);
         }

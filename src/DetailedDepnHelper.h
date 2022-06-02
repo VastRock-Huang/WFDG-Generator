@@ -21,9 +21,12 @@ namespace wfdg {
 
         const ASTContext &_context;
         const CustomCPG &_customCPG;
+        //! 依赖关系映射器
         DepnMapper &_depnMapper;
 
+        //! 记录每个结点的写入变量ID对-左值数据序号的vector
         vector<VarMap<int>> _writtenVarVec;
+        //! 记录当前结点的读取变量的ID对-右值数据序号的映射
         VarMap<int> _readVarMap{};
 
         string _getVarNameByIds(const VarIdPair &ids) const {
@@ -46,6 +49,8 @@ namespace wfdg {
             return -1;
         }
 
+        //! 判断写入变量是否在给定结点
+        //! \return 若在则为变量的左值序号,反之为-1
         int _hasWrittenVarInNode(unsigned nodeID, const VarIdPair &ids) const {
             auto it = _writtenVarVec.at(nodeID).find(ids);
             if (it != _writtenVarVec.at(nodeID).end()) {
@@ -54,6 +59,8 @@ namespace wfdg {
             return -1;
         }
 
+        //! 判断写入的结构体变量是否在给定结点
+        //! \return 若在则为结构体变量的左值序号,反之为-1
         int _hasWrittenStructInNode(unsigned nodeID, const VarIdPair &varIds, const VarIdPair &memIds) const {
             auto it1 = _writtenVarVec[nodeID].find(varIds);
             auto it2 = _writtenVarVec[nodeID].find(memIds);
@@ -73,6 +80,7 @@ namespace wfdg {
 
         void _traceReadStructVar(const VarIdPair &memIds, const string &name, unsigned lineNum);
 
+        //! 收集写入变量所依赖的所有读取变量
         void _collectRVarsOfWVar(const Stmt *stmt, VarMap<int> &assignFrom) const {
             queue<const Stmt *> stmtQue{};
             stmtQue.push(stmt);
@@ -117,6 +125,7 @@ namespace wfdg {
             }
         }
 
+        //! 记录写入变量
         void _recordWrittenVar(const VarIdPair &ids, const VarMap<int> &assignFrom, unsigned lineNum) {
             int leftIdx = _depnMapper.pushAssignInfo(ids, assignFrom);
             _writtenVarVec.at(_nodeID).emplace(ids, leftIdx);
@@ -126,6 +135,7 @@ namespace wfdg {
             }
         }
 
+        //! 记录写入结构体变量
         void _recordWrittenStruct(const VarIdPair &memIds, const string &name, const VarMap<int> &assignFrom,
                                   unsigned lineNum) {
             if (memIds.first == 0) {
@@ -142,6 +152,7 @@ namespace wfdg {
             }
         }
 
+        //! 获取成员表达式对应的变量ID对和变量名
         static string _getStructIdsAndName(const MemberExpr *memberExpr, VarIdPair &ids) {
             stack<const MemberExpr *> memStk;
             memStk.push(memberExpr);

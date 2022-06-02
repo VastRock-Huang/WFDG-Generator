@@ -13,6 +13,7 @@
 using namespace std;
 
 namespace wfdg {
+    //! 控制依赖生成器
     class ContrDepn {
     private:
         const CustomCPG &_customCPG;
@@ -23,7 +24,7 @@ namespace wfdg {
         vector<unsigned> _parent;   //!< 并查集祖先结点,1起始,非0
         vector<unsigned> _best; //!< 祖先链中dfn值最小的semi,1起始
         vector<unsigned> _id;   //!< 时间戳对应的结点ID,1起始
-        vector<unsigned> _idom;
+        vector<unsigned> _idom;     //!< 结点的控制依赖结点
         unsigned _idx{};    //!< 时间戳
 
     private:
@@ -121,6 +122,8 @@ namespace wfdg {
             }
         }
 
+        //! 生成结点的控制依赖向量
+        //! \return 控制依赖向量idom idom[i]为第i号结点依赖的结点,没有则为0
         vector<unsigned> gen() {
             _dfs(_size - 1);
             _LengauerTarjan();

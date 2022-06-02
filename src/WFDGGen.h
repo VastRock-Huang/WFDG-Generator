@@ -13,6 +13,7 @@
 using namespace std;
 
 namespace wfdg {
+    //! WFDG生成器
     class WFDGGenerator {
     private:
         using WFDGNode = WFDG::WFDGNode;
@@ -24,11 +25,12 @@ namespace wfdg {
         template<typename T>
         using VarMap = DepnMapper::VarMap<T>;
 
-        const Configuration &_config;
-        CustomCPG &_customCPG;
+        const Configuration &_config;   //!< 配置
+        CustomCPG &_customCPG;  //!< 定制CPG
 
-        int _sensitiveIdx{};
+        int _sensitiveIdx{};    //!< 敏感行的序号
 
+        //! 设置敏感行的序号
         void _setSensitiveIdx(int idx) {
             _sensitiveIdx = idx;
         }

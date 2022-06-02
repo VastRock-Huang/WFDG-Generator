@@ -6,19 +6,21 @@
 
 namespace wfdg {
     // FIXME: 结构体处理不完善:未考虑结构体变量中数组的情况,如:structVar[i].mem,会忽略变量i;以及返回结构体的函数memFunc(structVar).mem
+    //! 处理语句的依赖关系
     void AbstractDepnHelper::_buildDepn(const Stmt *stmt) {
         if (_stmtHelper.skipStmt(stmt)) {
             return;
         }
 //        llvm::outs() << stmt->getStmtClassName() << '\n';
+        // 判断语句类型
         switch (stmt->getStmtClass()) {
-            case Stmt::MemberExprClass: {
+            case Stmt::MemberExprClass: {   // 成员表达式
                 const MemberExpr *memberExpr = cast<MemberExpr>(stmt);
                 _doDepnOfReadMember(memberExpr);
                 return;
             }
 
-            case Stmt::DeclRefExprClass: {
+            case Stmt::DeclRefExprClass: {  // 变量引用表达式
                 const DeclRefExpr *refExpr = cast<DeclRefExpr>(stmt);
                 if (isa<VarDecl>(refExpr->getDecl())) {
                     _doDepnOfReadRef(refExpr);
@@ -26,18 +28,19 @@ namespace wfdg {
                 return;
             }
 
-            case Stmt::CallExprClass: {
+            case Stmt::CallExprClass: { // 函数调用表达式
                 const CallExpr *callExpr = cast<CallExpr>(stmt);
                 if (const ImplicitCastExpr *castExpr = dyn_cast<ImplicitCastExpr>(callExpr->getCallee())) {
                     _buildDepn(castExpr->getSubExpr());
                 } else {
                     _buildDepn(callExpr->getCallee());
                 }
+                // 遍历函数参数
                 for (unsigned i = 0; i < callExpr->getNumArgs(); ++i) {
                     const Expr *argExpr = callExpr->getArg(i);
                     if (const ImplicitCastExpr *castExpr = dyn_cast<ImplicitCastExpr>(argExpr)) {
                         const Expr *expr = castExpr->getSubExpr();
-                        _buildDepn(expr);
+                        _buildDepn(expr);   // 处理每个参数的表达式
                         // 对于非const指针的处理
                         if (!castExpr->getType().isConstQualified() && castExpr->getType().getTypePtr()->isPointerType()
                             && isa<UnaryOperator>(expr)) {
@@ -53,9 +56,9 @@ namespace wfdg {
                 return;
             }
 
-            case Stmt::UnaryOperatorClass: {
+            case Stmt::UnaryOperatorClass: {    // 一元运算符
                 const UnaryOperator *op = cast<UnaryOperator>(stmt);
-                if (op->isIncrementDecrementOp()) {
+                if (op->isIncrementDecrementOp()) { // 针对自增自减
                     const Stmt *childExpr = op->getSubExpr();
                     while (!isa<DeclRefExpr>(childExpr) && !isa<MemberExpr>(childExpr)) {
                         if (childExpr->child_begin() == childExpr->child_end()) {
@@ -69,8 +72,9 @@ namespace wfdg {
                 break;
             }
 
-            case Stmt::BinaryOperatorClass: {
+            case Stmt::BinaryOperatorClass: {   // 二元运算符
                 const BinaryOperator *binOp = cast<BinaryOperator>(stmt);
+                // 针对赋值运算符
                 if (binOp->getOpcode() == BinaryOperatorKind::BO_Assign) {
                     _buildDepn(binOp->getRHS());
                     _depnOfWrittenVar(binOp->getLHS(), binOp->getRHS());
@@ -79,9 +83,9 @@ namespace wfdg {
                 break;
             }
 
-            case Stmt::CompoundAssignOperatorClass: {
+            case Stmt::CompoundAssignOperatorClass: {   // 复合运算符
                 const CompoundAssignOperator *binOp = cast<CompoundAssignOperator>(stmt);
-                if (binOp->isAssignmentOp()) {
+                if (binOp->isAssignmentOp()) {  // 是赋值语句
                     _buildDepn(binOp->getLHS());
                     _buildDepn(binOp->getRHS());
                     _depnOfWrittenVar(binOp->getLHS(), stmt);
@@ -90,7 +94,7 @@ namespace wfdg {
                 break;
             }
 
-            case Stmt::DeclStmtClass: {
+            case Stmt::DeclStmtClass: { // 声明语句
                 const DeclStmt *declStmt = cast<DeclStmt>(stmt);
                 for (auto &decl: declStmt->decls()) {
                     if (isa<VarDecl>(decl)) {
@@ -103,11 +107,13 @@ namespace wfdg {
 
             default:;
         }
+        // 对于其它类型则依次处理其每个子语句
         for (auto it = stmt->child_begin(); it != stmt->child_end(); ++it) {
             _buildDepn(*it);
         }
     }
 
+    //! 处理写入变量
     void AbstractDepnHelper::_depnOfWrittenVar(const Stmt *writtenExpr, const Stmt *readExpr) {
         while (!isa<DeclRefExpr>(writtenExpr) && !isa<MemberExpr>(writtenExpr)) {
             if (writtenExpr->child_begin() == writtenExpr->child_end()) {

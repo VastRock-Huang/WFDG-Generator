@@ -50,6 +50,11 @@ namespace wfdg {
                "}";
     }
 
+    //! 生成加权特征依赖图
+    //! \param[in] srcPathList 源文件列表
+    //! \param[in] config 配置对象
+    //! \param[in] compileArgs 编译器参数列表
+    //! \return 源文件中生成的所有WFDG
     vector<WFDG> genWFDGs(const vector<string> &srcPathList, const Configuration &config, vector<string> compileArgs) {
         FixedCompilationDatabase database(".", move(compileArgs));
         ClangTool tool(database, move(srcPathList));

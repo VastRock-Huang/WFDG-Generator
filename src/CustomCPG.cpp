@@ -5,6 +5,7 @@
 #include "CustomCPG.h"
 
 namespace wfdg {
+    //! 添加出度边
     void CustomCPG::addSuccEdge(unsigned cur, unsigned succ) {
         assert((_succIdx == 0U || cur <= _succIdx) && cur < _nodeCnt);
         _succIdx = cur + 1U;
@@ -13,6 +14,7 @@ namespace wfdg {
         _nodesSuccVec.push_back(succ);
     }
 
+    //! 添加入度边
     void CustomCPG::addPredEdge(unsigned cur, unsigned pred) {
         assert((_predIdx == 0U || cur <= _predIdx) && cur < _nodeCnt);
         _predIdx = cur + 1U;

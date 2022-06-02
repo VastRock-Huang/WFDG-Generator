@@ -10,35 +10,43 @@
 #include <queue>
 
 namespace wfdg {
+    //! 简化依赖关系构建器
     class SimplifiedDepnHelper : public AbstractDepnHelper {
     private:
         const CustomCPG &_customCPG;
+        //! 每个结点的写入变量集合
         vector<unordered_set<VarIdPair, util::pair_hash>> _writtenVarVec;
+        //! 数据依赖边集合
         set<pair<unsigned, unsigned>> &_depnEdges;
 
+        //! 判断写入变量是否在给定结点
         bool _noneWrittenVarInNode(unsigned nodeID, const VarIdPair &ids) const {
             return _writtenVarVec.at(nodeID).count(ids) == 0;
         }
 
+        //! 判断结构体写入变量是否在给定结点
         bool _noneWrittenStructInNode(unsigned nodeID, const VarIdPair &varIds, const VarIdPair &memIds) const {
             return _writtenVarVec[nodeID].count(varIds) == 0 &&
                    _writtenVarVec[nodeID].count(memIds) == 0;
         }
 
+        //! 添加数据依赖边
         void _addDepnEdge(unsigned cur, unsigned pred) {
             _depnEdges.emplace(cur, pred);
         }
 
-
+        //! 跟踪读取变量
         void _traceReadVar(const VarIdPair &ids);
 
+        //! 跟踪读取结构体变量
         void _traceReadStructVar(const VarIdPair &memIds);
 
+        //! 记录写入变量
         void _recordWrittenVar(const VarIdPair &ids) {
             _writtenVarVec.at(_nodeID).emplace(ids);
         }
 
-
+        //! 获取成员表达式对应的结构体变量的完整名称
         static string _getStructName(const MemberExpr *memberExpr) {
             const Stmt *childStmt = *(memberExpr->child_begin());
             while (!isa<DeclRefExpr>(childStmt) && !isa<MemberExpr>(childStmt)) {
