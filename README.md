@@ -32,8 +32,8 @@ make
 import wfdg_generator
 filepath = ["demo.c"]
 config = wfdg_generator.Configuration()
-header_list = ['-I/usr/local/lib/clang/9.0.0/include']
-wfdgs = wfdg_generator.gen_WFDGs(filepath, config, header_list)
+compile_args = ['-I/usr/local/lib/clang/9.0.0/include']
+wfdgs = wfdg_generator.gen_WFDGs(filepath, config, compile_args)
 ```
 
 ## 参考文献
